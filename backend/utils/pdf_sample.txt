@@ -1,0 +1,541 @@
+
+
+ 
+ 
+  B.Tech (CSE) Curriculum-2024                                                                                   Page 2 of 799 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+PROGRAM CURRICULUM 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+for 
+B. TECH. FOUR YEAR DEGREE PROGRAM 
+ 
+(Applicable for the batches admitted from A.Y. 2024-25) 
+ 
+ 
+ 
+ 
+Aditya Nagar, ADB Road, Surampalem - 533 437 
+ 
+ 
+ 
+ 
+COMPUTER SCIENCE AND 
+ENGINEERING 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 2 of 799 
+ 
+` 
+ 
+ 
+Department of Computer Science and Engineering 
+ 
+B.Tech (CSE) Program Curriculum-2024 
+(Applicable for the batches admitted from the A.Y. 2024-25) 
+ 
+UG Programs Offered 
+ 
+➢ B. Tech in (Computer Science and Engineering) 
+ 
+➢ B. Tech in (Computer Science and Engineering) with 
+ 
+• Minor degree in Civil Engineering 
+• Minor degree in Electrical and Electronics Engineering 
+• Minor degree in Mechanical Engineering 
+• Minor degree in Electronics and Communication Engineering 
+• Minor degree in Petroleum Technology 
+• Minor degree in Mining Engineering 
+• Minor degree in Agricultural Engineering 
+• Minor degree in Entrepreneurship Development and Incubation 
+ 
+Minor Streams offered in B.Tech (Computer Science and Engineering) 
+ 
+• Minor Stream in Network Security 
+• Minor Stream in Machine Intelligence 
+• Minor Stream in Data Engineering 
+• Minor Stream in Mobile Application Development 
+• Minor Stream in Cyber Security industry integrated Program- L&T 
+• Minor Stream in Agile Methodology with DevOps Programming 
+integrated Program- L&T 
+• Minor Stream in Cloud Infrastructure (Certification Programs - 
+CISCO, Red hat, Oracle, AWS, Google & Microsoft) 
+• Minor Stream in Customer Relationship Management 
+(Certification Programs - PEGA, Oracle, Microsoft & Salesforce) 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 3 of 799 
+ 
+` 
+ 
+ 
+Credit Division Category-wise 
+ 
+Foundation Courses – FC 
+ 
+Intermediate-level Courses – IC 
+ 
+Advanced Courses – AC 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+S.No Broad Category of Course UGC Credits 
+1 Major Core Courses (MCC ) 80 81 
+2 
+Minor Stream Courses (MSC) 
+(or) 
+University Open Elective Courses (UEC) 
+32 32 
+3 Multidisciplinary Courses (MDC) 9 9 
+4 Ability Enhancement Courses (AEC) 8 7 
+5 Skill Enhancement Courses (SEC) 9 9 
+6 Value Added Courses (VAC) 6-8 6 
+7 Summer Internships (SI) 2-4 4 
+8 Full Semester Internship (PROJ) 12 12 
+9 Mandatory Courses (MC)  0 
+Total Credits to be earned for B. Tech Degree 160 160 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 4 of 799 
+ 
+` 
+ 
+Major Core Courses (MCC) 
+ 
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241MA001 Linear algebra &Calculus FC
+ 
+2 1  3 50 50 100 - 
+241MA002 
+Differential equations 
+&vector calculus 
+FC 2 1  3 50 50 100 - 
+241CH002 Applied Chemistry FC 2  1 3 50 50 100 - 
+241PH002 Modern Physics FC 2  1 3 50 50 100 - 
+241ME001 Engineering Graphics FC 1  2 3 50 50 100 - 
+241ME003 Engineering Workshop FC   1 1 
+10
+0 
+ 100 - 
+241CS001 
+Programming for 
+Problem Solving Using C 
+FC 2  2 4 50 50 100 - 
+241CS003 Data Structures FC 2  2 4 50 50 100 PPSC 
+241IT001 IT &AI Skills FC   2 2 50 50 100 - 
+241MA008 Discrete Mathematics IC 2 1  3 50 50 100 LAC 
+241IT005 
+Database Management 
+Systems 
+IC 2  2 4 50 50 100 PPSC 
+241CS008 
+Object Oriented 
+Programming through 
+C++ 
+IC 2  2 4 50 50 100 PPSC 
+241MA009 Probability & Statistics IC 2 1  3 50 50 100 LAC 
+241IT006 Java Programming IC 2  2 4 50 50 100 PPSC 
+241CS011 Theory of Computation IC 2 1  3 50 50 100 DMS 
+241IT007 
+Agile Software 
+Engineering 
+IC 2  1 3 50 50 100 PPSC 
+241CS013 Operating Systems IC 2  1 3 50 50 100 - 
+241AI002 Artificial Intelligence IC 2  1 3 50 50 100 DAP 
+241CS015 Software Architecture IC 2  1 3 50 50 100 ASE 
+241CS007 Computer Networks IC 2  1 3 50 50 100 - 
+241AI003 Data Mining IC 1  2 3 50 50 100 - 
+241IT003 
+Cryptography & Network 
+Security 
+AC 2  1 3 50 50 100 CN 
+241IT004 Compiler Design AC 2  1 3 50 50 100 TOC 
+241CS010 
+Advanced Data 
+Structures & Algorithm 
+Analysis 
+AC 2  1 3 50 50 100 DS 
+241AI004 Big Data Analytics AC 2  1 3 50 50 100 DM 
+241AI005 Machine Learning AC 2  2 4 50 50 100 DAP 
+ Total  46 5 30 81     
+ 
+ 
+ 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 5 of 799 
+ 
+` 
+ 
+Multidisciplinary Courses (MDC) 
+ 
+ 
+Ability Enhancement Courses (AEC) 
+ 
+ 
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241EE001 
+Basic 
+Electrical&Electronics 
+Engineering 
+FC 2  2 4 50 50 100 - 
+241AI006 
+Digital Logic 
+&Computer 
+Organization 
+FC 2 1  3 50 50 100 - 
+241MB001 
+Engineering Economics 
+& Management 
+FC 2   2 50 50 100 - 
+Total 6 1 2 9     
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241EN001 
+Essential Cognitive 
+Skills for Engineers 
+FC 
+  1 1 100 - 100 - 
+241EN002 
+Advanced Cognitive 
+Skills for Engineers (or) 
+Proficiency in Foreign 
+Language 
+(Japanese/German/ 
+Spanish/ French) 
+FC 
+  1 1 100 - 100 - 
+241UC005 
+241UC004 
+241UC003 
+241UC006 
+241UC007 Design Thinking 
+FC 
+  1 1 100 - 100 - 
+241UC008 
+Universal Human 
+Values 
+FC 
+2   2 100 - 100 - 
+241UC009 
+Technical Paper 
+Publication 
+AC   2 2 100 - 100 - 
+Total 2  5 7     
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 6 of 799 
+ 
+` 
+ 
+Skill Enhancement Courses (SEC) 
+ 
+ 
+Value Added Courses (VAC) 
+ 
+ 
+Summer Internships (SI) 
+ 
+ 
+ 
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241CS016 
+Introduction to MERN 
+Stack Development 
+IC   2 2 50 50 100 - 
+241CS017 
+Object Oriented 
+Analysis & Design 
+using UML 
+IC   2 2 50 50 100 ASE 
+241CS018 
+Advanced MERN 
+Stack Development 
+AC   2 2 50 50 100 IMSD 
+241IT008 Bigdata Spark AC   2 2 50 50 100 - 
+241CS019 CI/CD using DevOps AC   1 1 100 - 100 - 
+Total   9 9     
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241UC010 
+Indian Cultural Heritage 
+& Fine Arts 
+FC     1 1 100 - 100 - 
+241PE001 Sports &Yoga FC     1 1 100 - 100 - 
+241CS004 Internet of Things FC   1 1 100 - 100 - 
+241CS002 
+Data Analysis using 
+Python 
+IC    2 2 50 50 100 PPSC 
+241UC011 Employability Skills-I FC    3 0 100 - 100 - 
+241UC013 Employability Skills-II FC   3 0 100  100 ES-I 
+241U4014 Employability Skills-III IC   3 0 100  100 ES-II 
+241UC015 Employability Skills-IV IC   3 0 100  100 ES-III 
+241UC016 Employability Skills-V AC   3 1 100  100 ES-IV 
+Total   20 6     
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241CS020 Summer Internship-I IC
+ 
+  2 2 100 - 100 - 
+241CS021 Summer Internship-II AC   2 2 100 - 100 - 
+Total   4 4     
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 7 of 799 
+ 
+` 
+ 
+Full Semester Internship (PROJ) 
+ 
+ 
+ 
+Mandatory Courses (MC) 
+ 
+ 
+ 
+Minor Stream: Network Security 
+ 
+Course 
+Code 
+Course 
+Name 
+Level L T P C CIE SEE Total 
+Pre-requisite 
+241CS022 
+Full Semester 
+Internship 
+AC
+ 
+  12 12 50 50 100 - 
+Total   12 12     
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241AC001 Environmental Science FC 2   0 100 - 100 
+- 
+241AC002 Constitution of India FC 2   0 100 - 100 - 
+241AC003 Research Methodology FC 2   0 100 - 100 - 
+241AC004 
+Intellectual Property 
+Rights &Patents 
+FC 2   0 100 - 100 - 
+241AC005 Biology for Engineers FC 2   0 100 - 100 - 
+Total 10   0     
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241CS032 
+Cyber Security 
+Essentials 
+FC 2  1 3 
+50 50 100 - 
+241CS030 
+Information Security 
+Analysis & Audit 
+FC 
+2   2 
+50 50 100 
+- 
+241CS023 Cloud Computing 
+FC 
+2  1 3 
+50 50 100 
+- 
+241CS024 Wireless Networks IC 2  1 3 
+50 50 100 
+- 
+241CS025 Cloud IoT & Edge ML AC 2  1 3 
+50 50 100 
+- 
+241CS028 Ethical Hacking AC 2  1 3 
+50 50 100 - 
+241CS029 
+Computational 
+Number Theory 
+AC 2  1 3 
+50 50 100 - 
+241CS027 
+Digital Forensics 
+AC 2  1 3 
+50 50 100 - 
+241CS026 
+Block Chain 
+Technologies 
+AC 2  1 3 
+50 50 100 CSE 
+241CS031 
+Cyber Laws 
+AC 2  1 3 
+50 50 100 - 
+241CS033 
+Secure Coding 
+Techniques 
+AC 2  1 3 
+50 50 100 - 
+Total 22  10 32     
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 8 of 799 
+ 
+` 
+ 
+Minor Stream: Machine Intelligence 
+ 
+Minor Stream: Data Engineering 
+Course 
+ Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241AI012 
+Fuzzy Logic & its 
+Applications  
+AC 1  2 3 50 50 100 DAP 
+241AI007 Computer Vision IC 1  2 3 50 50 100 DAP 
+241AI008 Expert Systems AC 1  2 3 50 50 100 DAP 
+241AI009 Reinforcement Learning AC 1  2 3 50 50 100 DAP 
+241AI010 
+Natural Language 
+Processing 
+AC 1  2 3 50 50 100 DAP 
+241AI011 Deep Learning AC 2  2 4 50 50 100 DAP 
+241AI013 Recommender Systems AC 1  2 3 50 50 100 DAP 
+241AI014 Soft Computing IC 1  2 3 50 50 100 AI 
+241AI015 AI Chatbot IC 2   2 50 50 100 DAP 
+241AI016 
+Prompt Engineering & 
+GenAI 
+AC 1  2 3 50 50 100 ML 
+241AI017 
+Federated Machine 
+Learning 
+AC 2   2 50 50 100 ML 
+Total  14  18 32     
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241CS012 NoSQL Databases FC 2   2 50 50 100 - 
+241CS034 
+Fundamentals of Data 
+Science 
+IC 2  1 3 50 50 100 PPSC 
+241AI026 
+Information Retrieval 
+Systems 
+IC 2  1 3 50 50 100 - 
+241CS036 
+Business Intelligence 
+& Analytics 
+IC 2  1 3 50 50 100 PPSC  
+241AI018 
+Mining Massive Data 
+Sets 
+IC 2  1 3 50 50 100 DM 
+241CS037 
+Health Care Data 
+Analytics 
+IC 2  1 3 50 50 100 PPSC 
+241AI019 Data Visualization AC 2  1 3 50 50 100 DAP 
+241CS038 
+Security & Privacy for 
+Big Data Analytics 
+AC 2  1 3 50 50 100 
+ 
+- 
+241CS039 
+Advanced Database 
+Management 
+AC 2  1 3 50 50 100 DBMS 
+241CS040 
+Social Networks & 
+Semantic Web 
+AC 2  1 3 50 50 100 - 
+241CS014 
+Finance & Retail 
+Analytics 
+AC 2  1 3 50 50 100 - 
+Total  22  10 32     

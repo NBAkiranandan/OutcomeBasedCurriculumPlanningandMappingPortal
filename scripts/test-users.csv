@@ -1,0 +1,4 @@
+name,email,role,departmentCode,programCode,password
+John Doe,john.doe@aditya.edu.in,Faculty,CSE,B.Tech,pass123
+Jane Smith,jane.smith@aditya.edu.in,Coordinator,ECE,B.Tech,pass123
+Bob Wilson,bob.w@aditya.edu.in,Faculty,CSE,B.Tech,pass123

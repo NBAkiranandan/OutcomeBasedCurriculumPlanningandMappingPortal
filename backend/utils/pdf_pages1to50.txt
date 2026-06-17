@@ -1,0 +1,3957 @@
+
+
+ 
+ 
+  B.Tech (CSE) Curriculum-2024                                                                                   Page 2 of 799 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+PROGRAM CURRICULUM 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+for 
+B. TECH. FOUR YEAR DEGREE PROGRAM 
+ 
+(Applicable for the batches admitted from A.Y. 2024-25) 
+ 
+ 
+ 
+ 
+Aditya Nagar, ADB Road, Surampalem - 533 437 
+ 
+ 
+ 
+ 
+COMPUTER SCIENCE AND 
+ENGINEERING 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 2 of 799 
+ 
+` 
+ 
+ 
+Department of Computer Science and Engineering 
+ 
+B.Tech (CSE) Program Curriculum-2024 
+(Applicable for the batches admitted from the A.Y. 2024-25) 
+ 
+UG Programs Offered 
+ 
+➢ B. Tech in (Computer Science and Engineering) 
+ 
+➢ B. Tech in (Computer Science and Engineering) with 
+ 
+• Minor degree in Civil Engineering 
+• Minor degree in Electrical and Electronics Engineering 
+• Minor degree in Mechanical Engineering 
+• Minor degree in Electronics and Communication Engineering 
+• Minor degree in Petroleum Technology 
+• Minor degree in Mining Engineering 
+• Minor degree in Agricultural Engineering 
+• Minor degree in Entrepreneurship Development and Incubation 
+ 
+Minor Streams offered in B.Tech (Computer Science and Engineering) 
+ 
+• Minor Stream in Network Security 
+• Minor Stream in Machine Intelligence 
+• Minor Stream in Data Engineering 
+• Minor Stream in Mobile Application Development 
+• Minor Stream in Cyber Security industry integrated Program- L&T 
+• Minor Stream in Agile Methodology with DevOps Programming 
+integrated Program- L&T 
+• Minor Stream in Cloud Infrastructure (Certification Programs - 
+CISCO, Red hat, Oracle, AWS, Google & Microsoft) 
+• Minor Stream in Customer Relationship Management 
+(Certification Programs - PEGA, Oracle, Microsoft & Salesforce) 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 3 of 799 
+ 
+` 
+ 
+ 
+Credit Division Category-wise 
+ 
+Foundation Courses – FC 
+ 
+Intermediate-level Courses – IC 
+ 
+Advanced Courses – AC 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+S.No Broad Category of Course UGC Credits 
+1 Major Core Courses (MCC ) 80 81 
+2 
+Minor Stream Courses (MSC) 
+(or) 
+University Open Elective Courses (UEC) 
+32 32 
+3 Multidisciplinary Courses (MDC) 9 9 
+4 Ability Enhancement Courses (AEC) 8 7 
+5 Skill Enhancement Courses (SEC) 9 9 
+6 Value Added Courses (VAC) 6-8 6 
+7 Summer Internships (SI) 2-4 4 
+8 Full Semester Internship (PROJ) 12 12 
+9 Mandatory Courses (MC)  0 
+Total Credits to be earned for B. Tech Degree 160 160 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 4 of 799 
+ 
+` 
+ 
+Major Core Courses (MCC) 
+ 
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241MA001 Linear algebra &Calculus FC
+ 
+2 1  3 50 50 100 - 
+241MA002 
+Differential equations 
+&vector calculus 
+FC 2 1  3 50 50 100 - 
+241CH002 Applied Chemistry FC 2  1 3 50 50 100 - 
+241PH002 Modern Physics FC 2  1 3 50 50 100 - 
+241ME001 Engineering Graphics FC 1  2 3 50 50 100 - 
+241ME003 Engineering Workshop FC   1 1 
+10
+0 
+ 100 - 
+241CS001 
+Programming for 
+Problem Solving Using C 
+FC 2  2 4 50 50 100 - 
+241CS003 Data Structures FC 2  2 4 50 50 100 PPSC 
+241IT001 IT &AI Skills FC   2 2 50 50 100 - 
+241MA008 Discrete Mathematics IC 2 1  3 50 50 100 LAC 
+241IT005 
+Database Management 
+Systems 
+IC 2  2 4 50 50 100 PPSC 
+241CS008 
+Object Oriented 
+Programming through 
+C++ 
+IC 2  2 4 50 50 100 PPSC 
+241MA009 Probability & Statistics IC 2 1  3 50 50 100 LAC 
+241IT006 Java Programming IC 2  2 4 50 50 100 PPSC 
+241CS011 Theory of Computation IC 2 1  3 50 50 100 DMS 
+241IT007 
+Agile Software 
+Engineering 
+IC 2  1 3 50 50 100 PPSC 
+241CS013 Operating Systems IC 2  1 3 50 50 100 - 
+241AI002 Artificial Intelligence IC 2  1 3 50 50 100 DAP 
+241CS015 Software Architecture IC 2  1 3 50 50 100 ASE 
+241CS007 Computer Networks IC 2  1 3 50 50 100 - 
+241AI003 Data Mining IC 1  2 3 50 50 100 - 
+241IT003 
+Cryptography & Network 
+Security 
+AC 2  1 3 50 50 100 CN 
+241IT004 Compiler Design AC 2  1 3 50 50 100 TOC 
+241CS010 
+Advanced Data 
+Structures & Algorithm 
+Analysis 
+AC 2  1 3 50 50 100 DS 
+241AI004 Big Data Analytics AC 2  1 3 50 50 100 DM 
+241AI005 Machine Learning AC 2  2 4 50 50 100 DAP 
+ Total  46 5 30 81     
+ 
+ 
+ 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 5 of 799 
+ 
+` 
+ 
+Multidisciplinary Courses (MDC) 
+ 
+ 
+Ability Enhancement Courses (AEC) 
+ 
+ 
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241EE001 
+Basic 
+Electrical&Electronics 
+Engineering 
+FC 2  2 4 50 50 100 - 
+241AI006 
+Digital Logic 
+&Computer 
+Organization 
+FC 2 1  3 50 50 100 - 
+241MB001 
+Engineering Economics 
+& Management 
+FC 2   2 50 50 100 - 
+Total 6 1 2 9     
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241EN001 
+Essential Cognitive 
+Skills for Engineers 
+FC 
+  1 1 100 - 100 - 
+241EN002 
+Advanced Cognitive 
+Skills for Engineers (or) 
+Proficiency in Foreign 
+Language 
+(Japanese/German/ 
+Spanish/ French) 
+FC 
+  1 1 100 - 100 - 
+241UC005 
+241UC004 
+241UC003 
+241UC006 
+241UC007 Design Thinking 
+FC 
+  1 1 100 - 100 - 
+241UC008 
+Universal Human 
+Values 
+FC 
+2   2 100 - 100 - 
+241UC009 
+Technical Paper 
+Publication 
+AC   2 2 100 - 100 - 
+Total 2  5 7     
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 6 of 799 
+ 
+` 
+ 
+Skill Enhancement Courses (SEC) 
+ 
+ 
+Value Added Courses (VAC) 
+ 
+ 
+Summer Internships (SI) 
+ 
+ 
+ 
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241CS016 
+Introduction to MERN 
+Stack Development 
+IC   2 2 50 50 100 - 
+241CS017 
+Object Oriented 
+Analysis & Design 
+using UML 
+IC   2 2 50 50 100 ASE 
+241CS018 
+Advanced MERN 
+Stack Development 
+AC   2 2 50 50 100 IMSD 
+241IT008 Bigdata Spark AC   2 2 50 50 100 - 
+241CS019 CI/CD using DevOps AC   1 1 100 - 100 - 
+Total   9 9     
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241UC010 
+Indian Cultural Heritage 
+& Fine Arts 
+FC     1 1 100 - 100 - 
+241PE001 Sports &Yoga FC     1 1 100 - 100 - 
+241CS004 Internet of Things FC   1 1 100 - 100 - 
+241CS002 
+Data Analysis using 
+Python 
+IC    2 2 50 50 100 PPSC 
+241UC011 Employability Skills-I FC    3 0 100 - 100 - 
+241UC013 Employability Skills-II FC   3 0 100  100 ES-I 
+241U4014 Employability Skills-III IC   3 0 100  100 ES-II 
+241UC015 Employability Skills-IV IC   3 0 100  100 ES-III 
+241UC016 Employability Skills-V AC   3 1 100  100 ES-IV 
+Total   20 6     
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241CS020 Summer Internship-I IC
+ 
+  2 2 100 - 100 - 
+241CS021 Summer Internship-II AC   2 2 100 - 100 - 
+Total   4 4     
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 7 of 799 
+ 
+` 
+ 
+Full Semester Internship (PROJ) 
+ 
+ 
+ 
+Mandatory Courses (MC) 
+ 
+ 
+ 
+Minor Stream: Network Security 
+ 
+Course 
+Code 
+Course 
+Name 
+Level L T P C CIE SEE Total 
+Pre-requisite 
+241CS022 
+Full Semester 
+Internship 
+AC
+ 
+  12 12 50 50 100 - 
+Total   12 12     
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241AC001 Environmental Science FC 2   0 100 - 100 
+- 
+241AC002 Constitution of India FC 2   0 100 - 100 - 
+241AC003 Research Methodology FC 2   0 100 - 100 - 
+241AC004 
+Intellectual Property 
+Rights &Patents 
+FC 2   0 100 - 100 - 
+241AC005 Biology for Engineers FC 2   0 100 - 100 - 
+Total 10   0     
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241CS032 
+Cyber Security 
+Essentials 
+FC 2  1 3 
+50 50 100 - 
+241CS030 
+Information Security 
+Analysis & Audit 
+FC 
+2   2 
+50 50 100 
+- 
+241CS023 Cloud Computing 
+FC 
+2  1 3 
+50 50 100 
+- 
+241CS024 Wireless Networks IC 2  1 3 
+50 50 100 
+- 
+241CS025 Cloud IoT & Edge ML AC 2  1 3 
+50 50 100 
+- 
+241CS028 Ethical Hacking AC 2  1 3 
+50 50 100 - 
+241CS029 
+Computational 
+Number Theory 
+AC 2  1 3 
+50 50 100 - 
+241CS027 
+Digital Forensics 
+AC 2  1 3 
+50 50 100 - 
+241CS026 
+Block Chain 
+Technologies 
+AC 2  1 3 
+50 50 100 CSE 
+241CS031 
+Cyber Laws 
+AC 2  1 3 
+50 50 100 - 
+241CS033 
+Secure Coding 
+Techniques 
+AC 2  1 3 
+50 50 100 - 
+Total 22  10 32     
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 8 of 799 
+ 
+` 
+ 
+Minor Stream: Machine Intelligence 
+ 
+Minor Stream: Data Engineering 
+Course 
+ Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241AI012 
+Fuzzy Logic & its 
+Applications  
+AC 1  2 3 50 50 100 DAP 
+241AI007 Computer Vision IC 1  2 3 50 50 100 DAP 
+241AI008 Expert Systems AC 1  2 3 50 50 100 DAP 
+241AI009 Reinforcement Learning AC 1  2 3 50 50 100 DAP 
+241AI010 
+Natural Language 
+Processing 
+AC 1  2 3 50 50 100 DAP 
+241AI011 Deep Learning AC 2  2 4 50 50 100 DAP 
+241AI013 Recommender Systems AC 1  2 3 50 50 100 DAP 
+241AI014 Soft Computing IC 1  2 3 50 50 100 AI 
+241AI015 AI Chatbot IC 2   2 50 50 100 DAP 
+241AI016 
+Prompt Engineering & 
+GenAI 
+AC 1  2 3 50 50 100 ML 
+241AI017 
+Federated Machine 
+Learning 
+AC 2   2 50 50 100 ML 
+Total  14  18 32     
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241CS012 NoSQL Databases FC 2   2 50 50 100 - 
+241CS034 
+Fundamentals of Data 
+Science 
+IC 2  1 3 50 50 100 PPSC 
+241AI026 
+Information Retrieval 
+Systems 
+IC 2  1 3 50 50 100 - 
+241CS036 
+Business Intelligence 
+& Analytics 
+IC 2  1 3 50 50 100 PPSC  
+241AI018 
+Mining Massive Data 
+Sets 
+IC 2  1 3 50 50 100 DM 
+241CS037 
+Health Care Data 
+Analytics 
+IC 2  1 3 50 50 100 PPSC 
+241AI019 Data Visualization AC 2  1 3 50 50 100 DAP 
+241CS038 
+Security & Privacy for 
+Big Data Analytics 
+AC 2  1 3 50 50 100 
+ 
+- 
+241CS039 
+Advanced Database 
+Management 
+AC 2  1 3 50 50 100 DBMS 
+241CS040 
+Social Networks & 
+Semantic Web 
+AC 2  1 3 50 50 100 - 
+241CS014 
+Finance & Retail 
+Analytics 
+AC 2  1 3 50 50 100 - 
+Total  22  10 32     
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 9 of 799 
+ 
+` 
+Minor Stream:Mobile Application Development 
+ 
+ 
+Minor Stream in Cyber Security industry integrated Program- L&T
+# 
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241IT012 Flutter Fundamentals FC   2 2 50 50 100 - 
+241IT013 
+Adobe Photoshop & 
+Figma 
+FC   3 3 50 50 100 - 
+241IT014 Web Technologies FC 2  1 3 50 50 100 JP 
+241IT015 Software Testing IC 2  1 3 50 50 100 ASE 
+241IT016 
+Software Project 
+Management 
+IC 2  1 3 50 50 100 ASE 
+241IT017 
+Mobile Operating 
+System 
+IC 2  1 3 50 50 100 - 
+241IT018 
+Android Application 
+Development 
+IC   3 3 50 50 100 JP 
+241AI024 API & Micro Services IC 2  1 3 50 50 100 PPSC 
+241IT019 Dart Programming AC   3 3 50 50 100 - 
+241IT020 Advanced Flutter AC   3 3 50 50 100 FF 
+241IT022 
+Software Quality 
+Assurance 
+AC 2  1 3 50 50 100 ASE 
+Total 12  20 32     
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241CS032 
+Cyber Security 
+Essentials 
+FC 2  1 3 
+50 50 100 
+- 
+241CS030 
+Information Security 
+Analysis & Audit 
+FC 
+2   2 
+50 50 100 
+- 
+241CS042 Linux Administration IC   3 3 
+50 50 100 
+- 
+241IT003 
+Cryptography & 
+Network Security 
+AC 
+2  1 3 
+50 50 100 - 
+241CS043 Secure Networking AC   3 3 
+50 50 100 
+- 
+241CS044 Application Security AC   3 3 
+50 50 100 
+- 
+241CS045 
+Ethical Hacking & 
+Penetration Testing 
+AC   3 3 
+50 50 100 
+- 
+241CS046 Cyber Forensic AC   3 3 
+50 50 100 
+- 
+241CS047 
+Malware Analysis & 
+Governance, Risk & 
+Compliance 
+AC   3 3 
+50 50 100 
+- 
+241CS031 Cyber Laws AC 2  1 3 
+50 50 100 
+- 
+241CS033 
+Secure Coding 
+Techniques 
+AC 2  1 3 
+50 50 100 
+- 
+Total 10  22 32     
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 10 of 799 
+ 
+` 
+ 
+ 
+Minor Stream in Agile Methodology with DevOps Programming integrated 
+Program- L&T
+#
+ 
+ 
+Note: # 
+# -The Syllabus for the industry partnered course will be released in the department as 
+and when required 
+ 
+ 
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisit
+e 
+241CS048 
+IT Infrastructure 
+Management 
+FC   3 3 50 50 100 - 
+241CS049 Web Engineering FC   2 2 50 50 100 - 
+241CS050 
+Intro to Azure& AWS 
+DevOps 
+FC   3 3 50 50 100 - 
+241CS051 
+Intro to Google Cloud 
+DevOps 
+FC   3 3 50 50 100 - 
+241CS052 
+Cloud 
+fundamentals&DevOps 
+IC   3 3 50 50 100 - 
+241CS053 
+Agile with DevOps 
+fundamentals & Usage 
+IC   3 3 50 50 100 - 
+241IT016 
+Software Project 
+Management 
+IC 2  1 3 50 50 100 ASE 
+241CS054 
+Agile based project 
+automation with DevOps 
+AC   3 3 50 50 100 - 
+241CS055 
+DevOps Container 
+Services 
+AC   3 3 50 50 100 - 
+241CS056 
+CI &CD (Continuous 
+Integration & Continuous 
+Development) 
+AC   3 3 50 50 100 - 
+241CS057 
+Object Oriented Software 
+Engineering 
+AC   3 3 50 50 100 - 
+Total 2  30 32     
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 11 of 799 
+ 
+` 
+Minor Stream in Cloud Infrastructure (Certification Programs - CISCO, Red 
+hat, Oracle, AWS, Google & Microsoft) 
+ 
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241CS068 
+Fundamentals of Red hat 
+Enterprise Linux 
+FC   2 2 50 50 100 - 
+241CS058 
+Introduction to Cisco 
+Networks 
+FC   3 3 50 50 100 - 
+241CS059 
+Red Hat Enterprise Linux 
+Administration 
+FC   3 3 50 50 100 - 
+241CS060 
+Cisco Routing & 
+Switching Essentials 
+FC   3 3 50 50 100 - 
+241CS061 
+Azure Cloud 
+Fundamentals 
+FC   3 3 50 50 100 - 
+241CS074 AWS Cloud Foundations IC   3 3 50 50 100 - 
+241CS062 
+Advanced Cisco 
+Enterprise Networking 
+IC   3 3 50 50 100 - 
+241CS063 
+Introduction to Oracle 
+Cloud Infrastructure 
+IC   3 3 50 50 100 - 
+241CS069 Cloud security IC   3 3 50 50 100 - 
+241CS064 
+AWS Machine learning 
+Foundations 
+IC   3 3 50 50 100 - 
+241CS070 
+Continuous integration & 
+delivery using DevOps 
+AC   3 3 50 50 100 - 
+Total   32 32     
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 12 of 799 
+ 
+` 
+ 
+Minor Stream: Customer Relationship Management (Certification Programs - 
+PEGA, Oracle, Microsoft & Salesforce) 
+ 
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241IT024 
+Fundamentals of 
+Salesforce 
+Administration 
+FC   2 2 
+50 50 100 - 
+241IT025 
+Essentials of Salesforce 
+Platform Development 
+IC   3 3 
+50 50 100 
+- 
+241IT029 
+Mastering Salesforce 
+Development 
+AC   3 3 
+50 50 100 
+- 
+241IT027 
+Service Now 
+Administration 
+IC   3 3 
+50 50 100 
+- 
+241IT028 
+Service Now Platform 
+Development 
+IC   3 3 
+50 50 100 
+- 
+241IT023 
+Principles of Pega 
+Systems 
+IC   3 3 
+50 50 100 
+- 
+241IT026 
+Pega System 
+Architecture & Design 
+AC   3 3 
+50 50 100 
+- 
+241IT032 
+Pega CSA Advanced AC   3 3 
+50 50 100 
+- 
+241IT033 
+PEGA GenAI AC   3 3 
+50 50 100 
+- 
+241IT030 
+Advanced Power APPS 
+Development 
+AC   3 3 
+50 50 100 
+- 
+241IT031 
+Advanced Power BI AC   3 3 
+50 50 100 
+IT&AI 
+Skills 
+Total    32 32 
+   
+ 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 13 of 799 
+ 
+` 
+ 
+UNIVERSITY OPEN ELECTIVE COURSES 
+AI & ML 
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Offered to 
+Programs 
+Pre-
+requisite 
+241AI002 
+Artificial 
+Intelligence 
+FC 2  1 3 50 50 100 
+CE,EEE,ME, 
+ECE, PT,Min.E 
+DAP 
+241AI005 
+Machine 
+Learning 
+FC 2  2 4 50 50 100 
+CE,EEE,ME, 
+ECE, PT,Min.E 
+DAP 
+241AI027 
+AI & Data 
+Science 
+IC 2  1 3 50 50 100 
+CE,EEE,ME, 
+ECE, PT,Min.E 
+DAP 
+241AI028 
+AI in 
+Healthcare 
+IC 2  1 3 50 50 100 
+CE,EEE, 
+ME, ECE,CSE, 
+IT, AIML,CSE 
+(DS) PT,Min.E 
+DAP 
+241AI011 
+Deep 
+Learning 
+IC 2  2 4 50 50 100 
+CE,EEE,ME, 
+ECE, PT,Min.E 
+DAP 
+241AI010 
+Natural 
+Language 
+Processing 
+IC 2  1 3 50 50 100 
+CE,EEE,ME, 
+ECE, PT,Min.E 
+DAP 
+241AI009 
+Reinforcement 
+Learning 
+AC 1  2 3 50 50 100 
+CE,EEE,ME, 
+ECE, PT,Min.E 
+DAP 
+241AI029 
+AI in 
+Agriculture 
+AC 2  1 3 50 50 100 
+CE,EEE,ME, 
+ECE,CSE,IT, 
+AIML,CSE(DS) 
+PT,Min.E 
+DAP 
+241AI030 Robotics & AI AC 2  1 3 50 50 100 
+CE,EEE,ME, 
+ECE,CSE,IT, 
+AIML,CSE(DS) 
+PT,Min.E 
+DAP 
+241AI031 
+AI in Finance 
+& Economics 
+AC 2  1 3 50 50 100 
+CE,EEE,ME, 
+ECE,CSE,IT, 
+AIML,CSE(DS) 
+PT,Min.E 
+DAP 
+Total  19  13 32      
+ 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 14 of 799 
+ 
+` 
+ 
+Production Excellence 
+Course 
+Code 
+Course Name 
+Leve
+l 
+L T P C 
+CI
+E 
+SE
+E 
+Tot
+al 
+Offered to 
+Programs 
+Pre-
+req
+uisit
+e 
+241ME081 
+Fundamentals of 
+Production 
+Excellence 
+FC 2   2 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, 
+AIML,CSE(DS) 
+PT,Min.E 
+- 
+241ME082 
+Six Sigma for 
+Production 
+Excellence 
+FC 2  1 3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+FPE 
+241ME083 
+Quality 
+Excellence in 
+Production 
+IC 2  1 3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+FPE 
+241ME084 
+Digital 
+Transformation 
+for Production 
+Excellence 
+IC 2  1 3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+FPE 
+241ME085 
+Agile Production 
+Systems 
+IC 2  1 3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+FPE 
+241ME086 
+Process 
+Excellence & 
+Optimization 
+IC 2  1 3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+FPE 
+241ME087 
+Risk Management 
+in Production 
+Excellence 
+AC 2  1 3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+FPE 
+241ME088 
+Ethical & Social 
+Responsibility in 
+Production 
+Excellence 
+AC 2  1 3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+FPE 
+241ME089 
+Data-Driven 
+Decision Making 
+for Production 
+Excellence 
+AC 2  1 3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,MinE 
+FPE 
+241ME058 
+Industry 5.0 for 
+Engineers 
+AC 3   3 50 50 100 
+CE,EEE, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,MinE 
+FPE 
+241ME090 
+Cost Excellence 
+in Production 
+AC 2  1 3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+FPE 
+Total  23  09 32      
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 15 of 799 
+ 
+` 
+ 
+Supply Chain Management 
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Offered to 
+Programs 
+Pre-
+requi
+site 
+241MB017 
+Introduction to 
+Supply Chain 
+Management 
+FC 2   2 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, 
+AIML,CSE(DS) 
+PT,Min.E 
+- 
+241MB018 
+Logistics & 
+Distribution 
+Management 
+FC 3   3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+ISCM 
+241MB019 
+Supply Chain 
+Project 
+Management 
+IC 3   3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+ISCM 
+241MB020 
+Supply Chain 
+Innovation 
+&Trends 
+IC 3   3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+ISCM 
+241MB021 
+Supply Chain 
+Analytics 
+IC 3   3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+ISCM 
+241MB022 
+Demand 
+Planning & 
+Forecasting 
+IC 3   3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+ISCM 
+241MB023 
+Supply Chain 
+Risk 
+Management 
+AC 3   3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+ISCM 
+241MB024 
+Inventory 
+Management & 
+Control 
+AC 3   3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+ISCM 
+241MB025 
+E-Commerce & 
+Supply Chain 
+Management 
+AC 3   3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+ISCM 
+241MB026 
+Operations 
+Management 
+AC 3   3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+ISCM 
+241MB027 
+Supply Chain 
+Ethics & 
+Corporate 
+Social 
+Responsibility 
+(CSR) 
+AC 3   3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+ISCM 
+Total  32   32      
+ 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 16 of 799 
+ 
+` 
+ 
+Sustainability 
+Course 
+Code 
+Course Name 
+Leve
+l 
+L T P C 
+CI
+E 
+SEE 
+Tot
+al 
+Offered to Programs 
+Pre-
+requ
+isite 
+241CE074 
+Introduction to 
+Sustainable 
+Development 
+FC 2   2 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, 
+AIML,CSE(DS) 
+PT,Min.E 
+- 
+241CE079 
+Natural Disaster 
+Management & 
+Mitigation 
+FC 3   3 50 50 100 
+EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+- 
+241CE081 
+Waste Water 
+Management 
+IC 3   3 50 50 100 
+EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+- 
+241CE082 
+Integrated Solid 
+Waste 
+Management for 
+a Smart City 
+IC 3   3 50 50 100 
+EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+- 
+241CE083 
+Watershed 
+Management 
+IC 3   3 50 50 100 
+EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+- 
+241EE033 
+Energy Audit, 
+Conservation 
+&Management 
+IC 3   3 50 50 100 
+CE, ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+BEE
+E 
+241EE006 
+Electric Power 
+Generation, 
+Transmission & 
+Distribution 
+Systems 
+AC 3   3 50 50 100 
+CE, ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+BEE
+E 
+241CE075 
+Sustainable 
+Agriculture & 
+Food Systems 
+AC 3   3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+- 
+241CE076 
+Sustainable 
+Supply Chain 
+Management 
+AC 3   3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+- 
+241CE077 
+Sustainable 
+Production 
+Excellence 
+AC 3   3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+- 
+241CE078 
+AI in 
+Environmental 
+Science and 
+Sustainability 
+AC 3   3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+- 
+Total  32   32      
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 17 of 799 
+ 
+` 
+ 
+Security 
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Offered to 
+Programs 
+Pre-
+requ
+isite 
+241CS032 
+Cybersecurity 
+Essentials 
+FC 2  1 3 50 50 100 
+CE,EEE,M
+E, ECE, 
+PT,Min.E 
+- 
+241IT035 
+Security in 
+Software 
+Development 
+FC 3   3 50 50 100 
+CE,EEE,M
+E, ECE, 
+PT,Min.E 
+- 
+241CS028 Ethical Hacking IC 2  1 3 50 50 100 
+CE,EEE,M
+E, ECE, 
+PT,Min.E 
+- 
+241CS069 Cloud Security IC   3 3 50 50 100 
+CE,EEE,M
+E, ECE, 
+PT,Min.E 
+- 
+241IT036 
+Security 
+&Compliance in 
+Business 
+IC 
+3   3 50 50 100 
+CE,EEE,M
+E, ECE, 
+PT,Min.E 
+- 
+241IT037 
+Cryptography & 
+Data Security 
+IC 
+2  1 3 50 50 100 
+CE,EEE,M
+E, ECE, 
+PT,Min.E 
+- 
+241IT038 
+Security 
+Awareness & 
+Social 
+Engineering 
+AC 2  1 3 50 50 100 
+CE,EEE,M
+E, ECE, 
+PT,Min.E 
+- 
+241IT039 
+Cybersecurity 
+Policy & Strategy 
+AC 3   3 50 50 100 
+CE,EEE,M
+E, ECE, 
+PT,Min.E 
+- 
+241IT040 
+Security in 
+Emerging 
+Technologies 
+AC 3   3 50 50 100 
+CE,EEE,M
+E, ECE, 
+PT,Min.E 
+- 
+241CS030 
+Information 
+Security Analysis 
+& Audit 
+AC 2   2 50 50 100 
+CE,EEE,M
+E, ECE, 
+PT,Min.E 
+- 
+241IT041 
+Financial 
+Information 
+Security & 
+Privacy 
+AC 3   3 50 50 100 
+CE,EEE,M
+E, ECE, 
+PT,Min.E 
+- 
+ Total   25  07 32      
+ 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 18 of 799 
+ 
+` 
+ 
+ 
+Others 
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Offered to 
+Programs 
+Pre-
+requisite 
+241CE080 
+Remote Sensing 
+& GIS 
+Applications 
+FC 3 
+  
+3 50 50 100 
+EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+- 
+241EE036 
+Electric Energy 
+Storage Systems 
+FC 3 
+  
+3 50 50 100 
+CE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+BEEE 
+ 
+241EE043 
+Electrical safety IC 3 
+  
+3 50 50 100 
+CE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+BEEE 
+ 
+241EE054 
+Hybrid & 
+Electric Vehicles 
+IC 3 
+  
+3 50 50 100 
+CE, ECE, CSE,IT, 
+AIML, CSE(DS) 
+PT,Min.E 
+BEEE 
+241ME073 
+Organizational 
+Behaviour 
+FC 3 
+  
+3 50 50 100 
+CE,EEE, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+- 
+241ME036 
+Sustainable 
+Energy Systems 
+FC 3 
+  
+3 50 50 100 
+CE, ECE, CSE,IT, 
+AIML, CSE(DS) 
+PT,Min.E 
+- 
+241ME037 
+Solar Energy 
+Systems 
+FC 3 
+  
+3 50 50 100 
+CE,EEE,ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+- 
+241ME060 
+Composite 
+Materials 
+IC 3 
+  
+3 50 50 100 
+CE,EEE,ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+SSP/MP 
+241EC082 
+Communication 
+Systems 
+FC 3 
+  
+3 50 50 100 
+CE,EEE,ME,CSE,IT, 
+AIML, CSE(DS) 
+PT,Min.E 
+- 
+241EC083 
+Electronic 
+Measurements & 
+Instrumentation 
+FC 3 
+  
+3 50 50 100 
+CE,EEE,ME, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+BEEE 
+241EC084 
+Introduction to 
+Embedded 
+Systems 
+FC 3 
+  
+3 50 50 100 
+CE,EEE,ME, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+- 
+ 
+241EC085 
+Fundamentals of 
+Image 
+Processing 
+FC 3 
+  
+3 50 50 100 
+CE,EEE,ME, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+ 
+241EC077 
+Sensors and 
+Transducers 
+IC 3 
+  
+3 50 50 100 
+CE,EEE,ME, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+ 
+241CS003 Data Structures FC 2 
+ 
+2 4 50 50 100 
+CE,EEE,ME, ECE, 
+PT,Min.E 
+PPSC 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 19 of 799 
+ 
+` 
+241CS065 
+Computer 
+Organization 
+FC 2 
+ 
+1 3 50 50 100 
+CE,EEE,ME, ECE, 
+PT,Min.E 
+- 
+241CS013 
+Operating 
+Systems 
+IC 2 
+ 
+1 3 50 50 100 
+CE,EEE,ME, ECE, 
+PT,Min.E 
+- 
+241IT005 
+Database 
+Management 
+Systems 
+IC 2 
+ 
+2 4 50 50 100 
+CE,EEE,ME, ECE, 
+PT,Min.E 
+PPSC 
+241IT007 
+Agile Software 
+Engineering 
+IC 2 
+ 
+1 3 50 50 100 
+CE,EEE,ME, ECE, 
+PT,Min.E 
+PPSC 
+241CS007 
+Computer 
+Networks 
+IC 2 
+ 
+1 3 50 50 100 
+CE,EEE,ME, ECE, 
+PT,Min.E 
+- 
+ 
+241IT006 
+Java 
+Programming 
+IC 2 
+ 
+2 4 50 50 100 
+CE,EEE,ME, ECE, 
+PT,Min.E 
+PPSC 
+241CS068 
+Fundamentals of 
+RedHat 
+Enterprise Linux 
+FC 
+  
+2 2 50 50 100 
+CE,EEE,ME, ECE, 
+PT,Min.E 
+- 
+ 
+241CS074 
+AWS Cloud 
+Foundations 
+IC 
+  
+3 3 50 50 100 
+CE,EEE,ME, ECE, 
+PT,Min.E 
+- 
+241CS066 
+AWS Cloud 
+Development 
+AC 
+  
+3 3 50 50 100 
+CE,EEE,ME, ECE, 
+PT,Min.E 
+- 
+241CS070 
+Continuous 
+integration & 
+delivery using 
+DevOps 
+AC 
+  
+3 3 50 50 100 
+CE,EEE,ME, ECE, 
+PT,Min.E 
+- 
+241IT024 
+Fundamentals of  
+Salesforce 
+Administration 
+FC 
+  
+2 2 50 50 100 
+CE,EEE,ME, ECE, 
+PT,Min.E 
+- 
+241IT034 
+Advanced 
+Salesforce 
+Administration 
+AC 
+  
+3 3 50 50 100 
+CE,EEE,ME, ECE, 
+PT,Min.E 
+- 
+241IT023 
+Principles of 
+Pega Systems 
+IC 
+  
+3 3 50 50 100 
+CE,EEE,ME, ECE, 
+PT,Min.E 
+- 
+241IT026 
+Pega System 
+Architecture & 
+Design 
+AC 
+  
+3 3 50 50 100 
+CE,EEE,ME, ECE, 
+PT,Min.E 
+- 
+241MB004 
+Entrepreneurship 
+Development & 
+Incubation 
+IC 3   3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+- 
+241MB005 
+Business Ethics 
+& Corporate 
+Governance 
+AC 3   3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+- 
+241MB006 
+Entrepreneurship 
+Development & 
+Business 
+Management 
+AC 1  2 3 50 50 100 
+CE,EEE,ME, ECE, 
+CSE,IT, AIML, 
+CSE(DS) PT,Min.E 
+- 
+ 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 20 of 799 
+ 
+` 
+ 
+ 
+ 
+ 
+Foundation Courses (FC) 
+Course Name Category L T P C 
+Linear algebra & Calculus MCC
+ 
+2 1  3 
+Differential equations & vector calculus MCC 2 1  3 
+Applied Chemistry MCC 2  1 3 
+Modern Physics MCC 2  1 3 
+Engineering Graphics MCC 1  2 3 
+Engineering Workshop MCC   1 1 
+Programming for Problem Solving Using C MCC 2  2 4 
+Data Structures MCC 2  2 4 
+IT & AI Skills MCC   2 2 
+Basic Electrical &Electronics Engineering MDC 2  2 4 
+Digital Logic & Computer Organization MDC 2 1  3 
+Engineering Economics&Management MDC 2   2 
+Essential Cognitive  Skills for Engineers AEC   1 1 
+Advanced CognitiveSkills for Engineers (or) 
+Proficiency Foreign Language (Japanese/ 
+German/Spanish/French) 
+AEC   1 1 
+Design Thinking AEC   1 1 
+Universal Human Values AEC 2   2 
+Indian Cultural Heritage &fine arts VAC   1 1 
+Sports &Yoga VAC   1 1 
+Internet of Things VAC   1 1 
+Employability Skills-I VAC   1 0 
+Employability Skills-II VAC   1 0 
+Environmental Science MC 2   0 
+Constitution of India 
+MC 
+2   0 
+Intellectual Property Rights & Patents 
+MC 
+2   0 
+Research Methodology 
+MC 
+2   0 
+Courses from Minor Stream(s) or University Open 
+Elective(s) 
+MSC/UEC    3 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 21 of 799 
+ 
+` 
+ 
+ 
+ 
+ 
+Intermediate-Level Courses (IC) 
+Course Name Category L T P C 
+Discrete Mathematics MCC
+ 
+2 1  3 
+Database Management Systems MCC 2  2 4 
+Object Oriented Programming through C++ MCC 2  2 4 
+Probability &Statistics MCC 2 1  3 
+Java Programming MCC 2  2 4 
+Theory of Computation MCC 2 1  3 
+Agile Software Engineering MCC 2  1 3 
+Operating Systems MCC 2  1 3 
+Artificial Intelligence MCC 2  1 3 
+Software Architecture MCC 2  1 3 
+Computer Networks MCC 2  1 3 
+Data Mining MCC 1  2 3 
+Data Analysis using Python VAC   2 2 
+Employability Skills-III VAC   1 0 
+Employability Skills-IV VAC   1 0 
+Object Oriented Analysis & Design using 
+UML 
+SEC   2 2 
+Introduction to MERN Stack Development SEC   2 2 
+Summer Internship-I SI   2 2 
+Courses from Minor Stream(s) or University 
+Open  Elective(s) 
+MSC/UEC    3 
+Advanced Courses (AC) 
+Course Name Category L T P C 
+Cryptography & Network Security MCC
+ 
+2  1 3 
+Compiler Design MCC 2  1 3 
+Design & Analysis of Algorithms MCC 2  1 3 
+Big Data Analytics MCC 2  1 3 
+Machine Learning MCC 2  2 4 
+Technical Paper Publication AEC   2 2 
+Advanced MERN Stack Development SEC   2 2 
+Bigdata Spark SEC   2 2 
+CI/CD using DevOps SEC   1 1 
+Employability Skills-V VAC   1 1 
+Summer Internship-II SI   2 2 
+Full Semester Internship PROJ   12 12 
+Courses from Minor Stream(s) or 
+University Open  Elective(s) 
+MSC/UEC    3 
+
+ 
+ 
+  B.Tech (CSE) Curriculum-2024                                                                                   Page 22 of 799 
+ 
+ 
+
+ 
+ 
+  B.Tech (CSE) Curriculum-2024                                                                                   Page 23 of 799 
+ 
+Foundation Level Courses: 
+ 
+LAC - Linear algebra &Calculus  
+DEVC - Differential equations & vector calculus 
+ITAI – IT & AI Skills 
+AChe – Applied chemistry 
+MP– Modern Physics 
+EDI - Entrepreneurship Development & 
+Incubation 
+PPSC - Programming for Problem Solving Using 
+C  
+DS - Data Structures 
+BEEE - Basic Electrical & Electronics 
+Engineering 
+IoT - Internet of Things 
+DLCO - Digital Logic & Computer Organization 
+EEM - Engineering Economics &Management 
+ECSE – Essential Cognitive Skills for Engineers  
+ACSE - Advanced Cognitive Skills for Engineers 
+DT - Design Thinking 
+EW – Engineering Workshop 
+EG – Engineering Graphics 
+ES – Environmental Science 
+CI - Constitution of India 
+RM- Research Methodology 
+IPR- Intellectual Property Rights & Patents 
+ES-I- Employability Skills-I 
+ES-II- Employability Skills-II 
+ICHFA – Indian Culture Heritage & Fine Arts 
+S&Y – Sports & Yoga 
+FL – Profeciency in Foreign Language 
+UHV- Universal Human Values 
+Intermediate Level Courses: 
+ 
+DMS - Discrete Mathematics 
+DBMS - Database Management Systems 
+CPP - Object Oriented Programming through C++ 
+P&S - Probability &Statistics 
+JP - Java Programming 
+AI - Artificial Intelligence 
+SA - Software Architecture 
+DM – Data Mining 
+OOAD – Object Oriented Analysis & Design using 
+UML 
+TOC - Theory of Computation 
+ASE – Agile Software Engineering 
+OS - Operating Systems 
+CN - Computer Networks 
+DAP - Data Analysis using Python 
+ES-III- Employability Skills-III 
+ES-IV- Employability Skills-IV 
+IMSD - Introduction to MERN Stack Development 
+SI - I - Summer Internship - I 
+ 
+Advanced Level Courses: 
+ 
+CNS - Cryptography & Network Security 
+CD - Compiler Design 
+DAA - Design &Analysis of Algorithms 
+BDA - Big Data Analytics 
+ML - Machine Learning 
+AMSD - Advanced MERN Stack Development  
+BECG - Business Ethics &Corporate Governance 
+BDS - Big data Spark 
+CI/CD – CI/CD using DevOps 
+ES-V- Employability Skills-V 
+EDBM - Entrepreneurship Development & Business 
+Management 
+SI - II - Summer Internship - II 
+MEC/UEC - Minor Elective Courses/ University Open 
+Elective Courses 
+FSI– Full Semester Internship  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 24 of 799 
+ 
+` 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 25 of 799 
+ 
+` 
+ 
+ 
+ 
+ 
+FC-Foundation 
+Course 
+IC-Intermediate-Level Course AC-Advanced Course 
+NS: Network 
+Security 
+ISAA: Information 
+Security Analysis 
+and Audit 
+CC:Cloud 
+Computing 
+WN: Wireless Networks 
+SCT: Secure Coding 
+Techniques 
+BCT: Block Chain 
+Technologies 
+CIE:Cloud IoT & Edge ML 
+EH: Ethical Hacking 
+CL: Cyber Laws 
+DF: Digital Forensics 
+CSE: Cyber Security 
+Essentials 
+CNT:Computational Number 
+Theory 
+MI: Machine 
+Intelligence 
+ CV:  Computer Vision 
+XS: Expert Systems 
+RL: Reinforcement Learning 
+DL: Deep Learning 
+FLA: Fuzzy Logic and its 
+Applications 
+RS: Recommender Systems 
+NLP: Natural Language 
+Processing 
+SC:Soft Computing 
+AIC:AI Chatbot 
+PEG:Prompt Engineering 
+and GenAI 
+FML:Federated Machine 
+Learning 
+DE: Data 
+Engineering 
+NSQL: NoSQL 
+Databases 
+ 
+FDS: Fundamentals of Data 
+Science 
+IRS: Information Retrieval 
+Systems 
+BIA: Business Intelligence and 
+Analytics 
+MMDS: Mining Massive Data 
+Sets 
+SNA:Social Network Analysis 
+HCDA:Health Care Data 
+Analytics 
+DV: Data Visualization 
+SPBDA: Security and 
+Privacy for Big Data 
+Analytics 
+ADM: Advanced Database 
+Management 
+SNSW: Social Networks and 
+Semantic Web 
+MAD: Mobile 
+Application 
+Development 
+FF: Flutter 
+Fundamentals 
+APF: Adobe 
+Photoshop & Figma 
+WT:Web 
+Technologies 
+FAAD: Fundamentals Android 
+Application Development 
+ST:Software Testing 
+SPM:Software Project 
+management 
+MOS:Mobile Operating System 
+APIM:API&Micro Services 
+DP: Dart Programming 
+AF: Advanced Flutter 
+SQA:Software Quality 
+Assurance 
+ 
+CS: Cyber 
+Security Industry 
+Integrated 
+Program-L & T 
+ISAA: Information 
+Security Analysis 
+and Audit 
+CC: Cloud 
+Computing 
+LA: Linux Administration 
+ 
+SN: Secure Networking 
+AS: Application Security 
+EHPT: Ethical Hacking & 
+Penetration Testing 
+CF: Cyber Forensic 
+CS:Cyber Security 
+CL:Cyber Laws 
+SCT:Secure Coding 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 26 of 799 
+ 
+` 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Techniques 
+MAGRC: Malware Analysis 
+and Governance, Risk and 
+Compliance 
+AM: Agile 
+Methodology 
+with DevOps 
+Programming 
+Industry 
+Integrated -L & 
+T 
+WE: Web 
+Engineering 
+IIM:IT 
+Infrastructure 
+Management 
+CFD: Cloud Fundamentals and 
+DevOps 
+ADFU: Agile with DevOps 
+Fundamentals and Usage 
+CRDE:Career readiness in 
+Digital era 
+ 
+APAD: Agile based Project 
+Automation with DevOps 
+DCS: DevOps Container 
+Services 
+CICD:CI and CD 
+(Continuous Integration and 
+Continuous Development) 
+IAAD: Intro to Azure and 
+AWS DevOps 
+PMP:Project Management 
+for Professionals 
+CI: Cloud 
+Infrastructure 
+FREL: 
+Fundamentals of 
+Redhat Enterprise 
+Linux 
+ICN: Introduction to 
+Cisco Networks 
+RELA: Redhat 
+Enterprise Linux 
+Administration 
+CRSE: Cisco 
+Routing and 
+Switching Essentials 
+ACF:Azure Cloud 
+Fundamentals 
+ACF: AWS Cloud Foundations 
+ACEN: Advanced Cisco 
+Enterprise Networking 
+CC:Cloud security 
+AMLF:AWS Machine learning 
+Foundations 
+ 
+CIDD: Continuous 
+Integration and Deployment 
+DevOps 
+CRM: Customer 
+Relationship 
+Management 
+PPS: Principles of 
+Pega Systems 
+ESPD: Essentials of Salesforce 
+Platform Development 
+PSAD: Pega System Architecture 
+and Design 
+SNA: Service Now 
+Administration 
+SNPD: Service Now Platform 
+Development 
+FSA: Fundamentals of Salesforce 
+Administration 
+ 
+MSD: Mastering Salesforce 
+Development 
+APAD:Advanced Power 
+APPS Development 
+PBI:Power BI 
+PCA:Pega CSA Advanced 
+PGAI:PEGA GenAI 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 27 of 799 
+ 
+` 
+ 
+ 
+Suggestive Semester-wise Curriculum 
+ 
+I SEMESTER 
+Course 
+code 
+Course Title 
+Course Credits 
+Total 
+Hours 
+Category Level L T P Total  
+241MA001 Linear algebra & Calculus MCC FC 2 1  3 3 
+241CH002 Applied Chemistry MCC FC 2  1 3 4 
+241CS001 
+Programming for Problem 
+Solving Using C 
+MCC FC 2  2 4 6 
+241IT001 IT & AI Skills MCC FC   2 2 4 
+241EE001 
+Basic Electrical & 
+Electronics 
+Engineering 
+MDC FC 2  2 4 6 
+241EN001 
+Essential Cognitive 
+Skills for Engineers 
+AEC FC   1 1 2 
+241UC008 
+Universal Human 
+Values 
+AEC FC 2   2 2 
+241UC010 
+Indian Cultural Heritage & 
+fine arts 
+VAC FC   1 1 2 
+ Total 10 1 9 20 29 
+ 
+II SEMESTER 
+Course code Course Title 
+Course Credits 
+Total 
+Hours 
+Category Level L T P Total 
+241MA002 
+Differential equations &vector 
+calculus 
+MCC FC 2 1  3 
+ 
+3 
+241PH002 Modern Physics MCC FC 2  1 3 4 
+241CS003 Data Structures MCC FC 2  2 4 6 
+241ME001 Engineering Graphics MCC FC 1  2 3 5 
+241ME003 Engineering Workshop MCC FC   1 1 2 
+241AI006 
+Digital Logic & Computer 
+Organization 
+MDC FC 2 1  3 3 
+241EN002 
+Advanced Cognitive  Skills for 
+Engineers (or) Proficiency in 
+Foreign Language (Japanese/ 
+German/Spanish/French) 
+AEC FC   1 1 2 
+241UC005 
+241UC004 
+241UC003 
+241UC006 
+241UC007 Design Thinking AEC FC   1 1 2 
+241PE001 Sports &Yoga VAC FC   1 1 2 
+241UC011 Employability Skills-I VAC FC   1 1 3 
+241AC001 Environmental Science MC FC 2   0 2 
+ Total 11 2 10 21 34 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 28 of 799 
+ 
+` 
+ 
+III SEMESTER 
+ 
+Course 
+code 
+Course Title 
+Course Credits 
+Total 
+Hours 
+Category Level L T P Total 
+241MA008 Discrete Mathematics MCC IC 2 1  3 3 
+241CS008 
+Object Oriented 
+Programming through C++ 
+MCC IC 2  2 4 6 
+241CS011 Theory of Computation MCC IC 2 1  3 3 
+241IT005 
+Database Management 
+Systems 
+MCC IC 2  2 4 6 
+241IT007 
+Agile Software 
+Engineering 
+MCC IC 2  1 3 4 
+241CS016 
+Introduction to 
+MERN Stack 
+Development 
+SEC IC   2 2 4 
+241CS002 Data Analysis using Python VAC IC   2 2 4 
+241UC013 Employability Skills-II VAC FC   1 1 3 
+241AC002 Constitution of India MC FC 2   0 2 
+ Total 12 2 10 22 35 
+ 
+IV SEMESTER 
+ 
+Course code Course Title 
+Course Credits 
+Total 
+Hours 
+Category Level L T P Total 
+241MA009 
+Probability & 
+Statistics 
+MCC IC 2 1  3 3 
+241IT006 Java Programming MCC IC 2  2 4 6 
+241CS013 Operating Systems MCC IC 2  1 3 4 
+241AI002 Artificial Intelligence MCC IC 2  1 3 4 
+ 
+Minor Stream Course-1/ 
+University Open 
+Elective Course-1 
+MSC/UE
+C 
+FC/IC 2   2 2 
+241CS010 
+Advanced Data 
+Structures & Algorithm 
+Analysis 
+MDC FC 2 0 1 3 
+ 
+4 
+241CS018 
+Advanced MERN Stack 
+Development 
+SEC IC   2 2 4 
+241UC014 Employability Skills-III VAC IC   1 1 3 
+241AC003 Research Methodology MC FC 2   0 2 
+ Total   14 1 8 21 32 
+ 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 29 of 799 
+ 
+` 
+V SEMESTER 
+ 
+Course code Course Title 
+Course Credits 
+Total 
+Hours 
+Category Level L T P Total 
+241CS007 Computer Networks MCC IC 2  1 3 4 
+241IT004 Compiler Design MCC AC 2  1 3 4 
+241AI005 Machine Learning MCC AC 2  2 4 6 
+ 
+Minor Stream Course – 2/ 
+University Opn Elective Course-
+2 
+MSC/UEC IC/AC 2  1 3 4 
+ 
+Minor Stream Course-3/ 
+University Open Elective 
+Course-3 
+MSC/UEC IC/AC 2  1 3 4 
+241UC015 Employability Skills-IV VAC IC   1 0 2 
+241CS017 
+Object Oriented Analysis & 
+Design using UML 
+SEC IC   2 2 4 
+241AI022 Summer Internship-I SI IC   2 2 4 
+241AC004 
+Intellectual Property Rights & 
+Patents 
+MC FC 2   0 2 
+ Total 12  11 20 34 
+ 
+ 
+VI SEMESTER 
+ 
+Course code Course Title 
+Course Credits 
+Total 
+Hours 
+Category Level L T P Total 
+241AI004 Bigdata Analytics MCC IC 2  1 3 4 
+241AI003 Data Mining MCC IC 1  2 3 5 
+241MB001 
+Engineering Economics & 
+Management 
+MCC AC 2 0 0 2 2 
+ 
+Minor Stream Course-4/ 
+University Elective Course-4 
+MSC/UEC IC/AC 2  1 3 
+ 
+4 
+ 
+Minor Stream Course – 5/ 
+University Open Elective 
+Course-5 
+MSC/UEC IC/AC 2  1 3 4 
+ 
+Minor Stream Course-6/ 
+University Open  Elective 
+Course-6 
+MSC/UEC IC/AC 2  1 3 4 
+ 
+Minor Stream Course-7/ 
+University Open  Elective 
+Course-7 
+MSC/UEC IC/AC 2  1 3 
+ 
+4 
+241CS004 Internet of Things VAC AC   1 1 2 
+241AC005 Biology for Engineers MC FC 2    2 
+241CS019 CI/CD using DevOps 
+ 
+SEC 
+ 
+AC 
+  1 1 2 
+ Total 15  9 22 33 
+ 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 30 of 799 
+ 
+` 
+ 
+ 
+VII SEMESTER 
+ 
+Course 
+code 
+Course Title 
+Course Credits 
+Total 
+Hours 
+Category Level L T P Total 
+241IT003 
+Cryptography &Network 
+Security 
+MCC AC 2  1 3 4 
+241CS015 
+Software Architecture 
+MCC AC 2  1 3 4 
+ 
+Minor Stream Course – 8/ 
+University Open Elective 
+Course-8 
+MSC/UEC AC 2  1 3 4 
+ 
+Minor Stream Course – 9/ 
+University  Open Elective 
+Course-9 
+MSC/UEC AC 2  1 3 4 
+ 
+Minor Stream Course-10/ 
+University Open Elective 
+Course-10 
+MSC/UEC AC 2  1 3 4 
+ 
+Minor Stream Course-11/ 
+University Open  Elective 
+Course-11 
+MSC/UEC AC 2  1 3 
+ 
+4 
+241IT008 Bigdata Spark SEC AC   2 2 4 
+241AI023  Summer Internship-II SI AC   2 2 4 
+ 
+Total 
+12  10 22 32 
+ 
+VIII SEMESTER 
+ 
+Course 
+code 
+Course Title 
+Course Credits 
+Total 
+Hours 
+Category Level L T P Total 
+241UC009 Technical Paper Publication AEC AC 
+  
+2 2 4 
+241UC016 Employability Skills-V VAC AC 
+  
+3 1 3 
+241AI025 
+Full Semester Internship 
+PROJ AC 
+  
+12 12 24 
+ 
+                                                          Total   
+17 15 31 
+ 
+Total Credits:160 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 31 of 799 
+ 
+` 
+ 
+* To acquire a minor degree, a student has to earn 20 credits in addition to the 160 credits.  
+Minor Degree in Computer Science and Engineering  
+(offered to other branches students) 
+ 
+Minor Degree in Civil Engineering 
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241CE025 
+Repair & Rehabilitation of 
+Structures 
+FC 3   3 50 50 100 - 
+241CE043 
+Building Planning & Computer-
+Aided Drawing 
+FC   2 2 50 50 100 - 
+241CE027 Green Buildings FC 3   3 50 50 100 - 
+241CE040 Fundamentals of Soil Behaviour FC 3   3 50 50 100 - 
+241CE054 Railway Engineering 
+(or)Docks & Harbour 
+Engineering 
+FC 3   3 50 50 100 - 
+241CE047 
+241CE036 Environmental Impact & Risk 
+Management(or) 
+Environmental Management 
+IC 3   3 50 50 100 - 
+241CE037 
+241CE056 Urban Transportation Planning 
+(or) 
+Intelligent Transportation 
+Systems 
+IC 3   3 50 50 100 - 
+241CE049 
+Total 18  2 20     
+ 
+Course Code Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241CS013 Operating Systems IC 2  1 3 50 50 100 - 
+241CS007 Computer Networks IC 2  1 3 50 50 100 - 
+241IT007 Agile Software Engineering IC 2  1 3 50 50 100 PPSC 
+241AI003 Data Mining IC 1  2 3 50 50 100 - 
+241CS008 Object Oriented Programming through 
+C++ (or)  
+Java Programming  
+IC 2  2 4 50 50 100 PPSC 
+241IT006 
+241CS016 Introduction to MERN Stack 
+Development(or) 
+Information Security Analysis & Audit 
+IC 
+  2   2 50 50 100 JP 
+241CS030 2     2 50 50 100 - 
+241CS018 Advanced MERN Stack Development 
+(or)                                                                                            
+Flutter Fundamentals 
+AC 
+  2 2 50 50 100 IMSD 
+241IT012   2 2 50 50 100 - 
+ Total 11   9 20     
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 32 of 799 
+ 
+` 
+ 
+Minor Degree in Electrical and Electronics Engineering 
+ 
+Course Code Course Name Level L T P C CIE SEE Total Pre-requisite 
+241EE055 
+Operation &Control of 
+Electric machines 
+FC 
+2   2 
+50 50 100 BEEE 
+241EE056 
+Fundamentals of Power 
+Electronics 
+FC 
+2   2 
+50 50 100 BEEE 
+241EE013 
+Electrical Measurements & 
+Instrumentation 
+FC 
+2  2 4 
+50 50 100 ENA-1/BEEE 
+241EE006 
+Electric Power Generation 
+and Distribution Systems 
+IC 
+3   3 
+50 50 100 ENA-1/BEEE 
+241EE034 
+Alternative Energy Sources 
+(or)Utilization of Electrical 
+Energy 
+IC 
+3   3 
+50 50 100 
+EPGDS / 
+BEEE/ 
+ISM 
+241EE027 
+241EE037 Hybrid Electric Vehicles 
+(or)Special Electric 
+machines 
+AC 
+3   3 
+50 50 100 
+FPE/ 
+OCEM 
+241EE035 
+241EE043 Electrical Safety (or) 
+Methods & Algorithms for 
+Intelligent Control 
+AC 
+3   3 
+50 50 100 EPGDS/PSA 
+241EE030 
+ Total 18  2 20     
+ 
+Minor Degree in Mechanical Engineering  
+ 
+Course Code Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241ME074 
+Basic Mechanical Engineering 
+FC 2    2 50 50 100 -  
+241ME004 
+Engineering Thermodynamics  
+IC 2 1  3 50 50 100 SSP/MP 
+241ME077 Introduction to Automobile 
+Engineering (or)  
+Mechanics of Solids 
+IC 3   3 50 50 100 SSP/MP 
+241ME078 
+241ME012 Heat Power Engineering (or) 
+Refrigeration & Air 
+Conditioning 
+IC 2 1  3 50 50 100 ETD 
+241ME040 
+241ME075 Production Technology IC 3   3 50 50 100 EW  
+241ME076 Metallurgy & Material Science IC 3   3 50 50 100 SSP/MP 
+241ME079 Theory of Machines (or)  
+Advanced Engineering 
+Metrology 
+AC 3   3 50 50 100 SSP/MP 
+241ME080 
+ Total 18 2  20     
+ 
+ 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 33 of 799 
+ 
+` 
+Minor Degree in Electronics & Communication Engineering 
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241EC087 
+Fundamentals of 
+Communications  
+FC 2  1 
+3 
+50 50 100 - 
+241EC088 
+Fundamentals of Signal 
+Processing 
+FC 2  1 
+3 
+50 50 100 - 
+241EC089 Analog & Digital Circuits IC 2   
+2 
+50 50 100 BEEE 
+241EC042 Wireless LAN’s & PAN’s IC 3   
+3 
+50 50 100 - 
+241EC090 Linear & Digital IC 
+Applications (or)  
+Sensors & Actuators 
+IC 3   
+3 
+50 50 100 ADC 
+241EC091 
+241EC092 Embedded 
+Microcontrollers (or) 
+Digital System Design  
+IC 2  1 
+3 
+50 50 100 
+ADC, 
+PPSC 
+241EC093 
+241EC067 
+Introduction to Internet of 
+things (or)Modern Wireless 
+Communications 
+AC 
+2  1 
+3 
+50 50 100 
+EM, 
+WLA
+N’s & 
+PAN’s 
+241EC074 3   
+3 
+50 50 100 FC 
+Total 16  4 20     
+ 
+Minor Degree in Petroleum Technology 
+ 
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241PT027 
+Introduction to 
+Petroleum Engineering 
+FC 
+2   2 
+50 50 100 - 
+241PT035 
+Unit Operations in 
+Petroleum Industry  
+FC 
+3   3 
+50 50 100 - 
+241PT047 
+Fundamentals of 
+Geology & Reservoir 
+Engineering 
+IC 
+3   3 
+50 50 100 - 
+241PT048 
+Fundamentals of 
+Drilling & Production 
+Engineering (or) 
+Unconventional 
+Hydrocarbon Resources 
+IC 
+3   3 
+50 50 100 - 
+241PT016 
+241PT049 Natural Gas Hydrates 
+(or) Fundamentals of 
+Liquefied Natural Gas  
+AC 
+3   3 
+50 50 100 - 
+241PT005 
+241PT050 Artificial Lift 
+Techniques (or)  
+Enhanced Oil Recovery 
+AC 
+3   3 
+50 50 100 - 
+241PT003 
+241PT012 
+Petroleum Refinery 
+Engineering 
+AC 
+3   3 
+50 50 100 - 
+Total 
+20   20 
+    
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 34 of 799 
+ 
+` 
+ 
+Minor Degree in Mining Engineering 
+ 
+Course Code Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241MN003 Development of Mineral Deposits FC 3   3 50 50 100 - 
+241MN041 Green Mining FC 3   3 50 50 100 - 
+241MN006 Surface Mining IC 3   3 50 50 100 DMD 
+241MN024 Drilling & Blasting IC 3   3   100 DMD 
+241MN007 Underground Coal Mining 
+Technology (or) 
+Underground Metal Mining 
+Technology 
+IC 3   3 50 50 100 DMD 
+241MN008 
+241MN014 Mine Legislation & General Safety 
+(or) 
+Environmental Pollution & Control 
+AC 3   3 50 50 100 
+UCMT/ 
+UMMT 
+241MN028 
+241MN045 
+Industrial Safety Practices(or) 
+Ground Control 
+AC 2   2 50 50 100 - 
+241MN046 
+Total 20   20     
+ 
+ 
+Minor Degree in Agricultural Engineering 
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241AE082 
+Fundamentals of Renewable 
+Energy Sources 
+FC 
+3   3 
+50 50 100 
+- 
+241AE083 
+Post-harvest Engineering of 
+Cereal Crops 
+FC 
+3   3 
+50 50 100 
+- 
+241AE084 
+Ground Water Hydrology 
+FC 
+3   3 
+50 50 100 
+- 
+241AE085 
+Micro Irrigation Systems 
+IC 
+2   2 
+50 50 100 - 
+241AE086 
+Surface Water Hydrology 
+(or)  
+Land & WaterManagement 
+Engineering 
+IC 
+3   3 
+ 
+50 
+ 
+50 100 GWH 
+241AE087 
+241AE088 
+Agricultural Process 
+Engineering & Food Quality 
+(or) 
+Post-harvest Engineering for 
+Horticultural Produce 
+AC 
+3   3 
+50 50 100 PHECC 
+241AE089 
+241AE090 
+Agricultural Machinery & 
+Equipment 
+ (or) 
+Design of Bio-energy 
+systems 
+AC 
+3   3 
+50 50 100 FRES 
+241AE091 
+TOTAL 
+20   20 
+    
+ 
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 35 of 799 
+ 
+` 
+ 
+ 
+ 
+Minor Degree in Entrepreneurship Development & Incubation 
+ 
+ 
+Course 
+Code 
+Course Name Level L T P C CIE SEE Total 
+Pre-
+requisite 
+241MB007 
+New Product 
+Development 
+FC 3   3 50 50 100 - 
+241MB008 
+Entrepreneurship & 
+Small Business 
+Management 
+IC 2   2 50 50 100 
+- 
+241MB009 
+Insurance & Risk 
+Management 
+IC 3   3 50 50 100 
+- 
+241MB010 
+Change & Innovations 
+Management 
+IC 3   3 50 50 100 
+- 
+241MB011 Personal Financial 
+Planning (or) 
+E-Business management 
+IC 3   3 50 50 100 
+- 
+241MB012 
+241MB013 Business Policy & 
+Strategic Management 
+(or)Green Marketing 
+AC 3   3 50 50 100 
+- 
+241MB014 
+241MB015 
+Startup Management (or)  
+Venture Management 
+AC 3   3 
+50 50 100 
+- 
+241MB016 
+Total 20   20     
+
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 36 of 799 
+ 
+` 
+
+DRAFT CO PY 
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 37 of 799 
+ 
+` 
+ 
+Dept 
+FOUNDATION 
+COURSE 
+INTERMEDIATE- LEVEL 
+COURSE 
+ADVANCED COURSE 
+CE 
+RRS 
+Repair & 
+Rehabilitatio
+n of 
+Structures 
+EIRM 
+Environmental Impact 
+& Risk Management 
+ 
+  
+BPCA 
+Building 
+Planning & 
+Computer-
+Aided 
+Drawing 
+EM 
+Environmental 
+Management 
+  
+GB 
+Green 
+Building 
+UTP 
+Urban Transportation 
+Planning 
+FSB 
+Fundamental 
+of Soil 
+Behaviour 
+ITS 
+Intelligent 
+Transportation Systems 
+  
+RE 
+Railway 
+Engineering 
+    
+DHE 
+Docks & 
+Harbour 
+Engineering 
+EEE 
+OCEM 
+Operation 
+control of 
+Electric 
+Machines 
+AES 
+Alternative Energy 
+Sources 
+MAI 
+Methods&Algorith
+msfor Intelligent 
+Control 
+FPE 
+Fundamental
+s of Power 
+Electronics 
+EPGDS 
+Electric Power 
+Generation 
+&Distribution Systems 
+HEV 
+Hybrid Electric 
+Vehicles 
+EMI 
+Electrical 
+Measurement
+s & 
+Instrumentati
+on 
+UEE 
+UtilizationofElectricalE
+nergy 
+SEM 
+Special Electric 
+Machines 
+ES 
+Electrical Safety 
+ME 
+BME 
+Basic 
+Mechanical 
+Engineering 
+ETD 
+Engineering 
+Thermodynamics 
+TOM Theory of Machines 
+IAE 
+Introduction to 
+Automobile Engineering 
+AEM 
+Advanced 
+Engineering 
+Metrology 
+  MOS Mechanics of Solids 
+  HPE Heat Power Engineering   
+  PT Production Technology   
+  MMS 
+Metallurgy & Material 
+Science 
+  
+  R&AC 
+Refrigeration & Air 
+Conditioning 
+  
+ECE FC 
+Fundamental
+s of 
+Communicati
+ADC 
+Analog & Digital 
+Circuits 
+IIT 
+Introduction to 
+Internet of things 
+LDIC Linear & Digital IC 
+
+DRAFT CO PY 
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 38 of 799 
+ 
+` 
+ons Applications 
+SA Sensors & Actuators 
+FSP 
+Fundamental
+s of Signal 
+Processing 
+EM 
+Embedded 
+Microcontrollers 
+MWC 
+Modern Wireless 
+Communications 
+  DSD Digital System Design   
+  
+WLAN
+&PAN 
+Wireless LANS & 
+PANS 
+  
+CSE 
+  ASE 
+Agile Software 
+Engineering 
+AMSD 
+Advanced MERN 
+Stack Development 
+  OOP 
+Object Oriented 
+Programming through 
+C++ 
+  OS Operating Systems FF 
+Flutter 
+Fundamentals 
+  CN Computer Networks   
+  JP Java Programming   
+  IMSD 
+Introduction to MERN 
+Stack Development 
+  
+  ISA 
+Information Security 
+Analysis and Audit 
+  
+  DM Data Mining   
+DS 
+  DM Data Mining SNA 
+Social Network 
+Analysis 
+  FDS 
+Fundamentals of Data 
+Science 
+DV Data Visualization 
+  ASE 
+Agile Software 
+Engineering 
+BDA Big Data Analytics 
+  NSQL NoSQL Databases SNSW 
+Social Networks 
+and Semantic Web 
+  BIA 
+Business Intelligence & 
+Analytics 
+  
+  HCDA 
+Health Care Data 
+Analysis 
+  
+      
+AIML 
+  ML Machine Learning DV Data Visualization 
+  AI Artificial Intelligence PEG 
+Prompt Engineering 
+and GenAI 
+  AI C AI Chatbot SNA 
+Social Network 
+Analysis 
+  FDS 
+Fundamentals of Data 
+Science 
+FML 
+Federated Machine 
+Learning 
+  SC Soft Computing NLP 
+Natural Language 
+Processing 
+Min.E 
+DMD 
+Development 
+of Mineral 
+Deposits 
+SM Surface Mining MLGS 
+Mine Legislation 
+and General Safety 
+GM Green UCMT Underground Coal EPC Environmental 
+
+DRAFT CO PY 
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 39 of 799 
+ 
+` 
+Mining Mining Technology Pollution & Control 
+  UMMT 
+Underground Metal 
+Mining Technology 
+ISP 
+Industrial Safety 
+Practices 
+  DB Drilling & Blasting GC Ground Control 
+PT 
+IPE 
+Introduction 
+to Petroleum 
+Engineering 
+FGRE 
+Fundamentals of 
+Geology and Reservoir 
+Engineering 
+PRE 
+Petroleum Refinery 
+Engineering 
+UOPI 
+Unit 
+operations in 
+Petroleum 
+Industry 
+FDPE 
+Fundamentals of 
+Drilling and Production 
+Engineering 
+FLNG 
+Fundamentals of 
+Liquefied Natural 
+Gas 
+NGH 
+Natural Gas 
+Hydrates 
+UHR 
+Unconventional 
+Hydrocarbon Resources 
+ALT 
+Artificial Lift 
+Techniques 
+  EOR 
+Enhanced Oil 
+Recovery 
+Ag.E 
+GWH 
+Ground 
+Water 
+Hydrology 
+LWME 
+Land and Water 
+Management 
+DBS 
+Design of Bio-
+Energy Systems 
+PHEC
+C 
+Post-harvest 
+Engineering 
+of Cereal 
+Crops 
+SWH 
+Surface Water 
+Hydrology 
+PHEHP 
+Post-Harvest 
+Engineering for 
+Horticultural 
+Produce 
+MIE 
+Micro Irrigation 
+Systems 
+FRES 
+Fundamental
+s of 
+Renewable 
+Energy 
+Sources 
+  
+AME 
+Agricultural 
+Machinery and 
+Equipment 
+APEFQ 
+Agriculture Process 
+Engineering and 
+Food Quality 
+EDC 
+NPD 
+New Product 
+Development 
+ESB 
+Entrepreneurship and 
+Small Business 
+Management 
+BPS 
+Business Policy & 
+Strategic 
+Management 
+  CIM 
+Change & Innovations 
+Management 
+GM Green Marketing 
+  PFP 
+Personal Financial 
+Planning 
+SM 
+Startup 
+Management 
+  EBM E-Business Management VM 
+Venture 
+Management 
+  IRM 
+Insurance and Risk 
+Management 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+DRAFT CO PY 
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 40 of 799 
+ 
+` 
+Major Core Courses (MCC) 
+ 
+Course 
+Code 
+Course Name Level L T P 
+ 
+C CIE SEE Total 
+Pre-
+requisite 
+241MA001 
+Linear algebra & 
+Calculus 
+FC
+ 
+2 1  
+ 
+3 50 50 100 - 
+241MA002 
+Differential equations 
+&vector calculus 
+FC 2 1  
+ 
+3 50 50 100 - 
+241CH002 Applied Chemistry FC 2  1  3 50 50 100 - 
+241PH002 Modern Physics FC 2  1  3 50 50 100 - 
+241ME001 Engineering Graphics FC 1  2  3 50 50 100 - 
+241ME003 Engineering Workshop FC     1 
+ 
+1 
+10
+0 
+ 100 - 
+241CS001 
+Programming for 
+Problem Solving Using 
+C 
+FC 2  2 
+ 
+4 50 50 100 - 
+241CS003 Data Structures FC 2  2  4 50 50 100 PPSC 
+241IT001 IT &AI Skills FC   2  2 50 50 100 - 
+241MA008 Discrete Mathematics IC 2 1   3 50 50 100 LAC 
+241IT005 
+Database Management 
+Systems 
+IC 2  2 
+ 
+4 50 50 100 PPSC 
+241CS008 
+Object Oriented 
+Programming through 
+C++ 
+IC 2  2 
+ 
+4 50 50 100 PPSC 
+241MA009 Probability & Statistics IC 2 1   3 50 50 100 LAC 
+241IT006 Java Programming IC 2  2  4 50 50 100 PPSC 
+241CS011 Theory of Computation IC 2 1   3 50 50 100 DMS 
+241IT007 
+Agile Software 
+Engineering 
+IC 2  1 
+ 
+3 50 50 100 PPSC 
+241CS013 Operating Systems IC 2  1  3 50 50 100 - 
+241AI002 Artificial Intelligence IC 2  1  3 50 50 100 DAP 
+241CS015 Software Architecture IC 2  1  3 50 50 100 ASE 
+241CS007 Computer Networks IC 2  1  3 50 50 100 - 
+241AI003 Data Mining IC 1  2  3 50 50 100 - 
+241IT003 
+Cryptography & 
+Network Security 
+AC 2  1 
+ 
+3 50 50 100 CN 
+241IT004 Compiler Design AC 2  1  3 50 50 100 TOC 
+241CS010 
+Advanced Data 
+Structures & Algorithm 
+Analysis 
+AC 2  1 
+ 
+3 50 50 100 DS 
+241AI004 Big Data Analytics AC 2  1  3 50 50 100 DM 
+241AI005 Machine Learning AC 2  2  4 50 50 100 DAP 
+ Total  46 5 30  81     
+ 
+ 
+ 
+
+DRAFT CO PY 
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 41 of 799 
+ 
+` 
+ 
+ 
+Linear Algebra & Calculus 
+(Common to CE, EEE, ME, ECE, CSE, IT, AIML, CSE(DS), PT & Min.E) 
+ 
+ L T P C 
+Course Code: 241MA001 
+ 
+2 1 0 3 
+Course Outcomes:  
+At the end of the Course, Student will be able to: 
+ 
+CO1: Solve the system of Linear equations 
+CO2: Calculate Eigen values and Eigen vectors 
+CO3: Apply differential calculus for one and several variable functions 
+CO4: 
+Calculate the Maximum value and Minimum value of a function of several 
+variables 
+CO5: Compute areas and volumes using multiple integrals 
+ 
+ 
+Mapping of Course Outcomes with Program Outcomes: 
+ 
+CO/PO PO 1 PO 2 PO 3 PO 4 PO 5 PO 6 PO 7 PO 8 PO 9 PO 10 PO 11 
+CO1 3 2          
+CO2 3 2          
+CO3 3 2          
+CO4 3 2          
+CO5 3 2          
+ 
+ 
+UNIT – I 
+ 
+System  of  linear  equations:Vector  Space,Linear  Independence,Rank  of  a  matrix  by 
+echelon  form,  normal  form,  Inverse  of  Non-singular  matrices  by  Gauss-Jordan  method, 
+Solutions   of   Linear   Systems:   Existence,   Uniqueness,Solving   the   system   by   Gauss 
+elimination method.  
+Practice(Using any computational tool) 
+1. Variables, arithmetic operations, elementary mathematical functions. 
+2. Defining row vector, column vector, Arithmetic operations on matrices   
+3. finding transpose of a matrix, inverse of a matrix, determinant of a matrix 
+4. rank of a matrix, solving system of linear equations. 
+ 
+UNIT – II 
+ 
+Eigenvalues,   Eigvectors :   Eigenvalues   and   properties(without   proof),   Eigenvectors, 
+Diagonalization  of  a  matrix,  Cayley-Hamilton Theorem  (without  proof),  Quadratic  forms, 
+Reduction of Quadratic form to canonical   forms by Orthogonal Transformation,Nature of 
+Quadratic forms. 
+Practice(Using any computational tool): 
+
+DRAFT CO PY 
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 42 of 799 
+ 
+` 
+1.  Computing eigen values and eigen vectors, matrix diagonalization. 
+ 
+UNIT-III 
+One Variable Calculus:Cauchy’s mean value theorem, Taylor’s and Maclaurin  theorems 
+with remainders (without proof), Problems and applications on the above theorems.  
+Several  Variable  Calculus: Limit,  Continuity,  partial  derivatives  and  their  geometrical 
+interpretation. 
+ 
+Practice(Using any computational tool):Basics of plotting,Plot graphs of  single  variable  
+functions 
+ 
+UNIT – IV 
+ 
+Functions   of   several   variables:Total   differential   and   differentiability,derivatives   of 
+composite and implicit functions,derivatives of higher order and their 
+commutativity,Euler’s  theorem  on  homogeneous  functions,  Taylor’s  and  Maclaurin’s  
+expansion  of  functions  of  two  variables.  Jacobians,  maxima  and  minima,  constrained 
+maxima/minima problems using  Lagrange’s method of  multipliers.  
+ 
+Practice(Using any computational tool): Plot graphs of various multi variable  functions 
+ 
+UNIT – V 
+ 
+Multiple  Integrals:  Double  integrals,  triple  integrals,  change  of  order  of  integration, 
+change  of  variables  to  polar,  cylindrical  and  spherical  coordinates.  Finding  areas  (by 
+double integrals) and volumes (by double integrals and triple integrals). 
+ 
+Practice(Using any computational tool):Plotting  the region of Integration 
+Text Books: 
+ 
+1 
+Advanced Engineering Mathematics, R. K. Jain and S. R. K. Iyengar, Alpha Science 
+International Ltd., 5th Edition (9th reprint), 2021· ISBN978-8184875607 
+2 
+Advanced Modern Engineering Mathematics, Glyn James, Pearson publishers, 5th 
+Edition, 2018.ISBN-13. 978-1292174341 
+ 
+Reference Books: 
+ 
+1 
+Advanced Engineering Mathematics, Michael Greenberg,  Pearson publishers, 9th 
+edition.ISBN-13. 9788177585469 
+2 
+Higher Engineering Mathematics, H. K. Dass, Er. R. Verma, S-Chand publishers, 3rd 
+edition 2023.ISBN 9788121938907 
+ 
+Web Links: 
+ 
+1 https://archive.nptel.ac.in/courses/111/104/111104137/ 
+2 https://archive.nptel.ac.in/courses/111/107/111107108/ 
+3 https://www.khanacademy.org/math/linear-algebra/ 
+4 https://www.khanacademy.org/math/multivariable-calculus 
+ 
+
+DRAFT CO PY 
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 43 of 799 
+ 
+` 
+ 
+ 
+
+DRAFT CO PY 
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 44 of 799 
+ 
+` 
+Differential Equations & Vector Calculus 
+(Common to CE, EEE, ME, ECE, CSE, IT, AIML, CSE(DS), PT & Min.E) 
+ 
+ L T P C 
+Course Code: 241MA002 
+ 
+2 1 0 3 
+ 
+Course Outcomes: 
+At the end of the Course, Student will be able to: 
+CO1: 
+Solve the linear differential equations of first order and apply in various 
+engineering problems. 
+CO2: 
+Solve the linear differential equations of higher order and  and apply in various 
+engineering problems. 
+CO3: Solve the linear partial differential equations 
+CO4: Calculate the gradient, divergence and curl. 
+CO5: Compute work done, flux using vector integration 
+ 
+Mapping of Course Outcomes with Program Outcomes: 
+CO/PO PO 1 PO 2 PO 3 PO 4 PO 5 PO 6 PO 7 PO 8 PO 9 PO 10 PO 11 
+CO1 3 2          
+CO2 3 2          
+CO3 3 2          
+CO4 3 2          
+CO5 3 2          
+ 
+UNIT – I 
+ 
+Ordinary Differential Equations of First Order and First Degree: 
+Solution  of  first  order  linear  differential  equations,  exact  differential  equations  and 
+equations  reducible  to  exact  differential  equations,  Orthogonal  Trajectories,  Modelling  of 
+RL- circuit. 
+Practice(Using  any  computational  tool):Solving  the  first  order  initial  value  problems 
+using odesolver and plot the solution curves. 
+ 
+ 
+UNIT – II 
+ 
+Linear Differential Equations of Higher Order: 
+Solution  of  linear  differential  equations  with  constant  coefficients,  method  of  variation  of 
+parameters, solution of simultaneous linear differential equations. 
+Equations reducible to Linear differential equations with constant coefficients: Cauchy’s 
+homogeneous  Linear  Equations,  Legendere’s  Linear  Equations.  Study  of  oscillations 
+arising in LCR circuit (free oscillations and forced oscillations).   
+ 
+Practice(Using  any  computational  tool):Solving  the  second  order  initial  value  problems 
+using odesolver and plot the solution curves 
+ 
+ 
+ 
+
+DRAFT CO PY 
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 45 of 799 
+ 
+` 
+ 
+UNIT – III 
+ 
+Partial Differential Equations: 
+Solution  of  linear  PDE  of  first  order  by  Lagrange’s  method,  solution  of  homogeneous 
+linear PDE of higher order with constant coefficients. 
+ 
+UNIT – IV 
+ 
+Vector Differentiation: 
+Gradient  of  a  scalar  field,  finding  angle  between  two  surfaces,  directional  derivative. 
+Divergence and solenoidal fields. Curl and irrotational fields, Finding Scalar Potential. 
+Practice(Using  any  computational  tool):Plotting  of  surfaces,  3D-plots,  plotting  vector 
+fields. 
+ 
+UNIT – V 
+ 
+Vector Integration: 
+Line  integrals,  work  done  by  a  force,  conservative  force  field,  surface  integral,  flux, 
+volume integral. Green's theorem, Stoke's theorem and Gauss divergence theorem.  
+ 
+Text Books: 
+ 
+1 
+Advanced Engineering Mathematics, E. Kreyszig, John Willey & Sons,10th Ed.,  
+2018.ISBN 978-0470458365 
+2 
+Higher Engineering Mathematics, B. S. Grewal, Khanna Publishers, 44’th Edition 
+(2021).ISBN 978-9383214204 
+ 
+Reference Books: 
+ 
+1 
+Advanced Engineering Mathematics, Dennis G. Zill, Jones & Bartlett Learning, 
+2018, 6th Edition.ISBN978-1284105902. 
+2 
+Higher Engineering Mathematics, B.V. Ramana, McGraw-Hill Education, 11’th  Ed., 
+2017.ISBN 978-9339216016. 
+ 
+Web Links: 
+ 
+1 https://www.classcentral.com/course/differential-equations-engineers-13258 
+2 https://archive.nptel.ac.in/courses/111/106/111106100/ 
+3 https://www.khanacademy.org/math/differential-equations 
+4 https://archive.nptel.ac.in/courses/111/101/111101153/ 
+5 https://archive.nptel.ac.in/courses/111/105/111105122/ 
+ 
+ 
+ 
+ 
+ 
+
+DRAFT CO PY 
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 46 of 799 
+ 
+` 
+Applied Chemistry 
+(Common to EEE, ECE, CSE, IT, AIML & CSE (DS)) 
+ 
+ L T P C 
+Course Code: 241CH002 2 0 1 3 
+ 
+Course Outcomes:  
+At the end of the course, student will be able to: 
+ 
+CO1: Explain the fundamentals of polymers and explore engineering applications.  
+CO2: Interpret the principles and applications of Electrochemical cells  
+CO3: Summarize the preliminaries of Computational Chemistry and its applications  
+CO4: Illustrate the fundamentals of nano and smart materials and their applications  
+CO5: Apply the knowledge of water treatment and E-waste management  
+ 
+Mapping of Course Outcomes with Program Outcomes: 
+CO/PO PO 1 PO 2 PO 3 PO 4 PO 5 PO 6 PO 7 PO 8 PO 9 PO 10 PO 11 
+CO1 
+3 
+ 1   1  1 1   
+CO2 
+3 
+      1 1   
+CO3 
+2 
+      1 1   
+CO4 
+2 
+    1  1 1   
+CO5 
+3 
+    2  1 1   
+ 
+Unit I:  
+Polymer  Chemistry Introduction  to  polymers,  functionality  of  monomers,  chain  growth 
+and  step  growth  polymerization,  coordination  polymerization,  with  specific  examples  and 
+methods  of  polymerization  (Suspension  polymerization  and  Emulsion  Polymerization) 
+Difference  between  thermoplastics  and  thermosetting  plastics;  Engineering  application  of 
+plastics - PTFE and Bakelite  
+Polymer  composites – Composites  as  structural  material;  Synthesis  and  applications  of 
+Kevlar and Carbon fibers; 
+Conducting polymers - Polyacetylene- Mechanism of conduction – applications (polymers 
+in sensors, self cleaning windows) 
+Biodegradable polymers - Introduction, Polyglycolic acid - synthesis, degradation and uses. 
+Practice 
+1. Preparation of a polymer (Bakelite) 
+2. Determination of molecular weight of polymer using Ostwald’s viscometer 
+ 
+ 
+UNIT – II 
+ 
+Electrochemistry and Applications  
+Electrochemicalcell,Nernstequation,cellpotentialcalculationsandnumericalproblems, 
+Primary  cells – Zinc-air  battery,  Secondary  cells –Ni-Cd  and,  Lead-Acid  battery,  lithium-
+
+DRAFT CO PY 
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 47 of 799 
+ 
+` 
+ion batteries- working of the batteries including cell reactions; Fuel cells, hydrogen-oxygen, 
+Methanol-Oxygen fuel cell– working of the cells. Polymer Electrolyte Membrane Fuel cells 
+(PEMFC) 
+Electrochemical sensors – potentiometric sensors with examples, amperometric sensors with example 
+(Glucose Electrochemical sensor) 
+Practice 
+1. Conduct metric titration of strong acids strong base 
+2. Potentiometric titration of red-ox 
+3. P
+H
+-metric titration of Acid-Base 
+4. Determination of Glucose by Electrochemical sensor 
+ 
+UNIT – III 
+ 
+Computational Chemistry 
+Computational Quantum Chemistry and its applications, Prediction of Molecular Properties 
+using Computational Chemistry 
+Molecular Modeling and Structure - molecular modeling today: overview of problems, 
+tools, and solution analysis. Techniques for Conformational Sampling- Monte Carlo, global 
+optimization, etc. 
+ 
+Practice: 
+1. Molecular docking to predict the interaction energy between molecules 
+ 
+ 
+UNIT – IV 
+ 
+Nano and Smart Materials: 
+Introductiontonanomaterialsandgeneralapplications,basicchemicalmethodsofpreparation(top 
+down  and  bottom  up  approach) - Sol-gel  method. Applications    of  Carbon  nano  tubes  and 
+Fullerenes, Graphene (water treatment and drug delivery) 
+Characterization of nanomaterials bySEMandTEM (onlyPrinciple). 
+Smart materials and their engineering applications 
+Shape memory materials- Poly L-Lactic acid, 
+Thermoresponse materials – Poly acryl amides , Poly vinyl Amides 
+ 
+Practice: 
+1. Preparation of nano particles by Green synthesis 
+2. Characterization of nanoparticles (SEM & TEM) 
+ 
+UNIT – V 
+ 
+Water Treatment & E-Waste Management 
+Water  treatment:Introduction,  hardness  of  water,  types,  determination  of  hardness  by 
+EDTA  method,  disadvantages  of  hard  water,  removal  of  hardness  by  Zeolite  and  ion 
+exchange method, Desalination of water – reverse osmosis and Electrodialysis. 
+E-Waste:Introduction,  sources  of  e-waste,  Composition,  Characteristics,  and  Need  of  e-
+waste   management.   Toxic   materials   used   in   manufacturing   electronic   and   electrical 
+products; Recycling: Recycling of Li-Ion batteries. Extraction of copper from E-waste. 
+ 
+
+DRAFT CO PY 
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 48 of 799 
+ 
+` 
+Practice: 
+1.  Determination of Hardness of a ground water sample 
+2.  Determination of Chloride content in given water sample 
+3.  Estimation of dissolved oxygen in given water sample 
+ 
+ 
+Text Books: 
+1 
+EngineeringChemistry,  PrasantaRath,  S.Aruna  Kumari,  CENGAGELearning(ISBN 
+978-93-5350-651-3)(ISBN 93-5350-651-4). 
+2 
+EngineeringChemistryFundamentalsandApplications, ShikhaAgarwal,Cambridge 
+2
+nd
+Edition(ISBN 978-1-108-72444-9). 
+ 
+Reference Books: 
+ 
+1. Engineering Chemistry, Uppal M.M, Jain and Jain, Khanna Publishers, 35th 
+Edition, 2013.(ISBN 978-817-409-2625) 
+ 
+2. A Textbook of Engineering Chemistry, Dr S.S.Dara, DrS.S.Umare,S.Chand 
+Publication, 2022 .( ISBN 978-935—283-6068) 
+ 
+3. MolecularModellingPrinciplesandapplications, AndrewR.Leach, IIed, 
+PrenticeHall, (ISBN 978-935-501-2585). 
+ 
+Web Links: 
+1 https://archive.nptel.ac.in/courses/104/106/104106096/ 
+2 https://archive.nptel.ac.in/courses/104/105/104105124/ 
+3 https://archive.nptel.ac.in/courses/104/106/104106137/ 
+4 https://nptel.ac.in/courses/118102003 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+DRAFT CO PY 
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 49 of 799 
+ 
+` 
+ 
+Modern Physics 
+(Common to EEE, ECE, CSE, IT, AIML & CSE (DS)) 
+ 
+ L T P C 
+Course Code: 241PH002 2 0 1 3 
+ 
+Course Outcomes:  
+At the end of the course, student will be able to: 
+ 
+CO1: 
+Apply the principles of interference and 
+diffraction to design and enhance the 
+resolving power of grating 
+ 
+CO2: 
+Familiarize
+ the concepts of LASER’s and 
+Optical fibres with applications.
+ 
+ 
+CO3: 
+Explain the fundamental concepts of 
+Quantum behaviour of matter 
+ 
+CO4: 
+Differentiate various electron theories to 
+understand the properties of solids. 
+ 
+CO5: 
+Explain the basic concepts of 
+Semiconductors and identify the type of 
+semiconductors using Hall effect. 
+ 
+ 
+Mapping of Course Outcomes with Program Outcomes: 
+CO/PO PO 1 PO 2 PO 3 PO 4 PO 5 PO 6 PO 7 PO 8 PO 9 PO 10 PO 11 
+CO1 2 1      
+1 1 
+  
+CO2 2 1      
+1 1 
+  
+CO3 2 1      
+1 1 
+  
+CO4 2 1      
+1 1 
+  
+CO5 2 1      
+1 1 
+  
+ 
+UNIT – I 
+ 
+Wave Optics 
+Interference: Introduction - Principle of Superposition - Interference of light- Conditions for sustained 
+Interference- Interference in thin films (reflected geometry) – Colours in thin films – Newton’s Rings 
+(reflected geometry) – Determination of wavelength and refractive index – Applications. 
+Diffraction: Introduction – Fresnel and Fraunhofer Diffraction - Diffraction due to Single slit (quantitative), 
+Double slit (qualitative) - N–Slits Intensity distribution curves (qualitative) – Grating spectrum–Rayleigh’s 
+criterion - Resolving powers of grating (qualitative) - Applications. 
+ 
+Practice: 
+1. Determination of Radius of curvature of a plano-convex lens using Newton’s 
+Rings.  
+2. Measurement of Width or thickness of a thin wire by forming interference fringes. 
+3. Determination of Wavelength of light source using Diffraction grating by normal 
+incidence method. 
+
+DRAFT CO PY 
+ 
+ 
+ B.Tech (CSE) Curriculum-2024                                          Page 50 of 799 
+ 
+` 
+4. Resolving power of grating. 
+5. Determination of wavelength of light by using prism. 
+ 
+ 
+UNIT – II 
+ 
+Lasers & Optical Fibres 
+Lasers:Introduction - Characteristics of Lasers – Spontaneous and Stimulated emission of 
+radiation – population   inversion- Einstein’s  coefficients – Relation - significance - 
+Pumping 
+Mechanisms - Ruby laser – Helium-Neon laser - Applications.
+ 
+Optical  Fibres  :Introduction – Principle  of  propagation  in  Optical  Fiber – Angle  of 
+acceptance – Expression   for   Numerical   Aperture   and   condition   for   propagation – 
+Classification of Optical fibers - Applications. 
+ 
+Practice: 
+1.  Determination of Wavelength of He-Ne laser source by using diffraction grating. 
+ 
+UNIT – III 
+ 
+Quantum Mechanics 
+Introduction – Matter waves – de Broglie’s hypothesis – Davisson and Germer Experiment 
+- Heisenberg’s Uncertainty Principle – interpretation of wave function – Schrödinger Time 
+dependent and Time Independent wave equations– Particle in a potential box. 
+ 
+UNIT – IV 
+ 
+Free electron Theory 
+Free  Electron  Theory:  Introduction–Classical  free  electron  theory  (merits  and  demerits  only) -Quantum 
+Free  electron  theory – Electrical  conductivity- Fermi  energy  state–Fermi  Dirac  distribution  function - 
+Temperature dependence – Density of states. 
+Band  theory  of  solids:Bloch  Theorem – Origin  of  energy  bands  in  crystalline  solids – classification  of 
+crystalline solids. 
+ 
+Practice: 
+1. Study  the  variation  of  magnetic  field  along  the  axis  of  a  circular  coil  carrying 
+current by using Stewart and Gee’s apparatus. 
+2. Determination  of  Frequency  of  electrically  maintained  tuning  fork  by  Melde’s 
+apparatus. 
+ 
+UNIT – V 
+ 
+Semiconductor Physics  
+Introduction – Intrinsic semiconductors – density of charge carriers – Electrical conductivity –Fermi level - 
+extrinsic  semiconductors - P-type  &  N-type  semiconductors-Density  of  charge  carriers (Qualitative)- 
+Dependence  of  Fermi  energy  on  carrier  concentration  and  temperature–Hall  effect-Hall  coefficient - 
+Applications  of  Hall  effect–Drift  and  Diffusion  currents - Einstein’s equation – Working  of  PN  junction 
+diode – Zener diode 
+ 
+Practice: 
