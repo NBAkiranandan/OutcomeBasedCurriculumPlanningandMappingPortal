@@ -261,6 +261,17 @@ export const saveSyllabusDraft = async (versionId, updateData, operatorUser) => 
       }, {})
     : updateData;
 
+  // HOD can update global course code and title directly from the version editor
+  if (operatorUser.role === 'HOD' || operatorUser.role === 'Admin') {
+    if (updateData.title || updateData.code) {
+      const courseUpdate = {};
+      if (updateData.title) courseUpdate.title = updateData.title;
+      if (updateData.code) courseUpdate.code = updateData.code;
+      const cId = version.courseId._id || version.courseId;
+      await courseRepository.updateCourseById(cId, courseUpdate);
+    }
+  }
+
   // Update version
   const updated = await courseRepository.updateCourseVersion(versionId, sanitizedUpdateData);
 

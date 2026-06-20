@@ -99,8 +99,12 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
     description: '', offeredFor: ['CSE'], objectives: [''], coordinatorId: '', prerequisites: ''
   });
 
-  // Full Syllabus Editor State
   const [editingSyllabusId, setEditingSyllabusId] = useState<string | null>(null);
+
+  // Course Categories State
+  const [courseCategories, setCourseCategories] = useState<any[]>([]);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [editCategoryData, setEditCategoryData] = useState<any>(null);
 
   // Profile password reset
   const [profilePass, setProfilePass] = useState({ current: '', newPass: '', confirm: '' });
@@ -147,14 +151,21 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       const facRes = await api.auth.getFaculty();
       setFaculty(facRes.faculty || []);
 
-      // 4. Ensure programs are loaded and set selectedProgram
       let currentPrograms = programs;
       if (programs.length === 0) {
         const progRes = await api.programs.list();
-        setPrograms(progRes.programs);
+        setPrograms(progRes.programs || []);
         currentPrograms = progRes.programs;
       }
-      
+
+      // 5. Load dynamic course categories
+      try {
+        const catRes = await api.courseCategories.list();
+        setCourseCategories(catRes.categories || []);
+      } catch (err) {
+        console.error('Failed to load categories:', err);
+      }
+
       const progId = typeof selectedDepartment.programId === 'object' ? selectedDepartment.programId._id : selectedDepartment.programId;
       if (!selectedProgram && selectedDepartment) {
         const prog = currentPrograms.find((p: any) => p._id === progId);
@@ -236,11 +247,45 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       setNewRegData({ code: '', academicYear: 2025 });
       loadData();
     } catch (err: any) {
-      alert(`Failed to create regulation: ${err.message}`);
+      alert(err.message || 'Failed to update workflow.');
     }
   };
 
-  // Toggle Regulation Lock/Unlock
+  const handleSaveCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editCategoryData.code || !editCategoryData.name) {
+      alert('Code and Name are required.');
+      return;
+    }
+    try {
+      if (editCategoryData._id) {
+        await api.courseCategories.update(editCategoryData._id, editCategoryData);
+        alert('Course category updated.');
+      } else {
+        await api.courseCategories.create(editCategoryData);
+        alert('Course category added.');
+      }
+      setCategoryModalOpen(false);
+      const catRes = await api.courseCategories.list();
+      setCourseCategories(catRes.categories || []);
+    } catch (err: any) {
+      alert(err.message || 'Failed to save course category.');
+    }
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this course type?')) return;
+    try {
+      await api.courseCategories.delete(id);
+      alert('Course category deleted.');
+      const catRes = await api.courseCategories.list();
+      setCourseCategories(catRes.categories || []);
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete category.');
+    }
+  };
+
+  // --- Curriculum Planner Handlers ---Toggle Regulation Lock/Unlock
   const handleToggleLock = async (reg: any) => {
     try {
       await api.regulations.update(reg._id, { isActive: !reg.isActive });
@@ -492,8 +537,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
             let coordinatorId = '';
             if (coordinatorQuery) {
-              const fac = faculty.find((f: any) => 
-                (f.email && f.email.toLowerCase() === coordinatorQuery.toLowerCase().trim()) || 
+              const fac = faculty.find((f: any) =>
+                (f.email && f.email.toLowerCase() === coordinatorQuery.toLowerCase().trim()) ||
                 (f.name && f.name.toLowerCase() === coordinatorQuery.toLowerCase().trim())
               );
               if (fac) {
@@ -533,7 +578,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
             }
             successCount++;
           }
-          
+
           alert(`Successfully imported ${successCount} courses!`);
           setBulkImportOpen(false);
           setBulkFile(null);
@@ -562,7 +607,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
         title: builderSelectedCourse.title,
         departmentId: selectedDepartment?._id,
         regulationId: builderRegulationId,
-        semester: builderTargetSem
+        semester: builderTargetSem,
+        category: builderSelectedCourse.category || courseCategories[0]?.code || 'PC'
       });
 
       alert('Course mapped to syllabus curriculum structure!');
@@ -643,6 +689,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
     try {
       if (!approvalEditModal.version) return;
       await api.courses.saveDraft(approvalEditModal.version._id, {
+        title: editCourseData.title,
+        code: editCourseData.code,
         semester: editCourseData.semester,
         category: editCourseData.category,
         courseLevel: editCourseData.courseLevel,
@@ -694,7 +742,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
         departmentId: course.departmentId,
         regulationId: selectedRegulation._id,
         semester: 1,
-        category: 'PC'
+        category: course.category || courseCategories[0]?.code || 'PC'
       });
       alert('Course added to current regulation! You can now edit its syllabus.');
       loadData();
@@ -737,7 +785,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
           </p>
         </div>
         <div className="flex gap-2">
-          <button 
+          <button
             onClick={() => setActiveTab('curriculum-book')}
             className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-bold transition-all border shadow-sm ${activeTab === 'curriculum-book' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'}`}
           >
@@ -1290,6 +1338,140 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       )}
 
       {/* ============================================================== */}
+      {/* NEW: COURSE CATEGORIES MANAGEMENT */}
+      {/* ============================================================== */}
+      {activeTab === 'course-categories' && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-extrabold text-slate-800">Course Categories (Types)</h1>
+              <p className="text-xs text-slate-500 mt-1">Manage standard and custom course types and their UGC credits.</p>
+            </div>
+            <button
+              onClick={() => {
+                setEditCategoryData({ code: '', name: '', ugc: '-' });
+                setCategoryModalOpen(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-sm font-bold transition-all shadow-sm cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Add Category
+            </button>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                  <th className="p-4 pl-6 w-32">Code</th>
+                  <th className="p-4">Name</th>
+                  <th className="p-4 w-32">UGC Credits</th>
+                  <th className="p-4 pr-6 text-right w-32">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {courseCategories.map((c) => (
+                  <tr key={c._id} className="border-b border-slate-100 hover:bg-slate-50/20 text-slate-600 font-medium">
+                    <td className="p-4 pl-6 font-mono font-bold text-teal-650">{c.code}</td>
+                    <td className="p-4 font-bold text-slate-800">{c.name}</td>
+                    <td className="p-4 font-semibold text-slate-500">{c.ugc}</td>
+                    <td className="p-4 pr-6 text-right flex gap-1.5 justify-end">
+                      <button
+                        onClick={() => {
+                          setEditCategoryData(c);
+                          setCategoryModalOpen(true);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors cursor-pointer"
+                        title="Edit Category"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCategory(c._id)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors cursor-pointer"
+                        title="Delete Category"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {courseCategories.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="p-8 text-center text-slate-400 font-semibold">
+                      No categories found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Category Modal */}
+          {categoryModalOpen && editCategoryData && (
+            <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-fadeIn">
+              <div className="bg-white w-[500px] rounded-2xl shadow-2xl border border-slate-200">
+                <div className="p-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                  <h3 className="text-base font-bold text-slate-800 flex items-center gap-1.5">
+                    <Layers className="w-5 h-5 text-teal-700" />
+                    <span>{editCategoryData._id ? 'Edit Category' : 'Add Course Category'}</span>
+                  </h3>
+                  <button onClick={() => setCategoryModalOpen(false)} className="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
+                </div>
+                <form onSubmit={handleSaveCategory} className="p-6 space-y-4 text-xs font-bold text-slate-500">
+                  <div className="space-y-1">
+                    <span>Category Code * (e.g. MCC)</span>
+                    <input
+                      type="text"
+                      value={editCategoryData.code}
+                      onChange={(e) => setEditCategoryData({ ...editCategoryData, code: e.target.value.toUpperCase() })}
+                      className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none focus:ring-1 focus:ring-teal-700 bg-white"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <span>Category Name * (e.g. Major Core Courses)</span>
+                    <input
+                      type="text"
+                      value={editCategoryData.name}
+                      onChange={(e) => setEditCategoryData({ ...editCategoryData, name: e.target.value })}
+                      className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none focus:ring-1 focus:ring-teal-700 bg-white"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <span>UGC Credits (e.g. 80, 6-8, or -)</span>
+                    <input
+                      type="text"
+                      value={editCategoryData.ugc}
+                      onChange={(e) => setEditCategoryData({ ...editCategoryData, ugc: e.target.value })}
+                      className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none focus:ring-1 focus:ring-teal-700 bg-white"
+                    />
+                  </div>
+                  <div className="flex gap-3 pt-3">
+                    <button
+                      type="button"
+                      onClick={() => setCategoryModalOpen(false)}
+                      className="flex-1 py-2.5 border border-slate-300 text-slate-600 rounded-lg font-bold hover:bg-slate-50 cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg font-bold shadow cursor-pointer transition-all"
+                    >
+                      Save Category
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ============================================================== */}
       {/* 4. CURRICULUM MANAGEMENT (BUILDER & BOOK) */}
       {/* ============================================================== */}
       {activeTab === 'curriculum' && (
@@ -1336,7 +1518,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                         <div className="absolute top-0 right-0 w-16 h-16 bg-blue-100/50 rounded-bl-full -z-0 group-hover:scale-110 transition-transform"></div>
                         <h4 className="font-extrabold text-slate-800 text-lg relative z-10">{reg.code}</h4>
                         <p className="text-xs text-slate-500 font-medium mb-4 relative z-10">Academic Year: {reg.academicYear}</p>
-                        
+
                         <div className="flex flex-wrap gap-2 relative z-10">
                           <button
                             onClick={() => {
@@ -2321,13 +2503,13 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     onChange={(e) => setNewCourseData({ ...newCourseData, category: e.target.value })}
                     className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none bg-white"
                   >
-                    <option value="PC">Professional Core (PC)</option>
-                    <option value="PE">Professional Elective (PE)</option>
-                    <option value="OE">Open Elective (OE)</option>
-                    <option value="BS">Basic Sciences (BS)</option>
-                    <option value="ES">Engineering Sciences (ES)</option>
-                    <option value="HS">Humanities & Social Sciences (HS)</option>
-                    <option value="MC">Mandatory Course (MC)</option>
+                    {courseCategories.length > 0 ? (
+                      courseCategories.map((c) => (
+                        <option key={c._id} value={c.code}>{c.name}</option>
+                      ))
+                    ) : (
+                      <option value="PC">Professional Core (PC)</option>
+                    )}
                   </select>
                 </div>
               </div>
@@ -2380,10 +2562,11 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                       type="number"
                       value={newCourseData.L}
                       onChange={(e) => {
-                        const lVal = parseInt(e.target.value) || 0;
-                        const cVal = lVal + (newCourseData.T) + (newCourseData.P / 2) + (newCourseData.S);
+                        const lVal = parseFloat(e.target.value) || 0;
+                        const cVal = lVal + (newCourseData.T) + (newCourseData.P) + (newCourseData.S);
                         setNewCourseData({ ...newCourseData, L: lVal, credits: cVal });
                       }}
+                      step="0.5"
                       className="w-full text-center border border-slate-300 rounded p-1.5 text-slate-700 bg-white"
                     />
                   </div>
@@ -2393,10 +2576,11 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                       type="number"
                       value={newCourseData.T}
                       onChange={(e) => {
-                        const tVal = parseInt(e.target.value) || 0;
-                        const cVal = (newCourseData.L) + tVal + (newCourseData.P / 2) + (newCourseData.S);
+                        const tVal = parseFloat(e.target.value) || 0;
+                        const cVal = (newCourseData.L) + tVal + (newCourseData.P) + (newCourseData.S);
                         setNewCourseData({ ...newCourseData, T: tVal, credits: cVal });
                       }}
+                      step="0.5"
                       className="w-full text-center border border-slate-300 rounded p-1.5 text-slate-700 bg-white"
                     />
                   </div>
@@ -2406,10 +2590,11 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                       type="number"
                       value={newCourseData.P}
                       onChange={(e) => {
-                        const pVal = parseInt(e.target.value) || 0;
-                        const cVal = (newCourseData.L) + (newCourseData.T) + (pVal / 2) + (newCourseData.S);
+                        const pVal = parseFloat(e.target.value) || 0;
+                        const cVal = (newCourseData.L) + (newCourseData.T) + (pVal) + (newCourseData.S);
                         setNewCourseData({ ...newCourseData, P: pVal, credits: cVal });
                       }}
+                      step="0.5"
                       className="w-full text-center border border-slate-300 rounded p-1.5 text-slate-700 bg-white"
                     />
                   </div>
@@ -2419,10 +2604,11 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                       type="number"
                       value={newCourseData.S}
                       onChange={(e) => {
-                        const sVal = parseInt(e.target.value) || 0;
-                        const cVal = (newCourseData.L) + (newCourseData.T) + (newCourseData.P / 2) + sVal;
+                        const sVal = parseFloat(e.target.value) || 0;
+                        const cVal = (newCourseData.L) + (newCourseData.T) + (newCourseData.P) + sVal;
                         setNewCourseData({ ...newCourseData, S: sVal, credits: cVal });
                       }}
+                      step="0.5"
                       className="w-full text-center border border-slate-300 rounded p-1.5 text-slate-700 bg-white"
                     />
                   </div>
@@ -2431,7 +2617,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     <input
                       type="number"
                       value={newCourseData.credits}
-                      onChange={(e) => setNewCourseData({ ...newCourseData, credits: parseInt(e.target.value) || 0 })}
+                      onChange={(e) => setNewCourseData({ ...newCourseData, credits: parseFloat(e.target.value) || 0 })}
+                      step="0.5"
                       className="w-full text-center border border-teal-300 font-bold bg-teal-50 rounded p-1.5 text-teal-850"
                     />
                   </div>
@@ -2647,9 +2834,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
             <div className="p-6 space-y-4 text-xs font-bold text-slate-500 text-center">
               <p className="text-slate-400 font-semibold mb-2">Upload curriculum metadata via CSV. Headers should match: Course Code, Course Title, Category, Semester, etc.</p>
               <label className="border-2 border-dashed border-slate-300 rounded-xl p-8 hover:border-teal-700 transition-colors flex flex-col items-center gap-2 cursor-pointer bg-slate-50 relative">
-                <input 
-                  type="file" 
-                  accept=".csv" 
+                <input
+                  type="file"
+                  accept=".csv"
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   onChange={(e) => setBulkFile(e.target.files?.[0] || null)}
                 />
@@ -2697,8 +2884,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                   <input
                     type="text"
                     value={editCourseData.title}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-400 font-semibold outline-none bg-slate-50"
-                    disabled
+                    onChange={(e) => setEditCourseData({ ...editCourseData, title: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none bg-white"
                   />
                 </div>
                 <div className="space-y-1">
@@ -2706,12 +2893,12 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                   <input
                     type="text"
                     value={editCourseData.code}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-400 font-semibold outline-none bg-slate-50"
-                    disabled
+                    onChange={(e) => setEditCourseData({ ...editCourseData, code: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none bg-white"
                   />
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <span>Program</span>
@@ -2745,13 +2932,13 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     onChange={(e) => setEditCourseData({ ...editCourseData, category: e.target.value })}
                     className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none bg-white"
                   >
-                    <option value="PC">Professional Core (PC)</option>
-                    <option value="PE">Professional Elective (PE)</option>
-                    <option value="OE">Open Elective (OE)</option>
-                    <option value="BS">Basic Sciences (BS)</option>
-                    <option value="ES">Engineering Sciences (ES)</option>
-                    <option value="HS">Humanities & Social Sciences (HS)</option>
-                    <option value="MC">Mandatory Course (MC)</option>
+                    {courseCategories.length > 0 ? (
+                      courseCategories.map((c) => (
+                        <option key={c._id} value={c.code}>{c.name}</option>
+                      ))
+                    ) : (
+                      <option value="PC">Professional Core (PC)</option>
+                    )}
                   </select>
                 </div>
               </div>
@@ -2804,10 +2991,11 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                       type="number"
                       value={editCourseData.L}
                       onChange={(e) => {
-                        const lVal = parseInt(e.target.value) || 0;
-                        const cVal = lVal + (editCourseData.T) + (editCourseData.P / 2) + (editCourseData.S);
+                        const lVal = parseFloat(e.target.value) || 0;
+                        const cVal = lVal + (editCourseData.T) + (editCourseData.P) + (editCourseData.S);
                         setEditCourseData({ ...editCourseData, L: lVal, C: cVal });
                       }}
+                      step="0.5"
                       className="w-full text-center border border-slate-300 rounded p-1.5 text-slate-700 bg-white"
                     />
                   </div>
@@ -2817,10 +3005,11 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                       type="number"
                       value={editCourseData.T}
                       onChange={(e) => {
-                        const tVal = parseInt(e.target.value) || 0;
-                        const cVal = (editCourseData.L) + tVal + (editCourseData.P / 2) + (editCourseData.S);
+                        const tVal = parseFloat(e.target.value) || 0;
+                        const cVal = (editCourseData.L) + tVal + (editCourseData.P) + (editCourseData.S);
                         setEditCourseData({ ...editCourseData, T: tVal, C: cVal });
                       }}
+                      step="0.5"
                       className="w-full text-center border border-slate-300 rounded p-1.5 text-slate-700 bg-white"
                     />
                   </div>
@@ -2830,10 +3019,11 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                       type="number"
                       value={editCourseData.P}
                       onChange={(e) => {
-                        const pVal = parseInt(e.target.value) || 0;
-                        const cVal = (editCourseData.L) + (editCourseData.T) + (pVal / 2) + (editCourseData.S);
+                        const pVal = parseFloat(e.target.value) || 0;
+                        const cVal = (editCourseData.L) + (editCourseData.T) + (pVal) + (editCourseData.S);
                         setEditCourseData({ ...editCourseData, P: pVal, C: cVal });
                       }}
+                      step="0.5"
                       className="w-full text-center border border-slate-300 rounded p-1.5 text-slate-700 bg-white"
                     />
                   </div>
@@ -2843,10 +3033,11 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                       type="number"
                       value={editCourseData.S}
                       onChange={(e) => {
-                        const sVal = parseInt(e.target.value) || 0;
-                        const cVal = (editCourseData.L) + (editCourseData.T) + (editCourseData.P / 2) + sVal;
+                        const sVal = parseFloat(e.target.value) || 0;
+                        const cVal = (editCourseData.L) + (editCourseData.T) + (editCourseData.P) + sVal;
                         setEditCourseData({ ...editCourseData, S: sVal, C: cVal });
                       }}
+                      step="0.5"
                       className="w-full text-center border border-slate-300 rounded p-1.5 text-slate-700 bg-white"
                     />
                   </div>
@@ -2855,7 +3046,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     <input
                       type="number"
                       value={editCourseData.C}
-                      onChange={(e) => setEditCourseData({ ...editCourseData, C: parseInt(e.target.value) || 0 })}
+                      onChange={(e) => setEditCourseData({ ...editCourseData, C: parseFloat(e.target.value) || 0 })}
+                      step="0.5"
                       className="w-full text-center border border-teal-300 font-bold bg-teal-50 rounded p-1.5 text-teal-850"
                     />
                   </div>

@@ -10,6 +10,7 @@ import CourseVersion from '../models/CourseVersion.js';
 import Regulation from '../models/Regulation.js';
 import MinorStream from '../models/MinorStream.js';
 import Course from '../models/Course.js';
+import CourseCategory from '../models/CourseCategory.js';
 
 const STATUS_VALUES = ['Draft', 'Published', 'Archived'];
 const GENERATED_DIR = path.resolve('uploads', 'generated');
@@ -170,7 +171,9 @@ const getDynamicCurriculumContext = async (book) => {
         .sort({ name: 1 }).lean()
     : [];
 
-  return { regulation, courses, minorStreams };
+  const dbCategories = await CourseCategory.find().lean();
+
+  return { regulation, courses, minorStreams, dbCategories };
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -211,8 +214,7 @@ const getCourseLevelCode = (version) => {
   return 'FC'; // Foundation / default
 };
 
-const getCategoryCreditTotal = (categoryTotals, code) =>
-  code === 'MSC/UEC' ? (categoryTotals.MSC || 0) + (categoryTotals.UEC || 0) : (categoryTotals[code] || 0);
+const getCategoryCreditTotal = (categoryTotals, code) => categoryTotals[code] || 0;
 
 const legacyUnitToHtml = (unit = {}) => {
   const parts = [];
@@ -293,6 +295,7 @@ const renderCoursePageHtml = (version, departmentName) => {
   const L = version.credits?.L ?? 0;
   const T = version.credits?.T ?? 0;
   const P = version.credits?.P ?? 0;
+  const S = version.credits?.S ?? 0;
   const C = version.credits?.C ?? 0;
 
   // CO-PO Mapping table
@@ -388,8 +391,8 @@ const renderCoursePageHtml = (version, departmentName) => {
       <div class="cp-meta-row">
         <div class="cp-code-block"><strong>Course Code:</strong> ${courseCode}</div>
         <table class="cp-ltpc">
-          <thead><tr><th>L</th><th>T</th><th>P</th><th>C</th></tr></thead>
-          <tbody><tr><td>${L}</td><td>${T}</td><td>${P}</td><td>${C}</td></tr></tbody>
+          <thead><tr><th>L</th><th>T</th><th>P</th><th>S</th><th>C</th></tr></thead>
+          <tbody><tr><td>${L}</td><td>${T}</td><td>${P}</td><td>${S}</td><td>${C}</td></tr></tbody>
         </table>
       </div>
       ${outcomes.length > 0 ? `
@@ -419,38 +422,46 @@ const renderCoursePageHtml = (version, departmentName) => {
 // ─────────────────────────────────────────────────────────────────────────────
 //  CREDIT DIVISION TABLE — EXACT MATCH OF PDF PAGE 3
 // ─────────────────────────────────────────────────────────────────────────────
-const CREDIT_CATEGORY_ROWS = [
-  { code: 'MCC',     name: 'Major Core Courses (MCC)',                                           ugc: '80' },
-  { code: 'MSC/UEC', name: 'Minor Stream Courses (MSC) (or) University Open Elective Courses (UEC)', ugc: '32' },
-  { code: 'MDC',     name: 'Multidisciplinary Courses (MDC)',                                    ugc: '9' },
-  { code: 'AEC',     name: 'Ability Enhancement Courses (AEC)',                                  ugc: '8' },
-  { code: 'SEC',     name: 'Skill Enhancement Courses (SEC)',                                    ugc: '9' },
-  { code: 'VAC',     name: 'Value Added Courses (VAC)',                                          ugc: '6-8' },
-  { code: 'SI',      name: 'Summer Internships (SI)',                                            ugc: '2-4' },
-  { code: 'PROJ',    name: 'Full Semester Internship (PROJ)',                                    ugc: '12' },
-  { code: 'MC',      name: 'Mandatory Courses (MC)',                                             ugc: '' },
-];
+const CATEGORY_NAMES = {
+  'PC': 'Professional Core Courses (PC)',
+  'PE': 'Professional Elective Courses (PE)',
+  'OE': 'Open Elective Courses (OE)',
+  'BS': 'Basic Science Courses (BS)',
+  'ES': 'Engineering Science Courses (ES)',
+  'HS': 'Humanities and Social Sciences (HS)',
+  'MC': 'Mandatory Courses (MC)',
+  'MCC': 'Major Core Courses (MCC)',
+  'MDC': 'Multidisciplinary Courses (MDC)',
+  'AEC': 'Ability Enhancement Courses (AEC)',
+  'SEC': 'Skill Enhancement Courses (SEC)',
+  'VAC': 'Value Added Courses (VAC)',
+  'MSC': 'Minor Stream Courses (MSC)',
+  'UEC': 'University Open Elective Courses (UEC)',
+  'SI': 'Summer Internships (SI)',
+  'PROJ': 'Full Semester Internship (PROJ)'
+};
 
-const COURSE_CATEGORY_ROWS = [
-  { code: 'MCC',  title: 'Major Core Courses (MCC)' },
-  { code: 'MDC',  title: 'Multidisciplinary Courses (MDC)' },
-  { code: 'AEC',  title: 'Ability Enhancement Courses (AEC)' },
-  { code: 'SEC',  title: 'Skill Enhancement Courses (SEC)' },
-  { code: 'VAC',  title: 'Value Added Courses (VAC)' },
-  { code: 'SI',   title: 'Summer Internships (SI)' },
-  { code: 'PROJ', title: 'Full Semester Internship (PROJ)' },
-  { code: 'MC',   title: 'Mandatory Courses (MC)' },
-  { code: 'MSC',  title: 'Minor Stream Courses (MSC)' },
-  { code: 'UEC',  title: 'University Open Elective Courses (UEC)' },
-];
+const CATEGORY_UGC = {
+  'MCC': '80',
+  'MSC/UEC': '32',
+  'MSC': '32',
+  'UEC': '32',
+  'MDC': '9',
+  'AEC': '8',
+  'SEC': '9',
+  'VAC': '6-8',
+  'SI': '2-4',
+  'PROJ': '12',
+  'MC': ''
+};
 
 const renderCategoryTable = (title, rows) => {
   if (!rows.length) return '';
   const totals = rows.reduce((acc, v) => {
     acc.L += v.credits?.L || 0; acc.T += v.credits?.T || 0;
-    acc.P += v.credits?.P || 0; acc.C += v.credits?.C || 0;
+    acc.P += v.credits?.P || 0; acc.S += v.credits?.S || 0; acc.C += v.credits?.C || 0;
     return acc;
-  }, { L: 0, T: 0, P: 0, C: 0 });
+  }, { L: 0, T: 0, P: 0, S: 0, C: 0 });
 
   return `
     <div class="struct-table-block">
@@ -459,7 +470,7 @@ const renderCategoryTable = (title, rows) => {
         <thead>
           <tr>
             <th>Course Code</th><th>Course Name</th><th>Level</th>
-            <th>L</th><th>T</th><th>P</th><th>C</th>
+            <th>L</th><th>T</th><th>P</th><th>S</th><th>C</th>
             <th>CIE</th><th>SEE</th><th>Total</th><th>Pre-requisite</th>
           </tr>
         </thead>
@@ -470,7 +481,7 @@ const renderCategoryTable = (title, rows) => {
               <td class="ta-l">${escHtml(v.courseId?.title || '-')}</td>
               <td>${getCourseLevelCode(v)}</td>
               <td>${v.credits?.L || ''}</td><td>${v.credits?.T || ''}</td>
-              <td>${v.credits?.P || ''}</td><td>${v.credits?.C || ''}</td>
+              <td>${v.credits?.P || ''}</td><td>${v.credits?.S || ''}</td><td>${v.credits?.C || ''}</td>
               <td>${v.cieSee?.cieMaxMarks || 50}</td>
               <td>${v.cieSee?.seeMaxMarks || 50}</td>
               <td>${(v.cieSee?.cieMaxMarks || 50) + (v.cieSee?.seeMaxMarks || 50)}</td>
@@ -482,6 +493,7 @@ const renderCategoryTable = (title, rows) => {
             <td><strong>${totals.L || ''}</strong></td>
             <td><strong>${totals.T || ''}</strong></td>
             <td><strong>${totals.P || ''}</strong></td>
+            <td><strong>${totals.S || ''}</strong></td>
             <td><strong>${totals.C || ''}</strong></td>
             <td colspan="4"></td>
           </tr>
@@ -509,6 +521,18 @@ const buildDynamicCurriculumHtml = (book, dynamicContext) => {
   }, {});
   const grandTotal = Object.values(categoryTotals).reduce((sum, v) => sum + v, 0);
 
+  const dbCategories = dynamicContext?.dbCategories || [];
+  const dynamicCategoryRows = dbCategories.map(cat => ({
+    code: cat.code,
+    name: cat.name,
+    ugc: cat.ugc || '-'
+  }));
+
+  const getRowCredits = (code) => {
+    if (code === 'MSC/UEC') return (categoryTotals['MSC'] || 0) + (categoryTotals['UEC'] || 0);
+    return categoryTotals[code] || 0;
+  };
+
   // FC / IC / AC counts
   const fcCourses = courses.filter(v => getCourseLevelCode(v) === 'FC');
   const icCourses = courses.filter(v => getCourseLevelCode(v) === 'IC');
@@ -531,12 +555,12 @@ const buildDynamicCurriculumHtml = (book, dynamicContext) => {
           <tr><th>S.No</th><th>Broad Category of Course</th><th>UGC</th><th>Credits</th></tr>
         </thead>
         <tbody>
-          ${CREDIT_CATEGORY_ROWS.map((row, i) => `
+          ${dynamicCategoryRows.map((row, i) => `
             <tr>
               <td>${i + 1}</td>
-              <td class="ta-l">${escHtml(row.name)}</td>
+              <td class="ta-l">${escHtml(row.name).replace(/\\n/g, '<br>')}</td>
               <td>${escHtml(row.ugc)}</td>
-              <td>${getCategoryCreditTotal(categoryTotals, row.code) || ''}</td>
+              <td>${getRowCredits(row.code)}</td>
             </tr>
           `).join('')}
           <tr class="total-row">
@@ -549,10 +573,10 @@ const buildDynamicCurriculumHtml = (book, dynamicContext) => {
     </section>
   `;
 
-  // ── Page: Category-wise Course Tables (MCC, MDC, AEC, SEC, VAC, SI, PROJ, MC, MSC, UEC) ──
+  // ── Page: Category-wise Course Tables (Dynamic) ──
   const categoryTablesPage = `
     <section class="dyn-page page-break">
-      ${COURSE_CATEGORY_ROWS.map(row => renderCategoryTable(row.title, courses.filter(v => v.category === row.code))).join('')}
+      ${dynamicCategoryRows.map(row => renderCategoryTable(row.name, courses.filter(v => (v.category || 'MCC') === row.code))).join('')}
     </section>
   `;
 
@@ -567,9 +591,9 @@ const buildDynamicCurriculumHtml = (book, dynamicContext) => {
         if (!semCourses.length) return '';
         const totals = semCourses.reduce((acc, v) => {
           acc.L += v.credits?.L || 0; acc.T += v.credits?.T || 0;
-          acc.P += v.credits?.P || 0; acc.C += v.credits?.C || 0;
+          acc.P += v.credits?.P || 0; acc.S += v.credits?.S || 0; acc.C += v.credits?.C || 0;
           return acc;
-        }, { L: 0, T: 0, P: 0, C: 0 });
+        }, { L: 0, T: 0, P: 0, S: 0, C: 0 });
         return `
           <div class="sem-block">
             <h3 class="sem-title">${ROMAN[i] || semNum} SEMESTER</h3>
@@ -584,7 +608,7 @@ const buildDynamicCurriculumHtml = (book, dynamicContext) => {
                 <tr class="sem-subhdr">
                   <th></th><th></th>
                   <th>Category</th><th>Level</th>
-                  <th>L</th><th>T</th><th>P</th><th>Total</th><th></th>
+                  <th>L</th><th>T</th><th>P</th><th>S</th><th>Total</th><th></th>
                 </tr>
               </thead>
               <tbody>
@@ -592,15 +616,16 @@ const buildDynamicCurriculumHtml = (book, dynamicContext) => {
                   const l = v.credits?.L || 0;
                   const t = v.credits?.T || 0;
                   const p = v.credits?.P || 0;
+                  const s = v.credits?.S || 0;
                   const c = v.credits?.C || 0;
-                  const hours = l + t + (p > 0 ? Math.max(p, 1) : 0);
+                  const hours = l + t + (p > 0 ? Math.max(p, 1) : 0) + (s > 0 ? Math.max(s, 1) : 0);
                   return `
                     <tr>
                       <td>${escHtml(v.courseId?.code || '-')}</td>
                       <td class="ta-l">${escHtml(v.courseId?.title || '-')}</td>
                       <td>${escHtml(v.category || '-')}</td>
                       <td>${getCourseLevelCode(v)}</td>
-                      <td>${l || ''}</td><td>${t || ''}</td><td>${p || ''}</td><td>${c}</td>
+                      <td>${l || ''}</td><td>${t || ''}</td><td>${p || ''}</td><td>${s || ''}</td><td>${c}</td>
                       <td>${hours || c}</td>
                     </tr>
                   `;
@@ -610,6 +635,7 @@ const buildDynamicCurriculumHtml = (book, dynamicContext) => {
                   <td><strong>${totals.L || ''}</strong></td>
                   <td><strong>${totals.T || ''}</strong></td>
                   <td><strong>${totals.P || ''}</strong></td>
+                  <td><strong>${totals.S || ''}</strong></td>
                   <td><strong>${totals.C}</strong></td>
                   <td></td>
                 </tr>
@@ -635,7 +661,7 @@ const buildDynamicCurriculumHtml = (book, dynamicContext) => {
               <thead>
                 <tr>
                   <th>Course Code</th><th>Course Name</th><th>Level</th>
-                  <th>L</th><th>T</th><th>P</th><th>C</th>
+                  <th>L</th><th>T</th><th>P</th><th>S</th><th>C</th>
                   <th>CIE</th><th>SEE</th><th>Total</th><th>Pre-requisite</th>
                 </tr>
               </thead>
@@ -645,7 +671,7 @@ const buildDynamicCurriculumHtml = (book, dynamicContext) => {
                     <td>${escHtml(c.code || '-')}</td>
                     <td class="ta-l">${escHtml(c.title || '-')}</td>
                     <td>-</td>
-                    <td></td><td></td><td></td><td></td>
+                    <td></td><td></td><td></td><td></td><td></td>
                     <td>50</td><td>50</td><td>100</td>
                     <td>-</td>
                   </tr>
@@ -721,23 +747,6 @@ const buildPdfReadyHtml = (book, sections, dynamicContext = {}) => {
   .cover-university { font-size: 11pt; font-weight: 600; margin-top: 2mm; }
 
   /* ── HEADER / FOOTER ── */
-  .print-wrapper { width: 100%; border-collapse: collapse; border: none; }
-  thead.print-header { display: table-header-group; }
-  tfoot.print-footer { display: table-footer-group; }
-  .page-header { 
-    height: 18mm; display: flex; justify-content: space-between; align-items: flex-start;
-    padding: 5mm 18mm 0;
-  }
-  .page-header-dept { font-size: 8.5pt; font-weight: 600; color: #374151; line-height: 1.3; max-width: 130mm; }
-  .page-header-logo { height: 14mm; width: auto; display: block; }
-  .page-footer {
-    height: 14mm; display: flex; flex-direction: column; justify-content: flex-end;
-  }
-  .footer-bar {
-    border-top: 1px solid #374151; padding: 2.5mm 18mm 2mm;
-    display: flex; justify-content: space-between;
-    font-size: 9pt; color: #374151; font-weight: 500;
-  }
   .page-content { padding: 4mm 18mm 0; min-height: 240mm; }
 
   /* ── SECTION HEADINGS ── */
@@ -875,14 +884,39 @@ const buildPdfReadyHtml = (book, sections, dynamicContext = {}) => {
   .ta-l { text-align: left !important; }
   .total-row td { background: #f9fafb; }
 
-  /* ── PRINT ── */
+  /* ── BROWSER PRINT HEADERS ── */
+  .browser-print-header, .browser-print-footer { display: none; }
   @media print {
     html, body { background: #fff; }
     .book { width: 100%; margin: 0; box-shadow: none; }
+    
+    body:not(.is-puppeteer) .browser-print-header {
+      display: flex; position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      justify-content: space-between; align-items: flex-start; padding: 5mm 18mm 0; background: white;
+    }
+    body:not(.is-puppeteer) .browser-print-footer {
+      display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;
+      justify-content: space-between; padding: 2.5mm 18mm 2mm; background: white; border-top: 1px solid #374151;
+      font-size: 9pt; color: #374151; font-weight: 500;
+    }
+    body:not(.is-puppeteer) .page-content {
+      padding-top: 5mm;
+    }
   }
 </style>
 </head>
 <body>
+<div class="browser-print-header">
+  <div style="font-size: 8.5pt; font-weight: 600; color: #374151; line-height: 1.3; max-width: 130mm;">
+    <strong>Department of ${escHtml(departmentName)}</strong><br>
+    B.Tech Program Curriculum-${escHtml(regulation.replace('R', '20'))} (Applicable for batches admitted from A.Y. ${escHtml(academicYear)})
+  </div>
+  ${logoSrc ? `<img src="${logoSrc}" style="height: 14mm; width: auto; display: block;" />` : ''}
+</div>
+<div class="browser-print-footer">
+  <span>B.Tech (${escHtml(departmentName)}) Curriculum-${escHtml(academicYear)}</span>
+  <span>Aditya University</span>
+</div>
 <main class="book">
 
   <!-- ── COVER PAGE ── -->
@@ -904,38 +938,10 @@ const buildPdfReadyHtml = (book, sections, dynamicContext = {}) => {
     </div>
   </div>
 
-  <!-- ── PRINT WRAPPER WITH REPEATING HEADER/FOOTER ── -->
-  <table class="print-wrapper">
-    <thead class="print-header">
-      <tr><td>
-        <div class="page-header">
-          <div class="page-header-dept">
-            <strong>Department of ${escHtml(departmentName)}</strong><br>
-            B.Tech Program Curriculum-${escHtml(regulation.replace('R', '20'))} (Applicable for batches admitted from A.Y. ${escHtml(academicYear)})
-          </div>
-          ${logoSrc ? `<img src="${logoSrc}" alt="Aditya University" class="page-header-logo" />` : ''}
-        </div>
-      </td></tr>
-    </thead>
-    <tbody>
-      <tr><td>
-        <div class="page-content">
-          ${sections.map(sectionToHtml).join('\n')}
-          ${dynamicHtml}
-        </div>
-      </td></tr>
-    </tbody>
-    <tfoot class="print-footer">
-      <tr><td>
-        <div class="page-footer">
-          <div class="footer-bar">
-            <span>B.Tech (${escHtml(departmentName)}) Curriculum-${escHtml(academicYear)}</span>
-            <span>Aditya University</span>
-          </div>
-        </div>
-      </td></tr>
-    </tfoot>
-  </table>
+  <div class="page-content">
+    ${sections.map(sectionToHtml).join('\n')}
+    ${dynamicHtml}
+  </div>
 
 </main>
 </body>
@@ -1237,18 +1243,27 @@ export const exportPdf = async (req, res, next) => {
     });
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.evaluate(() => document.body.classList.add('is-puppeteer'));
     await page.pdf({
       path: pdfPath,
       format: 'A4',
       printBackground: true,
-      margin: { top: '18mm', right: '15mm', bottom: '14mm', left: '15mm' },
+      margin: { top: '24mm', right: '15mm', bottom: '20mm', left: '15mm' },
       displayHeaderFooter: true,
-      headerTemplate: '<div></div>',
+      headerTemplate: `
+        <div style="font-family:'Times New Roman',serif; width:100%; display:flex; justify-content:space-between; align-items:flex-start; padding:0 15mm; background:white; -webkit-print-color-adjust: exact;">
+          <div style="font-size:8.5pt; font-weight:600; color:#374151; line-height:1.3; max-width:130mm;">
+            <strong style="color:black;">Department of ${book.departmentId?.name || 'Computer Science and Engineering'}</strong><br>
+            <span style="color:black;">B.Tech Program Curriculum-${(book.regulation || 'R24').replace('R', '20')} (Applicable for batches admitted from A.Y. ${book.academicYear || '2024-25'})</span>
+          </div>
+          ${getLogoBase64() ? `<img src="${getLogoBase64()}" style="height:12mm; width:auto; display:block;" />` : ''}
+        </div>
+      `,
       footerTemplate: `
         <div style="font-family:'Times New Roman',serif; font-size:9pt; width:100%; padding:0 15mm; display:flex; justify-content:space-between; color:#374151; border-top:1px solid #374151;">
-          <span>B.Tech (${book.departmentId?.name || 'CSE'}) Curriculum-${book.academicYear || '2024-25'}</span>
-          <span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
-          <span>Aditya University</span>
+          <span style="color:black;">B.Tech (${book.departmentId?.code || 'CSE'}) Curriculum-${book.academicYear || '2024-25'}</span>
+          <span style="color:black;">Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
+          <span style="color:black;">Aditya University</span>
         </div>
       `,
     });

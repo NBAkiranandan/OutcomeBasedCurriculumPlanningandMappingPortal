@@ -61,7 +61,8 @@ export const courseSchema = z.object({
   title: z.string().min(3, { message: 'Course title must be at least 3 characters' }),
   departmentId: z.string().regex(/^[0-9a-fA-F]{24}$/, { message: 'Invalid department ID reference' }),
   regulationId: z.string().regex(/^[0-9a-fA-F]{24}$/, { message: 'Invalid regulation ID reference' }),
-  semester: z.number().int().min(1).max(12, { message: 'Semester must be between 1 and 12' })
+  semester: z.number().int().min(1).max(12, { message: 'Semester must be between 1 and 12' }),
+  category: z.string().optional()
 });
 
 // Assign Coordinator Schema
@@ -72,6 +73,8 @@ export const assignCoordinatorSchema = z.object({
 
 // CourseVersion Syllabus & Mapping Update Schema (Draft/Coordinator saving)
 export const updateCourseVersionSchema = z.object({
+  title: z.string().optional(),
+  code: z.string().optional(),
   credits: z.object({
     L: z.number().int().min(0).max(10),
     T: z.number().int().min(0).max(10),
@@ -79,7 +82,7 @@ export const updateCourseVersionSchema = z.object({
     S: z.number().int().min(0).max(10),
     C: z.number().int().min(0).max(15)
   }).optional(),
-  category: z.enum(['PC', 'PE', 'OE', 'BS', 'ES', 'HS', 'MC', 'MCC', 'MDC', 'AEC', 'SEC', 'VAC', 'MSC', 'UEC', 'SI', 'PROJ']).optional(),
+  category: z.string().optional(),
   level: z.enum(['Foundation', 'Intermediate', 'Advanced']).optional(),
   knowledgeLevel: z.string().optional(),
   objectives: z.array(z.string()).optional(),

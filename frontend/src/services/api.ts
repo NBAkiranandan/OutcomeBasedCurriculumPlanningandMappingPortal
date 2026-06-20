@@ -242,6 +242,12 @@ export const api = {
     update: (id: string, body: any) => apiRequest(`/api/course-assignments/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
     delete: (id: string) => apiRequest(`/api/course-assignments/${id}`, { method: 'DELETE' })
   },
+  courseCategories: {
+    list: () => apiRequest('/api/course-categories'),
+    create: (body: any) => apiRequest('/api/course-categories', { method: 'POST', body: JSON.stringify(body) }),
+    update: (id: string, body: any) => apiRequest(`/api/course-categories/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+    delete: (id: string) => apiRequest(`/api/course-categories/${id}`, { method: 'DELETE' })
+  },
   curriculumBooks: {
     list: (params: any = {}) => {
       const qs = new URLSearchParams(params).toString();

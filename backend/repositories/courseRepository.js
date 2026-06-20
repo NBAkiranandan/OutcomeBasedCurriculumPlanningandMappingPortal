@@ -23,6 +23,10 @@ export const createCourse = async (courseData) => {
   return course.save();
 };
 
+export const updateCourseById = async (id, updateData) => {
+  return Course.findByIdAndUpdate(id, { $set: updateData }, { new: true, runValidators: true });
+};
+
 // Regulation Centric CourseVersion Repository
 export const findVersionById = async (versionId) => {
   return CourseVersion.findById(versionId)

@@ -208,7 +208,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         <button type="button" onClick={() => editor.chain().focus().deleteTable().run()} className={btnClass(false)} title="Delete Table"><Trash2 size={16} className="text-red-500" /></button>
       </div>
       <div className="p-4 flex-grow overflow-auto" style={{ minHeight }}>
-        <EditorContent editor={editor} className="prose max-w-none [&_.tiptap]:outline-none [&_.tiptap]:min-h-[150px] [&_table]:border-collapse [&_table]:w-full [&_td]:border [&_td]:border-slate-300 [&_td]:p-2 [&_th]:border [&_th]:border-slate-400 [&_th]:bg-slate-100 [&_th]:p-2 [&_th]:font-bold [&_p]:m-0 [&_ul]:pl-5 [&_ol]:pl-5 [&_li>p]:m-0" />
+        <EditorContent editor={editor} className="prose max-w-none [&_.tiptap]:outline-none [&_.tiptap]:min-h-[150px] [&_.tiptap]:whitespace-pre-wrap [&_.tiptap]:text-justify [&_table]:border-collapse [&_table]:w-full [&_td]:border [&_td]:border-slate-300 [&_td]:p-2 [&_th]:border [&_th]:border-slate-400 [&_th]:bg-slate-100 [&_th]:p-2 [&_th]:font-bold [&_p]:m-0 [&_ul]:pl-5 [&_ol]:pl-5 [&_li>p]:m-0" />
       </div>
     </div>
   );

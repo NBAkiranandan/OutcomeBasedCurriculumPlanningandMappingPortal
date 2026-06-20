@@ -51,7 +51,6 @@ const CourseVersionSchema = new mongoose.Schema({
   },
   category: { 
     type: String, 
-    enum: ['PC', 'PE', 'OE', 'BS', 'ES', 'HS', 'MC', 'MCC', 'MDC', 'AEC', 'SEC', 'VAC', 'MSC', 'UEC', 'SI', 'PROJ'], 
     default: 'PC' 
   }, // PC = Professional Core, etc.
   level: { 

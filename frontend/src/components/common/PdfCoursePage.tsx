@@ -214,6 +214,7 @@ export const PdfCoursePageStyles = () => (
     .obcp-pdf-unit-content ol,
     .obcp-pdf-reference-list p {
       margin: 0 0 1.6mm;
+      white-space: pre-wrap;
     }
     .obcp-pdf-unit-content h1,
     .obcp-pdf-unit-content h2,
@@ -299,13 +300,14 @@ export const PdfCoursePage: React.FC<PdfCoursePageProps> = ({
         </div>
         <table className="obcp-pdf-ltpc" aria-label="LTPC credits">
           <thead>
-            <tr><th>L</th><th>T</th><th>P</th><th>C</th></tr>
+            <tr><th>L</th><th>T</th><th>P</th><th>S</th><th>C</th></tr>
           </thead>
           <tbody>
             <tr>
               <td>{courseVersion?.credits?.L ?? 0}</td>
               <td>{courseVersion?.credits?.T ?? 0}</td>
               <td>{courseVersion?.credits?.P ?? 0}</td>
+              <td>{courseVersion?.credits?.S ?? 0}</td>
               <td>{courseVersion?.credits?.C ?? 0}</td>
             </tr>
           </tbody>

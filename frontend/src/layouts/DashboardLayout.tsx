@@ -143,6 +143,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
         return [
           { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
           { id: 'peo-pso', name: 'PEO & PSO Management', icon: Award },
+          { id: 'course-categories', name: 'Course Types', icon: Layers },
           { id: 'courses', name: 'Course Repository', icon: Database },
           { id: 'curriculum', name: 'Curriculum Manager', icon: BookMarked },
           { id: 'faculty-management', name: 'Faculty Assignment', icon: Users },

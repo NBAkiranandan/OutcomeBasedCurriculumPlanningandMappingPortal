@@ -21,6 +21,7 @@ import curriculumRoutes from './routes/curriculumRoutes.js';
 import curriculumBookRoutes from './routes/curriculumBookRoutes.js';
 import minorStreamRoutes from './routes/minorStreamRoutes.js';
 import prerequisiteRoutes from './routes/prerequisiteRoutes.js';
+import courseCategoryRoutes from './routes/courseCategoryRoutes.js';
 import courseAssignmentRoutes from './routes/courseAssignmentRoutes.js';
 
 dotenv.config();
@@ -80,6 +81,7 @@ app.use('/api/curriculum', curriculumRoutes);
 app.use('/api/curriculum-books', curriculumBookRoutes);
 app.use('/api/minor-streams', minorStreamRoutes);
 app.use('/api/prerequisites', prerequisiteRoutes);
+app.use('/api/course-categories', courseCategoryRoutes);
 app.use('/api/course-assignments', courseAssignmentRoutes);
 
 // Static file serving
