@@ -96,11 +96,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
         const regRes = await api.regulations.list();
         setRegulations(regRes.regulations);
         if (regRes.regulations.length > 0) {
-          const matchingReg = regRes.regulations.find((r: any) => {
-            const rDeptId = typeof r.departmentId === 'object' && r.departmentId ? r.departmentId._id : r.departmentId;
-            return rDeptId === (user?.department?.id || deptRes.departments[0]?._id);
-          });
-          setSelectedRegulation(matchingReg || regRes.regulations[0]);
+          setSelectedRegulation(regRes.regulations[0]);
         }
       } catch (err) {
         console.error('[Layout] Failed to load academic context', err);
@@ -109,18 +105,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
     if (user) fetchContext();
   }, [user]);
 
-  // Sync regulation when department changes
-  useEffect(() => {
-    if (selectedDepartment && regulations.length > 0) {
-      const matchingReg = regulations.find((r: any) => {
-        const rDeptId = typeof r.departmentId === 'object' ? r.departmentId._id : r.departmentId;
-        return rDeptId === selectedDepartment._id;
-      });
-      if (matchingReg && matchingReg._id !== selectedRegulation?._id) {
-        setSelectedRegulation(matchingReg);
-      }
-    }
-  }, [selectedDepartment, regulations]);
+
 
   // ── Sidebar navigation config per role ────────────────────────────────
   const getSidebarItems = (): SidebarItem[] => {
@@ -132,7 +117,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
           { id: 'programs', name: 'Programs', icon: Layers },
           { id: 'departments', name: 'Departments', icon: BookOpen },
           { id: 'regulations', name: 'Regulations', icon: Settings },
-          { id: 'po', name: 'PO Management', icon: Award },
+          { id: 'po-management', name: 'PO Management', icon: Award },
           { id: 'users', name: 'User Management', icon: Users },
           { id: 'hod-management', name: 'HOD Management', icon: Users },
           { id: 'curriculum', name: 'Curriculum Manager', icon: BookMarked },
@@ -142,7 +127,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
       case 'HOD':
         return [
           { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
-          { id: 'peo-pso', name: 'PEO & PSO Management', icon: Award },
+          { id: 'local-outcomes', name: 'Local Outcomes', icon: Award },
           { id: 'course-categories', name: 'Course Types', icon: Layers },
           { id: 'courses', name: 'Course Repository', icon: Database },
           { id: 'curriculum', name: 'Curriculum Manager', icon: BookMarked },

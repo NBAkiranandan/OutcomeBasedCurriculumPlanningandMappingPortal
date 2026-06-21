@@ -17,7 +17,7 @@ export const createProgram = async (programData) => {
 
 // Department queries
 export const findAllDepartments = async () => {
-  return Department.find().populate('programId').populate('regulationId').sort({ name: 1 });
+  return Department.find().populate('programId').sort({ name: 1 });
 };
 
 export const findDepartmentsByProgram = async (programId) => {
@@ -25,7 +25,7 @@ export const findDepartmentsByProgram = async (programId) => {
 };
 
 export const findDepartmentById = async (id) => {
-  return Department.findById(id).populate('programId').populate('regulationId');
+  return Department.findById(id).populate('programId');
 };
 
 export const createDepartment = async (deptData) => {
@@ -49,7 +49,7 @@ export const deleteProgram = async (id) => {
 };
 
 export const updateDepartment = async (id, updateData) => {
-  return Department.findByIdAndUpdate(id, updateData, { new: true }).populate('programId').populate('regulationId');
+  return Department.findByIdAndUpdate(id, updateData, { new: true }).populate('programId');
 };
 
 export const deleteDepartment = async (id) => {

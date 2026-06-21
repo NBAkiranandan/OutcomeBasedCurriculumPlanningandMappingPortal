@@ -92,6 +92,8 @@ const getCourseLevelCode = (v) => {
   return 'FC';
 };
 
+const fmtC = (val) => (val === 0 || !val) ? '-' : String(val);
+
 const formatBookEntry = (item) => {
   if (!item) return '';
   if (typeof item === 'string') return item;
@@ -213,11 +215,11 @@ const buildCategoryTable = (title, rows) => {
               dataCell(v.courseId?.code || '-'),
               dataCell(v.courseId?.title || '-', { align: AlignmentType.LEFT }),
               dataCell(getCourseLevelCode(v)),
-              dataCell(String(v.credits?.L || '')),
-              dataCell(String(v.credits?.T || '')),
-              dataCell(String(v.credits?.P || '')),
-              dataCell(String(v.credits?.S || '')),
-              dataCell(String(v.credits?.C || '')),
+              dataCell(fmtC(v.credits?.L)),
+              dataCell(fmtC(v.credits?.T)),
+              dataCell(fmtC(v.credits?.P)),
+              dataCell(fmtC(v.credits?.S)),
+              dataCell(fmtC(v.credits?.C)),
               dataCell(String(cie)),
               dataCell(String(see)),
               dataCell(String(cie + see)),
@@ -228,11 +230,11 @@ const buildCategoryTable = (title, rows) => {
         new TableRow({
           children: [
             new TableCell({ borders: CELL_BORDER, columnSpan: 3, children: [new Paragraph({ children: [boldRun('Total', { size: pt(9) })], alignment: AlignmentType.CENTER })] }),
-            dataCell(String(totals.L || '')),
-            dataCell(String(totals.T || '')),
-            dataCell(String(totals.P || '')),
-            dataCell(String(totals.S || '')),
-            dataCell(String(totals.C || '')),
+            dataCell(fmtC(totals.L)),
+            dataCell(fmtC(totals.T)),
+            dataCell(fmtC(totals.P)),
+            dataCell(fmtC(totals.S)),
+            dataCell(fmtC(totals.C)),
             new TableCell({ borders: CELL_BORDER, columnSpan: 3, children: [new Paragraph({ children: [textRun('')], alignment: AlignmentType.CENTER })] }),
           ],
         }),
@@ -274,21 +276,21 @@ const buildSemesterTable = (semNum, semCourses) => {
             dataCell(v.courseId?.code || '-'),
             dataCell(v.courseId?.title || '-', { align: AlignmentType.LEFT }),
             dataCell(v.category || '-'),
-            dataCell(String(v.credits?.L || '')),
-            dataCell(String(v.credits?.T || '')),
-            dataCell(String(v.credits?.P || '')),
-            dataCell(String(v.credits?.S || '')),
-            dataCell(String(v.credits?.C || '')),
+            dataCell(fmtC(v.credits?.L)),
+            dataCell(fmtC(v.credits?.T)),
+            dataCell(fmtC(v.credits?.P)),
+            dataCell(fmtC(v.credits?.S)),
+            dataCell(fmtC(v.credits?.C)),
           ],
         })),
         new TableRow({
           children: [
             new TableCell({ borders: CELL_BORDER, columnSpan: 3, children: [new Paragraph({ children: [boldRun('Total', { size: pt(9) })], alignment: AlignmentType.CENTER })] }),
-            dataCell(String(totals.L || '')),
-            dataCell(String(totals.T || '')),
-            dataCell(String(totals.P || '')),
-            dataCell(String(totals.S || '')),
-            dataCell(String(totals.C || '')),
+            dataCell(fmtC(totals.L)),
+            dataCell(fmtC(totals.T)),
+            dataCell(fmtC(totals.P)),
+            dataCell(fmtC(totals.S)),
+            dataCell(fmtC(totals.C)),
           ],
         }),
       ],
@@ -300,6 +302,9 @@ const buildSemesterTable = (semNum, semCourses) => {
 /** CO-PO / CO-PSO Mapping Matrix Table */
 const buildMappingTable = (label, outcomes, mappings, columns, mapKey) => {
   if (!outcomes.length || !columns.length) return [];
+
+  const firstColWidth = 15;
+  const otherColWidth = Math.floor(85 / columns.length);
 
   return [
     new Paragraph({
@@ -313,16 +318,16 @@ const buildMappingTable = (label, outcomes, mappings, columns, mapKey) => {
         new TableRow({
           tableHeader: true,
           children: [
-            headerCell(`CO/${mapKey.toUpperCase()}`),
-            ...columns.map(col => headerCell(col)),
+            headerCell(`CO/${mapKey.toUpperCase()}`, 1, { width: { size: firstColWidth, type: WidthType.PERCENTAGE } }),
+            ...columns.map(col => headerCell(col, 1, { width: { size: otherColWidth, type: WidthType.PERCENTAGE } })),
           ],
         }),
         ...outcomes.map(co => {
           const mapping = mappings.find(m => m.coCode === co.coCode)?.[mapKey] || {};
           return new TableRow({
             children: [
-              dataCell(co.coCode),
-              ...columns.map(col => dataCell(getMappingValue(mapping, col))),
+              dataCell(co.coCode, { width: { size: firstColWidth, type: WidthType.PERCENTAGE } }),
+              ...columns.map(col => dataCell(getMappingValue(mapping, col), { width: { size: otherColWidth, type: WidthType.PERCENTAGE } })),
             ],
           });
         }),
@@ -351,8 +356,8 @@ const buildCourseSection = (v) => {
 
   const courseTitle = v.courseId?.title || 'Course Title';
   const courseCode  = v.courseId?.code  || '-';
-  const L = v.credits?.L ?? 0, T = v.credits?.T ?? 0,
-        P = v.credits?.P ?? 0, S = v.credits?.S ?? 0, C = v.credits?.C ?? 0;
+  const L = fmtC(v.credits?.L), T = fmtC(v.credits?.T),
+        P = fmtC(v.credits?.P), S = fmtC(v.credits?.S), C = fmtC(v.credits?.C);
 
   const items = [
     // Page break + course title
@@ -548,7 +553,7 @@ export const generateCurriculumDocx = async ({
         children: [
           textRun(`${programCode} (${departmentCode}) Curriculum-${academicYear}     `, { size: pt(9), color: '374151' }),
           textRun('Page ', { size: pt(9), color: '374151' }),
-          new PageNumber({ format: NumberFormat.DECIMAL }),
+          new TextRun({ children: [PageNumber.CURRENT], size: pt(9), color: '374151' }),
           textRun('     Aditya University', { size: pt(9), color: '374151' }),
         ],
         alignment: AlignmentType.CENTER,

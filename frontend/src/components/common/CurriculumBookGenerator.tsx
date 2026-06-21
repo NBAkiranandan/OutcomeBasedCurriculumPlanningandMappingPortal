@@ -103,9 +103,22 @@ export const CurriculumBookGenerator: React.FC = () => {
     }
     setPdfExporting(true);
     try {
+      const printRoot = document.getElementById('curriculum-handbook-print-root');
+      if (!printRoot) throw new Error('PDF layout not found on page.');
+
+      const clonedRoot = printRoot.cloneNode(true) as HTMLElement;
+      // Strip out the non-printable buttons or toolbars if they exist inside the root, though they should be outside.
+      
+      const htmlContent = clonedRoot.outerHTML;
+      let styles = '';
+      document.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => {
+        styles += el.outerHTML;
+      });
+
       await (api.curriculumBooks as any).exportPdf({
-        regulationId:  selectedRegulation._id,
-        departmentId:  selectedDepartment._id,
+        htmlContent,
+        styles,
+        baseUrl: window.location.origin
       });
       showToast('success', 'PDF exported successfully!');
     } catch (err: any) {
@@ -181,7 +194,8 @@ export const CurriculumBookGenerator: React.FC = () => {
   const pdfSemesterCount = selectedRegulation?.semesterCount || 8;
   
   // CODEx-added: Shared helper for course rows in category and level tables.
-  const getCourseCreditsText = (v: any) => `${v.credits?.L || 0} ${v.credits?.T || 0} ${v.credits?.P || 0} ${v.credits?.S || 0} ${v.credits?.C || 0}`;
+  const fmtC = (val: number | null | undefined) => (val === 0 || !val) ? '-' : val;
+  const getCourseCreditsText = (v: any) => `${fmtC(v.credits?.L)} ${fmtC(v.credits?.T)} ${fmtC(v.credits?.P)} ${fmtC(v.credits?.S)} ${fmtC(v.credits?.C)}`;
   // CODEx-added end
 
   // CODEx-added start: Reference-PDF page wrapper now acts as a content block, relying on the global print table for headers/footers.
@@ -219,11 +233,11 @@ export const CurriculumBookGenerator: React.FC = () => {
               <td>{v.courseId?.code || '-'}</td>
               <td className="text-left">{v.courseId?.title || '-'}</td>
               <td>{v.level || (v.knowledgeLevel?.includes('Advanced') ? 'AC' : v.knowledgeLevel?.includes('Intermediate') ? 'IC' : 'FC')}</td>
-              <td>{v.credits?.L || ''}</td>
-              <td>{v.credits?.T || ''}</td>
-              <td>{v.credits?.P || ''}</td>
-              <td>{v.credits?.S || ''}</td>
-              <td>{v.credits?.C || ''}</td>
+              <td>{fmtC(v.credits?.L)}</td>
+              <td>{fmtC(v.credits?.T)}</td>
+              <td>{fmtC(v.credits?.P)}</td>
+              <td>{fmtC(v.credits?.S)}</td>
+              <td>{fmtC(v.credits?.C)}</td>
               <td>{v.cieSee?.cieMaxMarks || 50}</td>
               <td>{v.cieSee?.seeMaxMarks || 50}</td>
               <td>{(v.cieSee?.cieMaxMarks || 50) + (v.cieSee?.seeMaxMarks || 50)}</td>
@@ -232,11 +246,11 @@ export const CurriculumBookGenerator: React.FC = () => {
           ))}
           <tr className="font-bold">
             <td colSpan={3}>Total</td>
-            <td>{rows.reduce((sum, v) => sum + (v.credits?.L || 0), 0)}</td>
-            <td>{rows.reduce((sum, v) => sum + (v.credits?.T || 0), 0)}</td>
-            <td>{rows.reduce((sum, v) => sum + (v.credits?.P || 0), 0)}</td>
-            <td>{rows.reduce((sum, v) => sum + (v.credits?.S || 0), 0)}</td>
-            <td>{rows.reduce((sum, v) => sum + (v.credits?.C || 0), 0)}</td>
+            <td>{fmtC(rows.reduce((sum, v) => sum + (v.credits?.L || 0), 0))}</td>
+            <td>{fmtC(rows.reduce((sum, v) => sum + (v.credits?.T || 0), 0))}</td>
+            <td>{fmtC(rows.reduce((sum, v) => sum + (v.credits?.P || 0), 0))}</td>
+            <td>{fmtC(rows.reduce((sum, v) => sum + (v.credits?.S || 0), 0))}</td>
+            <td>{fmtC(rows.reduce((sum, v) => sum + (v.credits?.C || 0), 0))}</td>
             <td colSpan={4}></td>
           </tr>
         </tbody>
@@ -325,21 +339,6 @@ export const CurriculumBookGenerator: React.FC = () => {
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-12 max-w-[900px] mx-auto print:p-0 print:border-0 print:shadow-none print-layout" id="curriculum-handbook-print-root">
         <PdfCoursePageStyles />
         {/* CODEx-added start: Program/regulation handbook header, footer, and watermark applied to printed preview. */}
-        {resolvedBookLayout.headerText && (
-          <div className="print-book-header hidden print:block">
-            {resolvedBookLayout.headerText}
-          </div>
-        )}
-        {resolvedBookLayout.watermarkText && (
-          <div className="print-book-watermark">
-            {resolvedBookLayout.watermarkText}
-          </div>
-        )}
-        {resolvedBookLayout.footerText && (
-          <div className="print-book-footer hidden print:block">
-            {resolvedBookLayout.footerText}
-          </div>
-        )}
         {/* CODEx-added end */}
         
         {/* SECTION 1: COVER PAGE */}
@@ -369,17 +368,8 @@ export const CurriculumBookGenerator: React.FC = () => {
         {/* CODEx-added start: Reference PDF structure pages after cover. */}
         <div className="page-break"></div>
 
-        <div className="print-content-wrapper">
-          <div className="print-header hidden print:block">
-            <div className="flex justify-between items-start pb-4 pt-4 border-b border-slate-300">
-              <div className="text-[10px] font-bold text-slate-600 max-w-[60%]">
-                Department of {selectedDepartment?.name || 'Computer Science and Engineering'}<br />
-                B.Tech Program Curriculum-{selectedRegulation?.academicYear || '2024'}
-              </div>
-              <img src={adityaLogo} alt="Aditya University" className="w-[86px] h-auto" />
-            </div>
-          </div>
-          <div className="print-body">
+        <div>
+          <div>
 
         {/* ── PAGE 2: Department Frontmatter ── */}
         <PdfPage>
@@ -462,11 +452,11 @@ export const CurriculumBookGenerator: React.FC = () => {
               <div className="pdf-table-block">
                 <table className="pdf-grid-table">
                   <thead>
-                    <tr><th colSpan={6} style={{textAlign:'center', fontWeight:900, borderBottom:'2px solid #000'}}>{levelLabel}</th></tr>
+                    <tr><th colSpan={7} style={{textAlign:'center', fontWeight:900, borderBottom:'2px solid #000'}}>{levelLabel}</th></tr>
                     <tr>
                       <th style={{textAlign:'left'}}>Course Name</th>
                       <th>Category</th>
-                      <th>L</th><th>T</th><th>P</th><th>C</th>
+                      <th>L</th><th>T</th><th>P</th><th>S</th><th>C</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -474,10 +464,11 @@ export const CurriculumBookGenerator: React.FC = () => {
                       <tr key={v._id}>
                         <td style={{textAlign:'left'}}>{v.courseId?.title || '-'}</td>
                         <td>{v.category || '-'}</td>
-                        <td>{v.credits?.L ?? ''}</td>
-                        <td>{v.credits?.T || ''}</td>
-                        <td>{v.credits?.P || ''}</td>
-                        <td>{v.credits?.C ?? ''}</td>
+                        <td>{fmtC(v.credits?.L)}</td>
+                        <td>{fmtC(v.credits?.T)}</td>
+                        <td>{fmtC(v.credits?.P)}</td>
+                        <td>{fmtC(v.credits?.S)}</td>
+                        <td>{fmtC(v.credits?.C)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -663,14 +654,7 @@ export const CurriculumBookGenerator: React.FC = () => {
         {prereqLinks.length > 0 && <div className="page-break"></div>}
         {courseVersions.map((v) => renderPdfSyllabusCourse(v))}
           </div>
-          <div className="print-footer hidden print:block">
-            <div className="flex justify-between text-[10px] pt-2 pb-4 border-t border-slate-300 text-slate-600 font-bold">
-              <span>B.Tech ({selectedDepartment?.code || 'CSE'}) Curriculum-{selectedRegulation?.academicYear || '2024'}</span>
-              <span className="css-page-number">Aditya University</span>
-            </div>
-          </div>
         </div>
-        {/* CODEx-added end */}
       </div>
 
       {/* Global CSS style injecting print definitions print layout */}
@@ -680,9 +664,11 @@ export const CurriculumBookGenerator: React.FC = () => {
           background: #f8fafc;
         }
         .pdf-cover-page {
-          min-height: 1050px;
+          height: 240mm; /* Exact fit for A4 print */
           background: #fff;
-          padding: 92px 44px 54px;
+          position: relative;
+          z-index: 1000; /* Cover up the fixed print-headers on page 1 */
+          padding: 10mm 15mm;
           text-align: center;
           font-family: "Times New Roman", Times, serif;
           color: #000;
@@ -694,7 +680,7 @@ export const CurriculumBookGenerator: React.FC = () => {
           font-size: 30px;
           font-weight: 900;
           letter-spacing: 0;
-          margin: 0 0 96px;
+          margin: 0 0 40px;
         }
         .pdf-cover-dept-box {
           width: 68%;
@@ -1005,6 +991,7 @@ export const CurriculumBookGenerator: React.FC = () => {
             margin: 0 !important;
             border: 0 !important;
             box-shadow: none !important;
+            background: #fff !important;
           }
           .no-print {
             display: none !important;
@@ -1016,51 +1003,14 @@ export const CurriculumBookGenerator: React.FC = () => {
           .print-layout {
             display: block !important;
           }
-          @page {
-            margin: 25mm 15mm 20mm 15mm;
-            @bottom-right {
-              content: "Page " counter(page);
-            }
-          }
+
           .print-body {
             padding-top: 5mm; /* Header space */
           }
           /* CODEx-added start: Print-only header, footer, and watermark for curriculum books. */
-          .print-book-header {
-            display: none !important;
-          }
-          .print-book-footer {
-            display: none !important;
-          }
-          .print-book-watermark {
-            position: fixed;
-            top: 45%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-32deg);
-            z-index: 0;
-            font-size: 58px;
-            font-weight: 900;
-            letter-spacing: 8px;
-            color: rgba(15, 23, 42, 0.06);
-            pointer-events: none;
-            white-space: nowrap;
-          }
           /* CODEx-added end */
         }
         /* CODEx-added start: On-screen watermark preview for curriculum book layout review. */
-        .print-book-watermark {
-          position: fixed;
-          top: 50%;
-          left: 58%;
-          transform: translate(-50%, -50%) rotate(-32deg);
-          z-index: 0;
-          font-size: 58px;
-          font-weight: 900;
-          letter-spacing: 8px;
-          color: rgba(15, 23, 42, 0.045);
-          pointer-events: none;
-          white-space: nowrap;
-        }
         /* CODEx-added end */
       `}</style>
     </div>

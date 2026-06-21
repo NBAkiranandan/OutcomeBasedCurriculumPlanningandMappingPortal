@@ -29,6 +29,7 @@ export interface Department {
   code: string;
   programId: string | Program;
   description?: string;
+  outcomes?: any[];
 }
 
 export interface Regulation {

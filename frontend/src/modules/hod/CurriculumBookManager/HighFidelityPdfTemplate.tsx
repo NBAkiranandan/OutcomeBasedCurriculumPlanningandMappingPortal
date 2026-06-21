@@ -113,14 +113,14 @@ export const HighFidelityPdfTemplate: React.FC<TemplateProps> = ({ book, section
         <div
           className="curriculum-book"
           id="high-fidelity-pdf-root"
-          style={{ width: '210mm', margin: '0 auto', background: '#fff', boxShadow: '0 20px 50px rgba(15,23,42,0.18)' }}
+          style={{ width: '100%', maxWidth: '210mm', margin: '0 auto', background: '#fff', boxShadow: '0 20px 50px rgba(15,23,42,0.18)' }}
         >
           {/* Cover */}
           <div style={{
             display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-            textAlign: 'center', height: '297mm', padding: '28mm 22mm 24mm',
-            border: '2px solid #111827', outline: '4px double #111827', outlineOffset: '-9mm',
-            fontFamily: '"Times New Roman", serif'
+            textAlign: 'center', height: '244mm', padding: '10mm 15mm',
+            border: '2px solid #111827', outline: '4px double #111827', outlineOffset: '-6mm',
+            fontFamily: '"Times New Roman", serif', boxSizing: 'border-box'
           }}>
             <div>
               <img src={adityaLogo} alt="Aditya University" style={{ height: '90px', margin: '0 auto 16px', display: 'block' }} />

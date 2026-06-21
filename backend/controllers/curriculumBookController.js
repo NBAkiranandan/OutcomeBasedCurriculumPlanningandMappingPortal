@@ -1220,12 +1220,32 @@ export const exportPdf = async (req, res, next) => {
     // Support two modes:
     // Mode A: regulationId + departmentId  → generates curriculum handbook PDF on the fly
     // Mode B: curriculumBookId             → generates PDF from an uploaded curriculum book record
-    const { curriculumBookId, regulationId, departmentId } = req.body;
+    const { curriculumBookId, regulationId, departmentId, htmlContent, styles, baseUrl } = req.body;
 
     let html = '';
     let pdfFilename = 'curriculum_book.pdf';
 
-    if (regulationId) {
+    if (htmlContent) {
+      const reg = regulationId ? await Regulation.findById(regulationId).lean() : null;
+      const dept = departmentId ? await Department.findById(departmentId).lean() : null;
+      pdfFilename = `${reg?.code || 'Export'}_${dept?.code || 'Curriculum'}.pdf`;
+      html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Curriculum PDF</title>
+  ${baseUrl ? `<base href="${baseUrl}/">` : ''}
+  ${styles || ''}
+  <style>
+    body { background: white !important; color: black !important; -webkit-print-color-adjust: exact; }
+    ::-webkit-scrollbar { display: none; }
+  </style>
+</head>
+<body class="bg-white">
+  ${htmlContent}
+</body>
+</html>`;
+    } else if (regulationId) {
       // Mode A: Handbook generator (from CurriculumBookGenerator page)
       if (!mongoose.Types.ObjectId.isValid(regulationId)) {
         return res.status(400).json({ message: 'Invalid regulation ID' });
@@ -1282,7 +1302,19 @@ export const exportPdf = async (req, res, next) => {
     await page.evaluate(() => document.body.classList.add('is-puppeteer'));
 
     const logoBase64 = getLogoBase64();
-    const pdfBuffer = await page.pdf({
+    
+    const pdfOptions = htmlContent ? {
+      format: 'A4',
+      printBackground: true,
+      displayHeaderFooter: true,
+      margin: { top: '10mm', right: '15mm', bottom: '15mm', left: '15mm' },
+      headerTemplate: '<span></span>',
+      footerTemplate: `
+        <div style="font-family:'Times New Roman',serif; font-size:10pt; width:100%; text-align:center; color:#374151;">
+          Page <span class="pageNumber"></span> of <span class="totalPages"></span>
+        </div>
+      `
+    } : {
       format: 'A4',
       printBackground: true,
       margin: { top: '28mm', right: '18mm', bottom: '24mm', left: '18mm' },
@@ -1307,7 +1339,9 @@ export const exportPdf = async (req, res, next) => {
           <span>Aditya University</span>
         </div>
       `,
-    });
+    };
+
+    const pdfBuffer = await page.pdf(pdfOptions);
 
     await browser.close();
     browser = null;

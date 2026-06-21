@@ -38,12 +38,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
 
   // Global context & state
   const [stats, setStats] = useState({
-    programs: 8,
-    departments: 8,
-    regulations: 3,
-    courses: 1402,
-    pending: 52,
-    published: 89
+    programs: 0,
+    departments: 0,
+    regulations: 0,
+    courses: 0,
+    pending: 0,
+    published: 0
   });
 
   const [programs, setPrograms] = useState<any[]>([]);
@@ -54,12 +54,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
   const [loading, setLoading] = useState(false);
 
   // Modals & form states
-  const [programModal, setProgramModal] = useState<{ open: boolean; mode: 'add' | 'edit'; data: any }>({ open: false, mode: 'add', data: { name: '', code: '', description: '', category: 'Engineering', degree: '', duration: 4, numberOfSemesters: 8, totalCredits: 160, vision: '', mission: '' } });
+  const [programModal, setProgramModal] = useState<{ open: boolean; mode: 'add' | 'edit'; data: any }>({ open: false, mode: 'add', data: { name: '', code: '', description: '', category: 'Engineering', degree: '', duration: 4, numberOfSemesters: 8, totalCredits: 160, vision: '', mission: '', outcomes: [] } });
   const [deptModal, setDeptModal] = useState<{ open: boolean; mode: 'add' | 'edit'; data: any }>({ open: false, mode: 'add', data: { name: '', code: '', programId: '', regulationId: '', description: '' } });
   const [assignHodModal, setAssignHodModal] = useState<{ open: boolean; data: any }>({ open: false, data: { programId: '', departmentId: '', userId: '' } });
   const [deptRegulations, setDeptRegulations] = useState<any[]>([]);
   const [programRegModal, setProgramRegModal] = useState<{ open: boolean; program: any; regulations: any[] }>({ open: false, program: null, regulations: [] });
-  const [regModal, setRegModal] = useState<{ open: boolean; mode: 'add' | 'edit'; data: any }>({ open: false, mode: 'add', data: { code: '', academicYear: new Date().getFullYear(), durationYears: 4, semesterCount: 8, programId: '' } });
+  const [regModal, setRegModal] = useState<{ open: boolean; mode: 'add' | 'edit'; data: any }>({ open: false, mode: 'add', data: { code: '', academicYear: new Date().getFullYear(), durationYears: 4, semesterCount: 8, programId: '', outcomes: [] } });
   const [userModal, setUserModal] = useState<{ open: boolean; mode: 'add' | 'edit'; data: any }>({ open: false, mode: 'add', data: { name: '', email: '', password: '', role: 'Faculty', departmentId: '', programId: '' } });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -124,31 +124,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
       setUsers(userRes.users);
 
       // Fetch Approvals queue (we load all course versions to filter dynamically)
+      let pendingCount = 0;
+      let publishedCount = 0;
+      let aggregatedVersions: any[] = [];
+
       if (regRes.regulations.length > 0) {
         // Fetch all course versions under the active regulation
         const verPromises = regRes.regulations.map((r: any) => api.courses.listByReg(r._id));
         const allVersRes = await Promise.all(verPromises);
-        const aggregatedVersions = allVersRes.flatMap((res: any) => res.versions || []);
+        aggregatedVersions = allVersRes.flatMap((res: any) => res.versions || []);
         setApprovalsQueue(aggregatedVersions);
 
-        // Update stats
-        const pendingCount = aggregatedVersions.filter((v: any) => v.status === 'Pending Admin' || v.status === 'Pending HOD').length;
-        const publishedCount = aggregatedVersions.filter((v: any) => v.status === 'Approved').length;
-        setStats({
-          programs: progRes.programs.length,
-          departments: deptRes.departments.length,
-          regulations: regRes.regulations.length,
-          courses: aggregatedVersions.length,
-          pending: pendingCount,
-          published: publishedCount
-        });
-
-        // Initialize PO selections
-        setPoSelectedReg(regRes.regulations[0]._id);
-        if (deptRes.departments.length > 0) {
-          setPoSelectedDept(deptRes.departments[0]._id);
-        }
+        pendingCount = aggregatedVersions.filter((v: any) => v.status === 'Pending Admin' || v.status === 'Pending HOD').length;
+        publishedCount = aggregatedVersions.filter((v: any) => v.status === 'Approved').length;
+      } else {
+        setApprovalsQueue([]);
       }
+
+      // Update stats always
+      setStats({
+        programs: progRes.programs.length,
+        departments: deptRes.departments.length,
+        regulations: regRes.regulations.length,
+        courses: aggregatedVersions.length,
+        pending: pendingCount,
+        published: publishedCount
+      });
       
       // Initialize selected directory program
       if (progRes.programs.length > 0) {
@@ -210,7 +211,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
         await api.programs.update(programModal.data._id, programModal.data);
       }
       alert(`Program successfully ${programModal.mode === 'add' ? 'created' : 'updated'}!`);
-      setProgramModal({ open: false, mode: 'add', data: {} });
+      setProgramModal({ open: false, mode: 'add', data: { outcomes: [] } });
       loadData();
     } catch (err: any) {
       alert(`Program operation failed: ${err.message}`);
@@ -277,7 +278,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
         await api.regulations.update(regModal.data._id, regModal.data);
       }
       alert(`Regulation successfully ${regModal.mode === 'add' ? 'created' : 'updated'}!`);
-      setRegModal({ open: false, mode: 'add', data: {} });
+      setRegModal({ open: false, mode: 'add', data: { outcomes: [] } });
       loadData();
     } catch (err: any) {
       alert(`Regulation operation failed: ${err.message}`);
@@ -531,30 +532,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
     }
   };
 
-  // Recharts Overview mock data matching screenshots
+  const isDbEmpty = stats.programs === 0 && stats.regulations === 0;
+
   const approvalTrendsData = [
-    { month: 'Jan', approvals: 12 },
-    { month: 'Feb', approvals: 25 },
-    { month: 'Mar', approvals: 18 },
-    { month: 'Apr', approvals: 42 },
-    { month: 'May', approvals: 52 },
-    { month: 'Jun', approvals: 30 }
+    { month: 'Jan', approvals: 0 },
+    { month: 'Feb', approvals: 0 },
+    { month: 'Mar', approvals: 0 },
+    { month: 'Apr', approvals: 0 },
+    { month: 'May', approvals: 0 },
+    { month: 'Jun', approvals: 0 }
   ];
 
-  const deptCompletionData = [
-    { name: 'CSE', value: 80 },
-    { name: 'ECE', value: 72 },
-    { name: 'Mechanical', value: 60 },
-    { name: 'Civil', value: 55 },
-    { name: 'EEE', value: 50 },
-    { name: 'Others', value: 50 }
-  ];
+  const deptCompletionData = !departments || departments.length === 0 ? [
+    { name: 'No Data', value: 100 }
+  ] : departments.map(d => ({ name: d?.code || d?.name || 'Unknown', value: 1 }));
 
-  const regDistributionData = [
-    { name: 'R23', value: 45 },
-    { name: 'R25', value: 35 },
-    { name: 'Others', value: 20 }
-  ];
+  const regDistributionData = !regulations || regulations.length === 0 ? [
+    { name: 'No Data', value: 100 }
+  ] : regulations.map(r => ({ name: r?.code || 'Unknown', value: 1 }));
 
   const COLORS_COMPLETION = ['#1D4ED8', '#071A3D', '#F59E0B', '#16A34A', '#8B5CF6', '#EC4899'];
   const COLORS_REG = ['#1D4ED8', '#F59E0B', '#64748B'];
@@ -675,7 +670,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                   </ResponsiveContainer>
                   <div className="absolute text-center">
                     <span className="block text-[8px] uppercase tracking-wider font-bold text-slate-400 leading-none">Overall</span>
-                    <strong className="block text-lg font-extrabold text-slate-800 leading-none mt-1">67%</strong>
+                    <strong className="block text-lg font-extrabold text-slate-800 leading-none mt-1">{isDbEmpty ? '0%' : '67%'}</strong>
                   </div>
                 </div>
                 {/* Custom Legend */}
@@ -721,7 +716,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                   </ResponsiveContainer>
                   <div className="absolute text-center">
                     <span className="block text-[8px] uppercase tracking-wider font-bold text-slate-400 leading-none">Total</span>
-                    <strong className="block text-lg font-extrabold text-slate-800 leading-none mt-1">6</strong>
+                    <strong className="block text-lg font-extrabold text-slate-800 leading-none mt-1">{isDbEmpty ? '0' : '6'}</strong>
                   </div>
                 </div>
                 {/* Custom Legend */}
@@ -751,21 +746,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 <button className="text-[11px] text-primary-600 hover:underline font-semibold">View all</button>
               </div>
               <div className="flex-1 overflow-y-auto pr-1 space-y-3">
-                {[
-                  { title: 'HOD CSE submitted curriculum for R25 regulation', time: '10 mins ago', color: 'bg-primary-500' },
-                  { title: 'Admin approved DBMS course (CS203)', time: '28 mins ago', color: 'bg-success-500' },
-                  { title: 'New faculty Dr. Kumar added to ECE department', time: '1 hour ago', color: 'bg-info-500' },
-                  { title: 'R25 CSE curriculum returned by admin', time: '2 hours ago', color: 'bg-warning-500' },
-                  { title: 'Full curriculum report generated for R23 ECE', time: '3 hours ago', color: 'bg-violet-500' },
-                ].map((act, idx) => (
-                  <div key={idx} className="flex gap-3 text-xs leading-relaxed py-1">
-                    <span className={`w-2 h-2 rounded-full ${act.color} mt-1.5 flex-shrink-0`}></span>
-                    <div>
-                      <p className="font-medium text-text-secondary">{act.title}</p>
-                      <span className="text-[10px] text-text-subtle block mt-0.5">{act.time}</span>
-                    </div>
+                {isDbEmpty ? (
+                  <div className="text-center p-8">
+                    <p className="text-xs text-text-subtle">No recent activity found.</p>
                   </div>
-                ))}
+                ) : (
+                  [
+                    { title: 'HOD CSE submitted curriculum for R25 regulation', time: '10 mins ago', color: 'bg-primary-500' },
+                    { title: 'Admin approved DBMS course (CS203)', time: '28 mins ago', color: 'bg-success-500' },
+                    { title: 'New faculty Dr. Kumar added to ECE department', time: '1 hour ago', color: 'bg-info-500' },
+                    { title: 'R25 CSE curriculum returned by admin', time: '2 hours ago', color: 'bg-warning-500' },
+                    { title: 'Full curriculum report generated for R23 ECE', time: '3 hours ago', color: 'bg-violet-500' },
+                  ].map((act, idx) => (
+                    <div key={idx} className="flex gap-3 text-xs leading-relaxed py-1">
+                      <span className={`w-2 h-2 rounded-full ${act.color} mt-1.5 flex-shrink-0`}></span>
+                      <div>
+                        <p className="font-medium text-text-secondary">{act.title}</p>
+                        <span className="text-[10px] text-text-subtle block mt-0.5">{act.time}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -858,7 +859,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
               <p className="text-xs text-slate-500 mt-1 font-sans">Manage all dynamic academic programs offered across university departments.</p>
             </div>
             <button
-              onClick={() => setProgramModal({ open: true, mode: 'add', data: { name: '', code: '', description: '', category: 'Engineering', degree: '', duration: 4, numberOfSemesters: 8, totalCredits: 160, vision: '', mission: '' } })}
+              onClick={() => setProgramModal({ open: true, mode: 'add', data: { name: '', code: '', description: '', category: 'Engineering', degree: '', duration: 4, numberOfSemesters: 8, totalCredits: 160, vision: '', mission: '', outcomes: [] } })}
               className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow cursor-pointer"
             >
               <Plus className="w-4 h-4" />
@@ -866,82 +867,70 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 text-slate-400 bg-slate-50/50 uppercase font-bold">
-                  <th className="p-4 pl-6">#</th>
-                  <th className="p-4">Program Name</th>
-                  <th className="p-4">Program Code</th>
-                  <th className="p-4">Degree</th>
-                  <th className="p-4">Duration</th>
-                  <th className="p-4">Total Credits</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 pr-6 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {programs.map((prog, idx) => (
-                  <tr key={prog._id} className="border-b border-slate-100 hover:bg-slate-50/20 text-slate-600 font-medium">
-                    <td className="p-4 pl-6 font-bold">{idx + 1}</td>
-                    <td className="p-4 font-bold text-slate-800">{prog.name}</td>
-                    <td className="p-4 font-mono font-bold text-blue-600">{prog.code}</td>
-                    <td className="p-4">{prog.degree || 'B.Tech'}</td>
-                    <td className="p-4 text-slate-500">{prog.duration || 4} Years</td>
-                    <td className="p-4 text-slate-500">{prog.totalCredits || 160} Credits</td>
-                    <td className="p-4">
-                      <span className={`px-2.5 py-0.5 rounded text-[9px] font-bold border ${prog.isActive !== false
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                          : 'bg-slate-100 text-slate-500 border-slate-200'
-                        }`}>
-                        {prog.isActive !== false ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="p-4 pr-6 text-right flex justify-end gap-2">
-                      <button
-                        onClick={async () => {
-                          try {
-                            const res = await api.regulations.listByProgram(prog._id);
-                            setProgramRegModal({ open: true, program: prog, regulations: res.regulations || [] });
-                          } catch (err) {
-                            console.error('Failed to fetch program regulations:', err);
-                            alert('Failed to load regulations for this program.');
-                          }
-                        }}
-                        className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-blue-600 cursor-pointer"
-                        title="View Regulations"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setActiveTab('departments');
-                          setDeptModal({ open: true, mode: 'add', data: { name: '', code: '', programId: prog._id, regulationId: '', description: '' } });
-                        }}
-                        className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-blue-600 cursor-pointer"
-                        title="Add Department"
-                      >
-                        <Building className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setProgramModal({ open: true, mode: 'edit', data: prog })}
-                        className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-blue-600 cursor-pointer"
-                        title="Edit"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleToggleProgram(prog._id)}
-                        className={`p-1 hover:bg-slate-100 rounded cursor-pointer ${prog.isActive !== false ? 'text-red-500 hover:text-red-700' : 'text-emerald-600'}`}
-                        title={prog.isActive !== false ? 'Deactivate' : 'Activate'}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {programs.map((prog) => (
+              <div key={prog._id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow h-full">
+                <div>
+                  <div className="flex justify-between items-start mb-3">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{prog.code}</span>
+                    <span className={`px-2.5 py-0.5 rounded text-[9px] font-bold border ${prog.isActive !== false
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                        : 'bg-slate-100 text-slate-500 border-slate-200'
+                      }`}>
+                      {prog.isActive !== false ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-extrabold text-slate-800">{prog.name}</h3>
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-xs font-medium text-slate-500">
+                    <div>Degree: <strong className="text-slate-700 block mt-0.5">{prog.degree || 'B.Tech'}</strong></div>
+                    <div>Duration: <strong className="text-slate-700 block mt-0.5">{prog.duration || 4} Years</strong></div>
+                    <div>Total Credits: <strong className="text-slate-700 block mt-0.5">{prog.totalCredits || 160}</strong></div>
+                  </div>
+                </div>
+                
+                <div className="border-t border-slate-100 pt-4 mt-5 flex justify-end gap-2">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await api.regulations.listByProgram(prog._id);
+                        setProgramRegModal({ open: true, program: prog, regulations: res.regulations || [] });
+                      } catch (err) {
+                        console.error('Failed to fetch program regulations:', err);
+                        alert('Failed to load regulations for this program.');
+                      }
+                    }}
+                    className="p-1.5 hover:bg-slate-100 rounded text-slate-500 hover:text-blue-600 cursor-pointer transition-colors"
+                    title="View Regulations"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab('departments');
+                      setDeptModal({ open: true, mode: 'add', data: { name: '', code: '', programId: prog._id, regulationId: '', description: '' } });
+                    }}
+                    className="p-1.5 hover:bg-slate-100 rounded text-slate-500 hover:text-blue-600 cursor-pointer transition-colors"
+                    title="Add Department"
+                  >
+                    <Building className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setProgramModal({ open: true, mode: 'edit', data: prog })}
+                    className="p-1.5 hover:bg-slate-100 rounded text-slate-500 hover:text-blue-600 cursor-pointer transition-colors"
+                    title="Edit"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleToggleProgram(prog._id)}
+                    className={`p-1.5 hover:bg-slate-100 rounded cursor-pointer transition-colors ${prog.isActive !== false ? 'text-red-500 hover:text-red-700' : 'text-emerald-600 hover:text-emerald-700'}`}
+                    title={prog.isActive !== false ? 'Deactivate' : 'Activate'}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -994,7 +983,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                     <td className="p-4 font-semibold text-xs text-slate-600 max-w-[200px] truncate" title={dept.programId?.code || 'None'}>
                       {dept.programId?.code || 'None'}
                     </td>
-                    <td className="p-4 text-slate-500">12 Members</td>
+                    <td className="p-4 text-slate-500">{dept.facultyCount || 0} Members</td>
                     <td className="p-4">
                       <span className={`px-2.5 py-0.5 rounded text-[9px] font-bold border ${dept.isActive !== false
                           ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
@@ -1062,6 +1051,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                         }`}>
                         {reg.status || 'Draft'}
                       </span>
+                      <button 
+                        onClick={() => setRegModal({ open: true, mode: 'edit', data: JSON.parse(JSON.stringify(reg)) })} 
+                        className="text-slate-300 hover:text-blue-500 transition-colors" 
+                        title="Edit Regulation"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
                       <button onClick={() => handleToggleReg(reg._id)} className="text-slate-300 hover:text-red-500 transition-colors" title={reg.isActive ? "Deactivate Regulation" : "Activate Regulation"}>
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1122,19 +1118,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
       )}
 
       {/* 5. PO MANAGEMENT PAGE */}
-      {activeTab === 'po' && (
+      {activeTab === 'po-management' && (
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-extrabold text-slate-800">Program Outcomes (PO) Management</h1>
-              <p className="text-xs text-slate-500 mt-1">Define Program Outcomes (POs) for regulation accreditation audits.</p>
+              <h1 className="text-xl font-extrabold text-slate-800">Program Outcomes (POs) Management</h1>
+              <p className="text-xs text-slate-500 mt-1">Configure POs for a specific regulation. These will apply across the entire regulation.</p>
             </div>
             <button
-              onClick={handleSaveOutcomes}
+              onClick={() => {
+                if (!poSelectedReg) return alert('Please select a regulation first.');
+                const reg = regulations.find(r => r._id === poSelectedReg);
+                if (reg) {
+                   api.regulations.update(poSelectedReg, { outcomes: reg.outcomes }).then(() => {
+                     alert('POs successfully saved to regulation!');
+                     loadData();
+                   }).catch((err: any) => alert(err.message));
+                }
+              }}
               className="flex items-center gap-1.5 px-4.5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
-              <span>Save Outlining Blueprint</span>
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>Save POs</span>
             </button>
           </div>
 
@@ -1144,79 +1149,138 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
               <span className="block uppercase tracking-wider text-[10px]">Select Regulation</span>
               <select
                 value={poSelectedReg}
-                onChange={(e) => setPoSelectedReg(e.target.value)}
-                className="border border-slate-300 rounded-lg p-2 font-semibold bg-white outline-none w-48"
-              >
-                {regulations.map(r => (
-                  <option key={r._id} value={r._id}>{r.code} Regulation</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <span className="block uppercase tracking-wider text-[10px]">Select Department</span>
-              <select
-                value={poSelectedDept}
-                onChange={(e) => setPoSelectedDept(e.target.value)}
-                className="border border-slate-300 rounded-lg p-2 font-semibold bg-white outline-none w-64"
-              >
-                {departments.map(d => (
-                  <option key={d._id} value={d._id}>{d.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-
-          {/* PO Outcomes definition */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                <FileSpreadsheet className="w-5 h-5 text-emerald-500" />
-                <span>Standard Graduate Attributes & Program Outcomes (POs)</span>
-              </h3>
-              <button
-                onClick={() => {
-                  const list = peoPso.pos ? [...peoPso.pos] : [];
-                  list.push({ code: `PO${list.length + 1}`, description: '' });
-                  setPeoPso({ ...peoPso, pos: list });
+                onChange={(e) => {
+                   setPoSelectedReg(e.target.value);
+                   // Ensure PO abstraction exists
+                   const regIndex = regulations.findIndex(r => r._id === e.target.value);
+                   if (regIndex > -1) {
+                     const reg = regulations[regIndex];
+                     const poExists = reg.outcomes?.find((o: any) => o.name === 'PO');
+                     if (!poExists) {
+                       const newRegs = [...regulations];
+                       newRegs[regIndex] = {
+                         ...newRegs[regIndex],
+                         outcomes: [...(newRegs[regIndex].outcomes || []), { name: 'PO', isGlobal: true, isLocal: false, isMapped: false, items: [] }]
+                       };
+                       setRegulations(newRegs);
+                     }
+                   }
                 }}
-                className="text-xs text-blue-600 font-bold hover:underline cursor-pointer"
+                className="border border-slate-300 rounded-lg p-2 font-semibold bg-white outline-none w-64 text-slate-700"
               >
-                + Add PO
-              </button>
-            </div>
-            <div className="grid grid-cols-2 gap-4 max-h-[400px] overflow-y-auto pr-2">
-              {peoPso.pos?.map((po: any, idx: number) => (
-                <div key={idx} className="flex gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 relative group">
-                  <span className="font-mono font-bold text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded mt-1">{po.code}</span>
-                  <textarea
-                    rows={2}
-                    value={po.description}
-                    onChange={(e) => {
-                      const list = [...peoPso.pos];
-                      list[idx].description = e.target.value;
-                      setPeoPso({ ...peoPso, pos: list });
-                    }}
-                    className="flex-1 border border-slate-300 rounded-lg p-2 text-xs font-semibold outline-none bg-white"
-                  />
-                  <button
-                    onClick={() => {
-                      const list = [...peoPso.pos];
-                      list.splice(idx, 1);
-                      list.forEach((p, i) => p.code = `PO${i + 1}`);
-                      setPeoPso({ ...peoPso, pos: list });
-                    }}
-                    className="p-1 hover:bg-red-50 rounded text-slate-400 hover:text-red-500 cursor-pointer self-start transition-colors"
-                    title="Delete PO"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+                <option value="">-- Choose Regulation --</option>
+                {regulations.map(r => (
+                  <option key={r._id} value={r._id}>{r.code} Regulation ({r.programId?.name || 'All'})</option>
+                ))}
+              </select>
             </div>
           </div>
+
+          {/* PO Builder */}
+          {poSelectedReg && (
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <Award className="w-5 h-5 text-blue-500" />
+                  <span>Program Outcomes Builder</span>
+                </h3>
+              </div>
+
+              <div className="space-y-3">
+                {(() => {
+                   const regIndex = regulations.findIndex(r => r._id === poSelectedReg);
+                   if (regIndex === -1) return null;
+                   const reg = regulations[regIndex];
+                   const poOutcomeIndex = reg.outcomes?.findIndex((o: any) => o.name === 'PO');
+                   if (poOutcomeIndex === undefined || poOutcomeIndex === -1) return null;
+                   
+                   const poOutcome = reg.outcomes[poOutcomeIndex];
+                   const items = poOutcome.items || [];
+
+                   return (
+                     <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                       {items.length === 0 ? (
+                         <div className="text-center p-8 text-xs font-bold text-slate-400 border border-dashed border-slate-300 rounded-xl bg-slate-50/50">
+                           No POs configured yet. Click "Add PO" to begin.
+                         </div>
+                       ) : (
+                         items.map((item: any, iIdx: number) => (
+                           <div key={iIdx} className="flex items-start gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                             <div className="flex-1 space-y-2">
+                               <div>
+                                 <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">PO Code</span>
+                                 <input
+                                   type="text"
+                                   placeholder="e.g. PO1"
+                                   value={item.code}
+                                   onChange={(e) => {
+                                     const newRegs = [...regulations];
+                                     const newOutcomes = [...newRegs[regIndex].outcomes];
+                                     newOutcomes[poOutcomeIndex].items[iIdx].code = e.target.value;
+                                     newRegs[regIndex] = { ...newRegs[regIndex], outcomes: newOutcomes };
+                                     setRegulations(newRegs);
+                                   }}
+                                   className="w-32 border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-700 outline-none focus:ring-1 focus:ring-blue-500 bg-white shadow-sm"
+                                 />
+                               </div>
+                               <div>
+                                 <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">PO Description</span>
+                                 <textarea
+                                   placeholder="Enter PO description..."
+                                   rows={2}
+                                   value={item.description}
+                                   onChange={(e) => {
+                                     const newRegs = [...regulations];
+                                     const newOutcomes = [...newRegs[regIndex].outcomes];
+                                     newOutcomes[poOutcomeIndex].items[iIdx].description = e.target.value;
+                                     newRegs[regIndex] = { ...newRegs[regIndex], outcomes: newOutcomes };
+                                     setRegulations(newRegs);
+                                   }}
+                                   className="w-full border border-slate-300 rounded-lg p-2 text-xs text-slate-700 outline-none focus:ring-1 focus:ring-blue-500 bg-white shadow-sm resize-y"
+                                 />
+                               </div>
+                             </div>
+                             <button
+                               type="button"
+                               onClick={() => {
+                                 const newRegs = [...regulations];
+                                 const newOutcomes = [...newRegs[regIndex].outcomes];
+                                 newOutcomes[poOutcomeIndex].items.splice(iIdx, 1);
+                                 newRegs[regIndex] = { ...newRegs[regIndex], outcomes: newOutcomes };
+                                 setRegulations(newRegs);
+                               }}
+                               className="p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
+                               title="Remove PO"
+                             >
+                               <Trash2 className="w-4 h-4" />
+                             </button>
+                           </div>
+                         ))
+                       )}
+                       
+                       <button
+                         type="button"
+                         onClick={() => {
+                           const newRegs = [...regulations];
+                           const newOutcomes = [...newRegs[regIndex].outcomes];
+                           if (!newOutcomes[poOutcomeIndex].items) newOutcomes[poOutcomeIndex].items = [];
+                           newOutcomes[poOutcomeIndex].items.push({ code: `PO${newOutcomes[poOutcomeIndex].items.length + 1}`, description: '' });
+                           newRegs[regIndex] = { ...newRegs[regIndex], outcomes: newOutcomes };
+                           setRegulations(newRegs);
+                         }}
+                         className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors mt-4 cursor-pointer w-fit border border-blue-200/50"
+                       >
+                         <Plus className="w-4 h-4" /> Add PO
+                       </button>
+                     </div>
+                   );
+                })()}
+              </div>
+            </div>
+          )}
         </div>
       )}
+
 
       {/* 6. USER MANAGEMENT PAGE */}
       {activeTab === 'users' && (
@@ -2039,15 +2103,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
       {/* PROGRAM ADD/EDIT MODAL */}
       {programModal.open && (
         <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-          <div className="bg-white w-[500px] rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
-            <div className="p-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+          <div className="bg-white w-[500px] max-h-[90vh] flex flex-col rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="p-5 border-b border-slate-200 flex justify-between items-center bg-slate-50 shrink-0">
               <h3 className="text-base font-bold text-slate-800 flex items-center gap-1.5">
                 <Layers className="w-5 h-5 text-blue-600" />
                 <span>{programModal.mode === 'add' ? 'Add Academic Program' : 'Edit Academic Program'}</span>
               </h3>
-              <button onClick={() => setProgramModal({ open: false, mode: 'add', data: {} })} className="text-slate-400 hover:text-slate-700">✕</button>
+              <button onClick={() => setProgramModal({ open: false, mode: 'add', data: { outcomes: [] } })} className="text-slate-400 hover:text-slate-700">✕</button>
             </div>
-            <form onSubmit={handleProgramSubmit} className="p-6 space-y-4 text-xs font-bold text-slate-500">
+            <form onSubmit={handleProgramSubmit} className="p-6 space-y-4 text-xs font-bold text-slate-500 overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <span className="uppercase text-[10px]">Program Code</span>
@@ -2152,10 +2216,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 />
               </div>
 
+
+
               <div className="flex gap-3 pt-3">
                 <button
                   type="button"
-                  onClick={() => setProgramModal({ open: false, mode: 'add', data: {} })}
+                  onClick={() => setProgramModal({ open: false, mode: 'add', data: { outcomes: [] } })}
                   className="flex-1 py-2.5 border border-slate-300 text-slate-600 rounded-lg font-bold hover:bg-slate-50 cursor-pointer text-center"
                 >
                   Cancel
@@ -2214,7 +2280,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 <Select
                   options={programs.map(p => ({ value: p._id, label: `${p.code} - ${p.name}` }))}
                   value={programs.filter(p => p._id === deptModal.data.programId).map(p => ({ value: p._id, label: `${p.code} - ${p.name}` }))}
-                  onChange={(selected: any) => setDeptModal({ ...deptModal, data: { ...deptModal.data, programId: selected?.value, regulationId: '' } })}
+                  onChange={(selected: any) => setDeptModal({ ...deptModal, data: { ...deptModal.data, programId: selected?.value } })}
                   placeholder="Choose a program..."
                   styles={{ control: (base) => ({ ...base, borderColor: '#cbd5e1', padding: '2px', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: '600' }) }}
                   required
@@ -2340,7 +2406,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 <span className="uppercase text-[10px]">Program Context</span>
                 <select
                   value={regModal.data.programId}
-                  onChange={(e) => setRegModal({ ...regModal, data: { ...regModal.data, programId: e.target.value } })}
+                  onChange={(e) => {
+                    const progId = e.target.value;
+                    const selectedProg = programs.find((p) => p._id === progId);
+                    
+                    // Deep copy outcomes to avoid reference mutation, dropping the internal _id so mongoose generates new ones for Regulation
+                    const inheritedOutcomes = selectedProg?.outcomes 
+                      ? selectedProg.outcomes.map((o: any) => ({ 
+                          name: o.name, 
+                          isGlobal: o.isGlobal, 
+                          isLocal: o.isLocal, 
+                          isMapped: o.isMapped,
+                          items: o.items ? o.items.map((i: any) => ({ code: i.code, description: i.description })) : []
+                        })) 
+                      : [];
+
+                    setRegModal({ 
+                      ...regModal, 
+                      data: { 
+                        ...regModal.data, 
+                        programId: progId,
+                        outcomes: regModal.data.outcomes?.length > 0 ? regModal.data.outcomes : inheritedOutcomes
+                      } 
+                    });
+                  }}
                   className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none focus:ring-1 focus:ring-blue-500 bg-white"
                   required
                 >
@@ -2398,10 +2487,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 </div>
               </div>
 
+
+
               <div className="flex gap-3 pt-3">
                 <button
                   type="button"
-                  onClick={() => setRegModal({ open: false, mode: 'add', data: {} })}
+                  onClick={() => setRegModal({ open: false, mode: 'add', data: { outcomes: [] } })}
                   className="flex-1 py-2.5 border border-slate-300 text-slate-600 rounded-lg font-bold hover:bg-slate-50 cursor-pointer text-center"
                 >
                   Cancel

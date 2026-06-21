@@ -385,10 +385,12 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ activeTab, s
                   
                   if (!c) return <div>No course selected</div>;
 
-                  const creditsC = c.credits?.C || 3;
-                  const l = c.credits?.L || 3;
-                  const t = c.credits?.T || 0;
-                  const p = c.credits?.P || 0;
+                  const fmt = (v: number | undefined) => (v === 0 || !v) ? '-' : v;
+                  const creditsC = fmt(c.credits?.C);
+                  const l = fmt(c.credits?.L);
+                  const t = fmt(c.credits?.T);
+                  const p = fmt(c.credits?.P);
+                  const s = fmt(c.credits?.S);
                   
                   return (
                     <>
@@ -401,8 +403,8 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ activeTab, s
                           Finalized
                         </span>
                         <div className="text-right font-sans">
-                          <span className="block text-[8px] font-bold text-slate-400 leading-none">L  T  P  C</span>
-                          <strong className="block text-xs text-slate-700 leading-none mt-1.5 font-mono">{l}  {t}  {p}  {creditsC}</strong>
+                          <span className="block text-[8px] font-bold text-slate-400 leading-none">L  T  P  S  C</span>
+                          <strong className="block text-xs text-slate-700 leading-none mt-1.5 font-mono">{l}  {t}  {p}  {s}  {creditsC}</strong>
                         </div>
                       </div>
                     </>

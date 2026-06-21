@@ -24,7 +24,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   const {
     programs, departments, regulations,
     selectedRegulation, selectedDepartment, selectedProgram,
-    setRegulations, setPrograms, setSelectedProgram, setSelectedRegulation
+    setRegulations, setPrograms, setDepartments, setSelectedProgram, setSelectedDepartment, setSelectedRegulation
   } = useContextStore();
 
   const [versions, setVersions] = useState<any[]>([]);
@@ -974,162 +974,275 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       )}
 
       {/* ============================================================== */}
-      {/* 2. PEO & PSO MANAGEMENT SCREEN */}
+      {/* 2. LOCAL OUTCOMES MANAGEMENT SCREEN */}
       {/* ============================================================== */}
-      {activeTab === 'peo-pso' && (
+      {activeTab === 'local-outcomes' && (
         <div className="space-y-6 animate-fadeIn">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-extrabold text-slate-800 font-sans">Department Objectives & Outcomes</h1>
-              <p className="text-xs text-slate-500 mt-1">Define and manage Program Educational Objectives (PEOs), Program Specific Outcomes (PSOs), and standard Program Outcomes (POs) for the entire department.</p>
+              <h1 className="text-xl font-extrabold text-slate-800 font-sans">PEO & PSO Management</h1>
+              <p className="text-xs text-slate-500 mt-1">Configure Program Educational Objectives (PEOs) and Program Specific Outcomes (PSOs) for your department.</p>
             </div>
-            {/* Outliner tabs */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setWorkspaceTab('po')}
-                className={`px-4 py-2 text-xs font-bold rounded-lg cursor-pointer border transition-all ${workspaceTab === 'po' ? 'bg-teal-700 border-teal-700 text-white' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
-                  }`}
-              >
-                Standard POs
-              </button>
-              <button
-                onClick={() => setWorkspaceTab('peo')}
-                className={`px-4 py-2 text-xs font-bold rounded-lg cursor-pointer border transition-all ${workspaceTab === 'peo' ? 'bg-teal-700 border-teal-700 text-white' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
-                  }`}
-              >
-                PEOs
-              </button>
-              <button
-                onClick={() => setWorkspaceTab('pso')}
-                className={`px-4 py-2 text-xs font-bold rounded-lg cursor-pointer border transition-all ${workspaceTab === 'pso' ? 'bg-teal-700 border-teal-700 text-white' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
-                  }`}
-              >
-                PSOs
-              </button>
-            </div>
+            <button
+              onClick={() => {
+                if (!(selectedDepartment as any)) return alert('No department selected.');
+                api.programs.updateDept((selectedDepartment as any)._id, { outcomes: (selectedDepartment as any).outcomes }).then(() => {
+                  alert('PEOs and PSOs successfully saved to department!');
+                  loadData();
+                }).catch((err: any) => alert(err.message));
+              }}
+              className="flex items-center gap-1.5 px-4.5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold transition-all shadow cursor-pointer"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>Save PEOs & PSOs</span>
+            </button>
           </div>
 
-          {/* Workspace Split Layout */}
-          <div className="grid grid-cols-3 gap-6">
-            {/* Left panel: Add form */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-              <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3">
-                Create {workspaceTab === 'po' ? 'PO' : workspaceTab === 'peo' ? 'PEO' : 'PSO'} Statement
-              </h3>
-              <div className="space-y-3 text-xs font-bold text-slate-500">
-                <div className="space-y-1">
-                  <span>{workspaceTab === 'po' ? 'PO' : workspaceTab === 'peo' ? 'PEO' : 'PSO'} Code *</span>
-                  <input
-                    type="text"
-                    placeholder={`e.g. ${workspaceTab === 'po' ? 'PO1' : workspaceTab === 'peo' ? 'PEO1' : 'PSO1'}`}
-                    value={newStatement.code}
-                    onChange={(e) => setNewStatement({ ...newStatement, code: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 outline-none bg-white font-semibold focus:ring-1 focus:ring-teal-700 focus:border-teal-700"
-                  />
+          {(selectedDepartment as any) ? (
+            <div className="grid grid-cols-2 gap-6">
+              
+              {/* PEO Builder */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <Layers className="w-5 h-5 text-teal-600" />
+                    <span>Program Educational Objectives (PEOs)</span>
+                  </h3>
                 </div>
-                <div className="space-y-1">
-                  <span>Description *</span>
-                  <textarea
-                    rows={4}
-                    placeholder="Define outcome details description..."
-                    value={newStatement.description}
-                    onChange={(e) => setNewStatement({ ...newStatement, description: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 outline-none bg-white font-semibold focus:ring-1 focus:ring-teal-700 focus:border-teal-700"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <span>Status</span>
-                  <select
-                    value={newStatement.status}
-                    onChange={(e) => setNewStatement({ ...newStatement, status: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 outline-none bg-white font-semibold focus:ring-1 focus:ring-teal-700"
-                  >
-                    <option value="Draft">Draft</option>
-                    <option value="Approved">Approved</option>
-                  </select>
-                </div>
-                <button
-                  onClick={handleAddWorkspaceStatement}
-                  className="w-full py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg font-bold shadow flex items-center justify-center gap-1.5 cursor-pointer text-center"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Outcome Statement</span>
-                </button>
-              </div>
-            </div>
 
-            {/* Right panel: Table list */}
-            <div className="col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-              <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3 uppercase tracking-wide">
-                {workspaceTab === 'po' ? 'Program Outcomes' : workspaceTab === 'peo' ? 'PEO Statements' : 'PSO Statements'}
-              </h3>
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-400 bg-slate-50/50 uppercase font-bold">
-                    <th className="p-3 pl-4 w-20">Code</th>
-                    <th className="p-3">Description</th>
-                    <th className="p-3 w-28">Status</th>
-                    <th className="p-3 pr-4 text-right w-16">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(workspaceTab === 'po' ? peoPso.pos : workspaceTab === 'peo' ? peoPso.peos : peoPso.psos)?.map((st: any, idx: number) => (
-                    <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/20 text-slate-600 font-medium">
-                      <td className="p-3 pl-4">
-                        <span className="text-emerald-700 bg-emerald-50 border border-emerald-100 font-bold px-2 py-0.5 rounded font-mono">
-                          {st.code}
-                        </span>
-                      </td>
-                      <td className="p-3 leading-relaxed">{st.description}</td>
-                      <td className="p-3">
-                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${st.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200'
-                          }`}>
-                          {st.status || 'Draft'}
-                        </span>
-                      </td>
-                      <td className="p-3 pr-4 text-right">
-                        {workspaceTab !== 'po' && (
-                          <>
-                            <button
-                              onClick={() => {
-                                const type = workspaceTab === 'peo' ? 'peos' : 'psos';
-                                setEditingStatement({
-                                  idx,
-                                  type,
-                                  code: st.code,
-                                  description: st.description,
-                                  status: st.status || 'Draft'
-                                });
-                              }}
-                              className="p-1.5 hover:bg-slate-100 rounded text-slate-500 mr-1"
-                              title="Edit Outcome Statement"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteStatement(idx)}
-                              className="p-1.5 hover:bg-red-50 rounded text-red-500"
-                              title="Delete Outcome Statement"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </>
+                <div className="space-y-3">
+                  {(() => {
+                    const deptIndex = departments.findIndex(d => d._id === (selectedDepartment as any)._id);
+                    if (deptIndex === -1) return null;
+                    const dept = departments[deptIndex];
+                    let peoIndex = dept.outcomes ? dept.outcomes.findIndex((o: any) => o.name === 'PEO') : -1;
+                    
+                    // Auto-initialize PEO object if missing
+                    if (peoIndex === -1) {
+                       const newDepts = [...departments];
+                       newDepts[deptIndex] = {
+                         ...newDepts[deptIndex],
+                         outcomes: [...(newDepts[deptIndex].outcomes || []), { name: 'PEO', isGlobal: false, isLocal: true, isMapped: false, items: [] }]
+                       };
+                       // We delay setDepartments to avoid render loop, but React handles it. 
+                       // Actually, better to just render empty state and let "Add" create it.
+                    }
+
+                    peoIndex = dept.outcomes ? dept.outcomes.findIndex((o: any) => o.name === 'PEO') : -1;
+                    const items = (peoIndex > -1 && dept.outcomes) ? (dept.outcomes[peoIndex].items || []) : [];
+
+                    return (
+                      <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                        {items.length === 0 ? (
+                          <div className="text-center p-8 text-xs font-bold text-slate-400 border border-dashed border-slate-300 rounded-xl bg-slate-50/50">
+                            No PEOs configured yet. Click "Add PEO" to begin.
+                          </div>
+                        ) : (
+                          items.map((item: any, iIdx: number) => (
+                            <div key={iIdx} className="flex items-start gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                              <div className="flex-1 space-y-2">
+                                <div>
+                                  <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">PEO Code</span>
+                                  <input
+                                    type="text"
+                                    placeholder="e.g. PEO1"
+                                    value={item.code}
+                                    onChange={(e) => {
+                                      const newDepts = [...departments];
+                                      const newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
+                                      if (peoIndex > -1) {
+                                        newOutcomes[peoIndex].items[iIdx].code = e.target.value;
+                                      }
+                                      newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
+                                      setDepartments(newDepts);
+                                      setSelectedDepartment(newDepts[deptIndex]);
+                                    }}
+                                    className="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-700 outline-none focus:ring-1 focus:ring-teal-500 bg-white shadow-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">PEO Description</span>
+                                  <textarea
+                                    placeholder="Enter PEO description..."
+                                    rows={2}
+                                    value={item.description}
+                                    onChange={(e) => {
+                                      const newDepts = [...departments];
+                                      const newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
+                                      if (peoIndex > -1) {
+                                        newOutcomes[peoIndex].items[iIdx].description = e.target.value;
+                                      }
+                                      newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
+                                      setDepartments(newDepts);
+                                      setSelectedDepartment(newDepts[deptIndex]);
+                                    }}
+                                    className="w-full border border-slate-300 rounded-lg p-2 text-xs text-slate-700 outline-none focus:ring-1 focus:ring-teal-500 bg-white shadow-sm resize-y"
+                                  />
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newDepts = [...departments];
+                                  const newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
+                                  if (peoIndex > -1) {
+                                    newOutcomes[peoIndex].items.splice(iIdx, 1);
+                                  }
+                                  newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
+                                  setDepartments(newDepts);
+                                  setSelectedDepartment(newDepts[deptIndex]);
+                                }}
+                                className="p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
+                                title="Remove PEO"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))
                         )}
-                      </td>
-                    </tr>
-                  ))}
-                  {(workspaceTab === 'po' ? peoPso.pos : workspaceTab === 'peo' ? peoPso.peos : peoPso.psos)?.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="p-12 text-center text-slate-400">
-                        No outcome statements registered for this workspace yet.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                        
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newDepts = [...departments];
+                            let newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
+                            let pIndex = newOutcomes.findIndex((o: any) => o.name === 'PEO');
+                            if (pIndex === -1) {
+                              newOutcomes.push({ name: 'PEO', isGlobal: false, isLocal: true, isMapped: false, items: [] });
+                              pIndex = newOutcomes.length - 1;
+                            }
+                            if (!newOutcomes[pIndex].items) newOutcomes[pIndex].items = [];
+                            newOutcomes[pIndex].items.push({ code: `PEO${newOutcomes[pIndex].items.length + 1}`, description: '' });
+                            newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
+                            setDepartments(newDepts);
+                            setSelectedDepartment(newDepts[deptIndex]);
+                          }}
+                          className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors mt-4 cursor-pointer w-fit border border-teal-200/50"
+                        >
+                          <Plus className="w-4 h-4" /> Add PEO
+                        </button>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
 
-          </div>
+              {/* PSO Builder */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <Layers className="w-5 h-5 text-teal-600" />
+                    <span>Program Specific Outcomes (PSOs)</span>
+                  </h3>
+                </div>
+
+                <div className="space-y-3">
+                  {(() => {
+                    const deptIndex = departments.findIndex(d => d._id === (selectedDepartment as any)._id);
+                    if (deptIndex === -1) return null;
+                    const dept = departments[deptIndex];
+                    let psoIndex = dept.outcomes ? dept.outcomes.findIndex((o: any) => o.name === 'PSO') : -1;
+                    
+                    const items = (psoIndex > -1 && dept.outcomes) ? (dept.outcomes[psoIndex].items || []) : [];
+
+                    return (
+                      <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                        {items.length === 0 ? (
+                          <div className="text-center p-8 text-xs font-bold text-slate-400 border border-dashed border-slate-300 rounded-xl bg-slate-50/50">
+                            No PSOs configured yet. Click "Add PSO" to begin.
+                          </div>
+                        ) : (
+                          items.map((item: any, iIdx: number) => (
+                            <div key={iIdx} className="flex items-start gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                              <div className="flex-1 space-y-2">
+                                <div>
+                                  <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">PSO Code</span>
+                                  <input
+                                    type="text"
+                                    placeholder="e.g. PSO1"
+                                    value={item.code}
+                                    onChange={(e) => {
+                                      const newDepts = [...departments];
+                                      const newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
+                                      if (psoIndex > -1) {
+                                        newOutcomes[psoIndex].items[iIdx].code = e.target.value;
+                                      }
+                                      newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
+                                      setDepartments(newDepts);
+                                      setSelectedDepartment(newDepts[deptIndex]);
+                                    }}
+                                    className="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-700 outline-none focus:ring-1 focus:ring-teal-500 bg-white shadow-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">PSO Description</span>
+                                  <textarea
+                                    placeholder="Enter PSO description..."
+                                    rows={2}
+                                    value={item.description}
+                                    onChange={(e) => {
+                                      const newDepts = [...departments];
+                                      const newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
+                                      if (psoIndex > -1) {
+                                        newOutcomes[psoIndex].items[iIdx].description = e.target.value;
+                                      }
+                                      newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
+                                      setDepartments(newDepts);
+                                      setSelectedDepartment(newDepts[deptIndex]);
+                                    }}
+                                    className="w-full border border-slate-300 rounded-lg p-2 text-xs text-slate-700 outline-none focus:ring-1 focus:ring-teal-500 bg-white shadow-sm resize-y"
+                                  />
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newDepts = [...departments];
+                                  const newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
+                                  if (psoIndex > -1) {
+                                    newOutcomes[psoIndex].items.splice(iIdx, 1);
+                                  }
+                                  newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
+                                  setDepartments(newDepts);
+                                  setSelectedDepartment(newDepts[deptIndex]);
+                                }}
+                                className="p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
+                                title="Remove PSO"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))
+                        )}
+                        
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newDepts = [...departments];
+                            let newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
+                            let pIndex = newOutcomes.findIndex((o: any) => o.name === 'PSO');
+                            if (pIndex === -1) {
+                              newOutcomes.push({ name: 'PSO', isGlobal: false, isLocal: true, isMapped: false, items: [] });
+                              pIndex = newOutcomes.length - 1;
+                            }
+                            if (!newOutcomes[pIndex].items) newOutcomes[pIndex].items = [];
+                            newOutcomes[pIndex].items.push({ code: `PSO${newOutcomes[pIndex].items.length + 1}`, description: '' });
+                            newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
+                            setDepartments(newDepts);
+                            setSelectedDepartment(newDepts[deptIndex]);
+                          }}
+                          className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors mt-4 cursor-pointer w-fit border border-teal-200/50"
+                        >
+                          <Plus className="w-4 h-4" /> Add PSO
+                        </button>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+
+            </div>
+          ) : null}
         </div>
       )}
 

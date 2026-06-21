@@ -544,6 +544,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
   const [activeVersion, setActiveVersion] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(true); // smart preview panel toggle
+  const syllabusUnitsSaveTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Validation engine state variables
   const [validationFailedModalOpen, setValidationFailedModalOpen] = useState(false);
@@ -574,6 +575,11 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
   const reportReady = Boolean(activeVersion && reportValidation.overallPassed);
   const reportWarning = reportMissingRequirements.length > 0;
 
+  const dynamicPOs = activeVersion?.regulationId?.outcomes?.find((o: any) => o.name === 'PO')?.items || [];
+  const dynamicPSOs = activeVersion?.courseId?.departmentId?.outcomes?.find((o: any) => o.name === 'PSO')?.items || [];
+  const poList = dynamicPOs.length > 0 ? dynamicPOs.map((p: any) => p.code) : Array.from({ length: 12 }, (_, i) => `PO${i + 1}`);
+  const psoList = dynamicPSOs.length > 0 ? dynamicPSOs.map((p: any) => p.code) : Array.from({ length: 3 }, (_, i) => `PSO${i + 1}`);
+
   const downloadReportPDF = async () => {
     if (!accrPreviewRef.current) return;
     try {
@@ -596,6 +602,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
 
   const downloadReportWord = async () => {
     if (!activeVersion) return;
+
     try {
       const doc = new Document({
         sections: [
@@ -626,14 +633,14 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
               new Paragraph({ children: [new TextRun({ text: 'CO-PO Mapping Matrix', bold: true })] }),
               ...(activeVersion.courseOutcomes || []).map((co: any) => {
                 const mapping = activeVersion.coPoMappings?.find((m: any) => m.coCode === co.coCode) || { po: {} };
-                const values = Array.from({ length: 12 }, (_, i) => mapping.po?.[`PO${i + 1}`] || 0).join(', ');
+                const values = poList.map((po: string) => mapping.po?.[po] || 0).join(', ');
                 return new Paragraph({ children: [new TextRun({ text: `${co.coCode}: [${values}]` })] });
               }),
               new Paragraph({ children: [] }),
               new Paragraph({ children: [new TextRun({ text: 'CO-PSO Mapping Matrix', bold: true })] }),
               ...(activeVersion.courseOutcomes || []).map((co: any) => {
                 const mapping = activeVersion.coPsoMappings?.find((m: any) => m.coCode === co.coCode) || { pso: {} };
-                const values = ['PSO1', 'PSO2', 'PSO3'].map((pso) => `${pso}:${mapping.pso?.[pso] || 0}`).join(', ');
+                const values = psoList.map((pso: string) => `${pso}:${mapping.pso?.[pso] || 0}`).join(', ');
                 return new Paragraph({ children: [new TextRun({ text: `${co.coCode}: [${values}]` })] });
               }),
               new Paragraph({ children: [] }),
@@ -794,9 +801,9 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
               <thead>
                 <tr>
                   <th style={{ border: '1px solid #000', padding: '2px 4px', fontWeight: 700, background: '#e8e8e8', textAlign: 'center' }}>CO/PO</th>
-                  {Array.from({ length: 12 }, (_, i) => (
-                    <th key={i} style={{ border: '1px solid #000', padding: '2px 3px', fontWeight: 700, background: '#e8e8e8', textAlign: 'center', minWidth: '18px' }}>
-                      PO{i+1}
+                  {poList.map((po: string) => (
+                    <th key={po} style={{ border: '1px solid #000', padding: '2px 3px', fontWeight: 700, background: '#e8e8e8', textAlign: 'center', minWidth: '18px' }}>
+                      {po}
                     </th>
                   ))}
                 </tr>
@@ -809,10 +816,10 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
                       <td style={{ border: '1px solid #000', padding: '2px 4px', fontWeight: 700, textAlign: 'center', background: '#f4f4f4' }}>
                         {co.coCode}
                       </td>
-                      {Array.from({ length: 12 }, (_, i) => {
-                        const val = coPo?.po?.[`PO${i+1}`] || 0;
+                      {poList.map((po: string) => {
+                        const val = coPo?.po?.[po] || 0;
                         return (
-                          <td key={i} style={{ border: '1px solid #000', padding: '2px 3px', textAlign: 'center', fontWeight: val > 0 ? 700 : 400 }}>
+                          <td key={po} style={{ border: '1px solid #000', padding: '2px 3px', textAlign: 'center', fontWeight: val > 0 ? 700 : 400 }}>
                             {val > 0 ? val : ''}
                           </td>
                         );
@@ -832,7 +839,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
               <thead>
                 <tr>
                   <th style={{ border: '1px solid #000', padding: '2px 6px', fontWeight: 700, background: '#e8e8e8', textAlign: 'center' }}>CO/PSO</th>
-                  {['PSO1','PSO2','PSO3'].map(pso => (
+                  {psoList.map((pso: string) => (
                     <th key={pso} style={{ border: '1px solid #000', padding: '2px 10px', fontWeight: 700, background: '#e8e8e8', textAlign: 'center' }}>{pso}</th>
                   ))}
                 </tr>
@@ -845,7 +852,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
                       <td style={{ border: '1px solid #000', padding: '2px 6px', fontWeight: 700, textAlign: 'center', background: '#f4f4f4' }}>
                         {co.coCode}
                       </td>
-                      {['PSO1','PSO2','PSO3'].map(pso => {
+                      {psoList.map((pso: string) => {
                         const val = coPso?.pso?.[pso] || 0;
                         return (
                           <td key={pso} style={{ border: '1px solid #000', padding: '2px 10px', textAlign: 'center', fontWeight: val > 0 ? 700 : 400 }}>
@@ -1018,194 +1025,8 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
           loadCourseVersion(res.versions[0]._id);
         }
       } else {
-        // Fallback Mock data to keep UI high density and professional
-        const mockVersions = [
-          {
-            _id: 'mock-ds-101',
-            courseId: {
-              _id: 'mock-ds-id',
-              code: 'CS301',
-              title: 'Database Management Systems',
-              departmentId: { name: 'Computer Science Engineering', code: 'CSE' }
-            },
-            regulationId: { _id: 'mock-reg-id', code: 'R2023', academicYear: 2023 },
-            semester: 5,
-            credits: { L: 3, T: 0, P: 2, S: 1, C: 4 },
-            category: 'PC',
-            description: 'This course introduces fundamental concepts of database management systems, data models, SQL, normalization, transactions and concurrency control.',
-            offeredFor: ['CSE', 'IT', 'ECE'],
-            prerequisites: ['Data Structures'],
-            objectives: [],
-            status: 'Returned',
-            assignedDate: '2026-05-10',
-            assignedBy: 'Dr. K. Raghavendra (HOD-CSE)',
-            deadline: '2026-06-15',
-            courseOutcomes: [
-              { coCode: 'CO1', description: 'Understand the database design principles and schemas.', bloomLevel: 'K2 - Understand' },
-              { coCode: 'CO2', description: 'Construct ER model and relational schema mappings.', bloomLevel: 'K3 - Apply' },
-              { coCode: 'CO3', description: 'Formulate relational algebra and structured queries.', bloomLevel: 'K3 - Apply' },
-              { coCode: 'CO4', description: 'Analyze relational databases using normalization.', bloomLevel: 'K4 - Analyze' },
-              { coCode: 'CO5', description: 'Design simple application software with databases.', bloomLevel: 'K6 - Create' }
-            ],
-            coPoMappings: [
-              { coCode: 'CO1', po: { PO1: 2, PO2: 1, PO3: 0, PO4: 0, PO5: 0, PO6: 0, PO7: 0, PO8: 0, PO9: 0, PO10: 0, PO11: 0, PO12: 1 } },
-              { coCode: 'CO2', po: { PO1: 3, PO2: 2, PO3: 2, PO4: 0, PO5: 0, PO6: 0, PO7: 0, PO8: 0, PO9: 0, PO10: 0, PO11: 0, PO12: 1 } },
-              { coCode: 'CO3', po: { PO1: 3, PO2: 2, PO3: 2, PO4: 1, PO5: 2, PO6: 0, PO7: 0, PO8: 0, PO9: 0, PO10: 0, PO11: 0, PO12: 1 } },
-              { coCode: 'CO4', po: { PO1: 3, PO2: 3, PO3: 2, PO4: 1, PO5: 1, PO6: 0, PO7: 0, PO8: 0, PO9: 0, PO10: 0, PO11: 0, PO12: 1 } },
-              { coCode: 'CO5', po: { PO1: 3, PO2: 3, PO3: 3, PO4: 2, PO5: 3, PO6: 1, PO7: 0, PO8: 0, PO9: 2, PO10: 1, PO11: 2, PO12: 2 } }
-            ],
-            coPsoMappings: [
-              { coCode: 'CO1', pso: { PSO1: 2, PSO2: 1, PSO3: 0 } },
-              { coCode: 'CO2', pso: { PSO1: 2, PSO2: 2, PSO3: 1 } },
-              { coCode: 'CO3', pso: { PSO1: 3, PSO2: 2, PSO3: 1 } },
-              { coCode: 'CO4', pso: { PSO1: 3, PSO2: 2, PSO3: 1 } },
-              { coCode: 'CO5', pso: { PSO1: 3, PSO2: 3, PSO3: 3 } }
-            ],
-            syllabusUnits: [
-              { unitNumber: 1, title: 'Introduction & Entity Relationship Model', description: 'Covers database management basics compared to legacy file systems, system architecture, ER schemas, and key definitions.', topics: ['ER model schemas', 'File systems vs DBMS'], hours: 10 },
-              { unitNumber: 2, title: 'Relational Model & Relational Algebra & SQL', description: 'Introduces formal mathematical representations of queries and practical SQL languages.', topics: ['SQL commands', 'Relational algebra'], hours: 12 },
-              { unitNumber: 3, title: 'Relational Database Design & Normalization', description: 'Syllabus centering on relational schema structures, eliminating redundancy and insert/delete anomalies.', topics: ['Normalization', 'Functional dependencies'], hours: 11 },
-              { unitNumber: 4, title: 'Transaction Processing & Concurrency Control', description: 'Focuses on database stability, consistency, lock managers, and log-based restoration structures.', topics: ['ACID transactions', 'Concurrency control'], hours: 10 },
-              { unitNumber: 5, title: 'Indexing, Storage & Query Processing', description: 'Physical storage structure optimization, disk block access mechanisms, B+ trees, and optimization paths.', topics: ['Storage formats', 'B+ tree indexing'], hours: 9 }
-            ],
-            labPracticals: [],
-            miniProjects: [],
-            textbooks: [
-              'Database System Concepts, Silberschatz, Korth, Sudarshan, 7th Edition, McGraw Hill.',
-              'Fundamentals of Database Systems, Elmasri, Navathe, 7th Edition, Pearson Education.'
-            ],
-            referenceMaterials: [
-              'Database Management Systems, Raghu Ramakrishnan, Johannes Gehrke, 3rd Edition, McGraw Hill.'
-            ],
-            journals: [],
-            onlineResources: [
-              'NPTEL Online Course - Database Management Systems'
-            ],
-            cieSee: {
-              cieMaxMarks: 40,
-              seeMaxMarks: 60,
-              midExams: 20,
-              assignments: 10,
-              quiz: 10,
-              lab: 0,
-              cieBreakup: 'Mid Terms (20M), Assignments (10M), Quiz (10M)',
-              seeBreakup: 'End Semester Theory Exam (60M)'
-            },
-            comments: 'Returned by HOD: Please refine CO3 Bloom taxonomy and add lab practical objectives.'
-          },
-          {
-            _id: 'mock-cn-102',
-            courseId: {
-              _id: 'mock-cn-id',
-              code: 'CS302',
-              title: 'Computer Networks',
-              departmentId: { name: 'Computer Science Engineering', code: 'CSE' }
-            },
-            regulationId: { _id: 'mock-reg-id', code: 'R2023', academicYear: 2023 },
-            semester: 5,
-            credits: { L: 3, T: 0, P: 0, S: 0, C: 3 },
-            category: 'PC',
-            description: 'This course covers the architectures, protocols, and technologies that run the modern Internet.',
-            offeredFor: ['CSE', 'IT'],
-            prerequisites: ['Computer Organization'],
-            status: 'Approved',
-            assignedDate: '2026-05-10',
-            assignedBy: 'Dr. K. Raghavendra (HOD-CSE)',
-            deadline: '2026-06-12',
-            courseOutcomes: [
-              { coCode: 'CO1', description: 'Describe network layered architectures.', bloomLevel: 'K2 - Understand' },
-              { coCode: 'CO2', description: 'Analyze link layer error detection coding.', bloomLevel: 'K4 - Analyze' },
-              { coCode: 'CO3', description: 'Solve subnet routing math.', bloomLevel: 'K3 - Apply' },
-              { coCode: 'CO4', description: 'Configure basic switches and routers.', bloomLevel: 'K3 - Apply' },
-              { coCode: 'CO5', description: 'Understand modern application level protocols.', bloomLevel: 'K2 - Understand' }
-            ],
-            coPoMappings: [
-              { coCode: 'CO1', po: { PO1: 2, PO2: 1 } }
-            ],
-            coPsoMappings: [
-              { coCode: 'CO1', pso: { PSO1: 1, PSO2: 1 } }
-            ],
-            syllabusUnits: [
-              { unitNumber: 1, title: 'Introduction & Physical Layer', description: 'Network models, OSI/TCP-IP reference architecture.', hours: 9 },
-              { unitNumber: 2, title: 'Data Link Layer', description: 'Sliding window protocols, error detection.', hours: 9 },
-              { unitNumber: 3, title: 'Network Layer', description: 'Routing algorithms, IP addressing, subnets.', hours: 10 },
-              { unitNumber: 4, title: 'Transport Layer', description: 'TCP, UDP protocols, congestion control.', hours: 9 },
-              { unitNumber: 5, title: 'Application Layer', description: 'DNS, HTTP, SMTP protocols.', hours: 9 }
-            ],
-            textbooks: ['Computer Networks, 5th Edition - Andrew S. Tanenbaum'],
-            referenceMaterials: ['Computer Networking: A Top-Down Approach - James Kurose']
-          },
-          {
-            _id: 'mock-os-103',
-            courseId: {
-              _id: 'mock-os-id',
-              code: 'CS303',
-              title: 'Operating Systems',
-              departmentId: { name: 'Computer Science Engineering', code: 'CSE' }
-            },
-            regulationId: { _id: 'mock-reg-id', code: 'R2023', academicYear: 2023 },
-            semester: 5,
-            credits: { L: 3, T: 0, P: 0, S: 0, C: 3 },
-            category: 'PC',
-            description: 'Introduction to operating systems principles, process control, threads, CPU scheduling, and memory allocation.',
-            offeredFor: ['CSE', 'IT', 'ECE'],
-            prerequisites: ['Computer Organization'],
-            status: 'Pending HOD',
-            assignedDate: '2026-05-12',
-            assignedBy: 'Dr. K. Raghavendra (HOD-CSE)',
-            deadline: '2026-06-20',
-            courseOutcomes: [
-              { coCode: 'CO1', description: 'Understand basic OS structures.', bloomLevel: 'K2 - Understand' },
-              { coCode: 'CO2', description: 'Demonstrate CPU scheduling models.', bloomLevel: 'K3 - Apply' },
-              { coCode: 'CO3', description: 'Analyze process synchronization concepts.', bloomLevel: 'K4 - Analyze' },
-              { coCode: 'CO4', description: 'Implement deadlock recovery algorithms.', bloomLevel: 'K3 - Apply' },
-              { coCode: 'CO5', description: 'Explain virtual memory schemes.', bloomLevel: 'K2 - Understand' }
-            ],
-            coPoMappings: [
-              { coCode: 'CO1', po: { PO1: 2, PO2: 1, PO12: 1 } }
-            ],
-            coPsoMappings: [
-              { coCode: 'CO1', pso: { PSO1: 1 } }
-            ],
-            syllabusUnits: [
-              { unitNumber: 1, title: 'Introduction & System Structures', description: 'OS operations, services, system calls.', hours: 9 },
-              { unitNumber: 2, title: 'Process Management', description: 'CPU scheduling, threads, synchronization.', hours: 9 },
-              { unitNumber: 3, title: 'Memory Management', description: 'Virtual memory paging, segmentations.', hours: 10 },
-              { unitNumber: 4, title: 'File System & Storage', description: 'Structure, allocation methods, directory layout.', hours: 9 },
-              { unitNumber: 5, title: 'Protection & Security', description: 'Access control, threats, cryptography.', hours: 9 }
-            ],
-            textbooks: ['Operating System Concepts - Silberschatz']
-          },
-          {
-            _id: 'mock-se-104',
-            courseId: {
-              _id: 'mock-se-id',
-              code: 'CS304',
-              title: 'Software Engineering',
-              departmentId: { name: 'Computer Science Engineering', code: 'CSE' }
-            },
-            regulationId: { _id: 'mock-reg-id', code: 'R2023', academicYear: 2023 },
-            semester: 5,
-            credits: { L: 3, T: 0, P: 0, S: 0, C: 3 },
-            category: 'PC',
-            description: '',
-            offeredFor: [],
-            prerequisites: [],
-            status: 'Draft',
-            assignedDate: '2026-05-15',
-            assignedBy: 'Dr. K. Raghavendra (HOD-CSE)',
-            deadline: '2026-06-28',
-            courseOutcomes: [],
-            coPoMappings: [],
-            coPsoMappings: [],
-            syllabusUnits: [],
-            textbooks: []
-          }
-        ];
-        setAssignedVersions(mockVersions);
-        if (!activeVersion) {
-          setActiveVersion(mockVersions[0]);
-        }
+        setAssignedVersions([]);
+        setActiveVersion(null);
       }
     } catch (err) {
       console.error('[Coord] Failed to load assigned courses', err);
@@ -2492,7 +2313,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
                   <thead>
                     <tr className="bg-slate-100 border-b-2 border-slate-200">
                       <th className="sticky left-0 z-10 bg-slate-100 text-[10px] font-extrabold text-slate-600 uppercase tracking-wider px-4 py-2 border-r border-slate-200" style={{ width: '80px', minWidth: '80px' }}>CO / PO</th>
-                      {Array.from({ length: 12 }, (_, i) => `PO${i + 1}`).map(po => (
+                      {poList.map((po: string) => (
                         <th key={po} className="text-[10px] font-extrabold text-slate-500 uppercase text-center py-2 border-r border-slate-200 last:border-r-0" style={{ width: '52px', minWidth: '52px' }}>{po}</th>
                       ))}
                     </tr>
@@ -2508,7 +2329,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
                               {co.coCode}
                             </span>
                           </td>
-                          {Array.from({ length: 12 }, (_, i) => `PO${i + 1}`).map(po => {
+                          {poList.map((po: string) => {
                             const val = coPo?.po?.[po] || 0;
                             return (
                               <td
@@ -2528,7 +2349,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
                     {/* Averages Row */}
                     <tr className="border-t-2 border-slate-200 bg-slate-100">
                       <td className="sticky left-0 z-10 px-4 text-[10px] font-extrabold text-slate-600 uppercase tracking-wide border-r border-slate-200 bg-slate-100" style={{ height: '36px' }}>Avg.</td>
-                      {Array.from({ length: 12 }, (_, i) => `PO${i + 1}`).map(po => {
+                      {poList.map((po: string) => {
                         let total = 0, count = 0;
                         activeVersion.coPoMappings?.forEach((m: any) => {
                           const v = m.po?.[po] || 0;
@@ -2550,7 +2371,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
 
               {/* Row count info */}
               <p className="text-[10px] text-slate-400 font-medium">
-                {activeVersion.courseOutcomes?.length || 0} Course Outcomes × 12 Program Outcomes — {activeVersion.coPoMappings?.reduce((acc: number, m: any) => acc + Object.values(m.po || {}).filter((v: any) => v > 0).length, 0) || 0} mappings defined
+                {activeVersion.courseOutcomes?.length || 0} Course Outcomes × {poList.length} Program Outcomes — {activeVersion.coPoMappings?.reduce((acc: number, m: any) => acc + Object.values(m.po || {}).filter((v: any) => v > 0).length, 0) || 0} mappings defined
               </p>
 
               <div className="flex justify-between pt-4 mt-6 border-t border-slate-100">
@@ -2614,7 +2435,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
                   <thead>
                     <tr className="bg-slate-100 border-b-2 border-slate-200">
                       <th className="sticky left-0 z-10 bg-slate-100 text-[10px] font-extrabold text-slate-600 uppercase tracking-wider px-4 py-2 border-r border-slate-200" style={{ width: '80px', minWidth: '80px' }}>CO / PSO</th>
-                      {Array.from({ length: 3 }, (_, i) => `PSO${i + 1}`).map(pso => (
+                      {psoList.map((pso: string) => (
                         <th key={pso} className="text-[10px] font-extrabold text-slate-500 uppercase text-center py-2 border-r border-slate-200 last:border-r-0" style={{ width: '90px', minWidth: '90px' }}>{pso}</th>
                       ))}
                     </tr>
@@ -2630,7 +2451,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
                               {co.coCode}
                             </span>
                           </td>
-                          {Array.from({ length: 3 }, (_, i) => `PSO${i + 1}`).map(pso => {
+                          {psoList.map((pso: string) => {
                             const val = coPso?.pso?.[pso] || 0;
                             return (
                               <td
@@ -2650,7 +2471,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
                     {/* Averages Row */}
                     <tr className="border-t-2 border-slate-200 bg-slate-100">
                       <td className="sticky left-0 z-10 px-4 text-[10px] font-extrabold text-slate-600 uppercase tracking-wide border-r border-slate-200 bg-slate-100" style={{ height: '36px' }}>Avg.</td>
-                      {Array.from({ length: 3 }, (_, i) => `PSO${i + 1}`).map(pso => {
+                      {psoList.map((pso: string) => {
                         let total = 0, count = 0;
                         activeVersion.coPsoMappings?.forEach((m: any) => {
                           const v = m.pso?.[pso] || 0;
@@ -2672,7 +2493,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
 
               {/* Row count info */}
               <p className="text-[10px] text-slate-400 font-medium">
-                {activeVersion.courseOutcomes?.length || 0} Course Outcomes × 3 Program Specific Outcomes — {activeVersion.coPsoMappings?.reduce((acc: number, m: any) => acc + Object.values(m.pso || {}).filter((v: any) => v > 0).length, 0) || 0} mappings defined
+                {activeVersion.courseOutcomes?.length || 0} Course Outcomes × {psoList.length} Program Specific Outcomes — {activeVersion.coPsoMappings?.reduce((acc: number, m: any) => acc + Object.values(m.pso || {}).filter((v: any) => v > 0).length, 0) || 0} mappings defined
               </p>
 
               <div className="flex justify-between pt-4 mt-6 border-t border-slate-100">
@@ -2774,7 +2595,13 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
                                       plainText: plainText,
                                       lastUpdated: new Date().toISOString()
                                     };
-                                    setActiveVersion({ ...activeVersion, syllabusUnits: units });
+                                    const newVersion = { ...activeVersion, syllabusUnits: units };
+                                    setActiveVersion(newVersion);
+                                    
+                                    if (syllabusUnitsSaveTimeout.current) clearTimeout(syllabusUnitsSaveTimeout.current);
+                                    syllabusUnitsSaveTimeout.current = setTimeout(() => {
+                                      saveDraftAutomatically(newVersion);
+                                    }, 2000);
                                   }}
                                   minHeight={250}
                                 />

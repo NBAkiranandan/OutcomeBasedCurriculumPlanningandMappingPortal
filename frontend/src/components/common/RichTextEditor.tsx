@@ -123,7 +123,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   return (
     <div className={`rich-text-editor-container bg-white border border-slate-300 rounded-lg overflow-hidden flex flex-col ${className}`}>
       <div className="flex flex-wrap items-center gap-1 p-2 bg-slate-100 border-b border-slate-300 shadow-sm z-10">
-        
+
         {/* Document Formatting */}
         <select
           disabled={disabled}
@@ -184,9 +184,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         <button type="button" onClick={() => editor.chain().focus().toggleItalic().run()} className={btnClass(editor.isActive('italic'))} title="Italic"><Italic size={16} /></button>
         <button type="button" onClick={() => editor.chain().focus().toggleUnderline().run()} className={btnClass(editor.isActive('underline'))} title="Underline"><UnderlineIcon size={16} /></button>
         <button type="button" onClick={() => editor.chain().focus().toggleStrike().run()} className={btnClass(editor.isActive('strike'))} title="Strikethrough"><Strikethrough size={16} /></button>
-        
+
         <div className="w-px h-5 bg-slate-300 mx-1" />
-        
+
         <button type="button" onClick={() => editor.chain().focus().setTextAlign('left').run()} className={btnClass(editor.isActive({ textAlign: 'left' }))} title="Align Left"><AlignLeft size={16} /></button>
         <button type="button" onClick={() => editor.chain().focus().setTextAlign('center').run()} className={btnClass(editor.isActive({ textAlign: 'center' }))} title="Align Center"><AlignCenter size={16} /></button>
         <button type="button" onClick={() => editor.chain().focus().setTextAlign('right').run()} className={btnClass(editor.isActive({ textAlign: 'right' }))} title="Align Right"><AlignRight size={16} /></button>
@@ -208,7 +208,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         <button type="button" onClick={() => editor.chain().focus().deleteTable().run()} className={btnClass(false)} title="Delete Table"><Trash2 size={16} className="text-red-500" /></button>
       </div>
       <div className="p-4 flex-grow overflow-auto" style={{ minHeight }}>
-        <EditorContent editor={editor} className="prose max-w-none [&_.tiptap]:outline-none [&_.tiptap]:min-h-[150px] [&_.tiptap]:whitespace-pre-wrap [&_.tiptap]:text-justify [&_table]:border-collapse [&_table]:w-full [&_td]:border [&_td]:border-slate-300 [&_td]:p-2 [&_th]:border [&_th]:border-slate-400 [&_th]:bg-slate-100 [&_th]:p-2 [&_th]:font-bold [&_p]:m-0 [&_ul]:pl-5 [&_ol]:pl-5 [&_li>p]:m-0" />
+        <EditorContent editor={editor} className="prose max-w-none [&_.tiptap]:outline-none [&_.tiptap]:min-h-[150px] [&_table]:border-collapse [&_table]:w-full [&_td]:border [&_td]:border-slate-300 [&_td]:p-2 [&_th]:border [&_th]:border-slate-400 [&_th]:bg-slate-100 [&_th]:p-2 [&_th]:font-bold [&_p]:m-0 [&_ul]:pl-5 [&_ol]:pl-5 [&_li>p]:m-0" />
       </div>
     </div>
   );

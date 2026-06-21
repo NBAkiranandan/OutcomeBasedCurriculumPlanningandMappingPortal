@@ -304,11 +304,11 @@ export const PdfCoursePage: React.FC<PdfCoursePageProps> = ({
           </thead>
           <tbody>
             <tr>
-              <td>{courseVersion?.credits?.L ?? 0}</td>
-              <td>{courseVersion?.credits?.T ?? 0}</td>
-              <td>{courseVersion?.credits?.P ?? 0}</td>
-              <td>{courseVersion?.credits?.S ?? 0}</td>
-              <td>{courseVersion?.credits?.C ?? 0}</td>
+              <td>{(courseVersion?.credits?.L === 0 || !courseVersion?.credits?.L) ? '-' : courseVersion?.credits?.L}</td>
+              <td>{(courseVersion?.credits?.T === 0 || !courseVersion?.credits?.T) ? '-' : courseVersion?.credits?.T}</td>
+              <td>{(courseVersion?.credits?.P === 0 || !courseVersion?.credits?.P) ? '-' : courseVersion?.credits?.P}</td>
+              <td>{(courseVersion?.credits?.S === 0 || !courseVersion?.credits?.S) ? '-' : courseVersion?.credits?.S}</td>
+              <td>{(courseVersion?.credits?.C === 0 || !courseVersion?.credits?.C) ? '-' : courseVersion?.credits?.C}</td>
             </tr>
           </tbody>
         </table>

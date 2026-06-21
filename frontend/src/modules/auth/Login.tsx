@@ -62,17 +62,17 @@ const ROLE_CONFIG = [
 
 /* ── Feature cards ── */
 const FEATURES = [
-  { Icon: Zap,        label: 'CO-PO Mapping',         sub: 'Automated attainment' },
-  { Icon: Award,      label: 'NBA Accreditation',      sub: 'Ready workflows' },
-  { Icon: BookMarked, label: 'Curriculum Mgmt.',       sub: 'Syllabus governance' },
-  { Icon: BarChart3,  label: 'Attainment Analytics',   sub: 'Real-time insights' },
+  { Icon: Zap, label: 'CO-PO Mapping', sub: 'Automated attainment' },
+  { Icon: Award, label: 'NBA Accreditation', sub: 'Ready workflows' },
+  { Icon: BookMarked, label: 'Curriculum Mgmt.', sub: 'Syllabus governance' },
+  { Icon: BarChart3, label: 'Attainment Analytics', sub: 'Real-time insights' },
 ];
 
 /* ── Security badges ── */
 const BADGES = [
-  { Icon: Lock,        text: 'Enterprise Secure Auth' },
+  { Icon: Lock, text: 'Enterprise Secure Auth' },
   { Icon: ShieldCheck, text: 'Role Based Access' },
-  { Icon: Award,       text: 'NBA Accreditation Ready' },
+  { Icon: Award, text: 'NBA Accreditation Ready' },
 ];
 
 /* ═══════════════════════════════════════════════════
@@ -98,19 +98,19 @@ const useClock = () => {
    COLOR TOKENS
 ═══════════════════════════════════════════════════ */
 const C = {
-  orange:     '#F97316',
+  orange: '#F97316',
   orangeDeep: '#EA580C',
-  gold:       '#D4AF37',
-  goldDim:    'rgba(212,175,55,0.30)',
-  panel:      'rgba(11,17,32,0.90)',
-  border:     'rgba(249,115,22,0.22)',
-  borderSel:  '#F97316',
-  glow:       'rgba(249,115,22,0.30)',
-  glowStr:    'rgba(249,115,22,0.50)',
-  muted:      '#94a3b8',
-  text:       '#ffffff',
-  inputBg:    'rgba(255,255,255,0.06)',
-  inputBorder:'rgba(255,255,255,0.10)',
+  gold: '#D4AF37',
+  goldDim: 'rgba(212,175,55,0.30)',
+  panel: 'rgba(11,17,32,0.90)',
+  border: 'rgba(249,115,22,0.22)',
+  borderSel: '#F97316',
+  glow: 'rgba(249,115,22,0.30)',
+  glowStr: 'rgba(249,115,22,0.50)',
+  muted: '#94a3b8',
+  text: '#ffffff',
+  inputBg: 'rgba(255,255,255,0.06)',
+  inputBorder: 'rgba(255,255,255,0.10)',
 };
 
 /* ═══════════════════════════════════════════════════
@@ -120,13 +120,13 @@ export const Login: React.FC = () => {
   const { login } = useAuthStore();
 
   /* State */
-  const [loading, setLoading]           = useState(false);
-  const [errorMsg, setErrorMsg]         = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
-  const [showPass, setShowPass]         = useState(false);
-  const [capsLock, setCapsLock]         = useState(false);
+  const [showPass, setShowPass] = useState(false);
+  const [capsLock, setCapsLock] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
-  const [passFocused, setPassFocused]   = useState(false);
+  const [passFocused, setPassFocused] = useState(false);
   const ts = useClock();
   const btnRef = useRef<HTMLButtonElement>(null);
 
@@ -168,7 +168,7 @@ export const Login: React.FC = () => {
 
   /* Input border */
   const iBorder = (focused: boolean, err: boolean) => {
-    if (err)     return `1.5px solid rgba(248,113,113,0.7)`;
+    if (err) return `1.5px solid rgba(248,113,113,0.7)`;
     if (focused) return `1.5px solid ${C.orange}`;
     return `1.5px solid ${C.inputBorder}`;
   };

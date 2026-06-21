@@ -39,7 +39,6 @@ export const departmentSchema = z.object({
   name: z.string().min(3, { message: 'Department name must be at least 3 characters' }),
   code: z.string().min(2, { message: 'Department code must be at least 2 characters' }),
   programId: z.string().regex(/^[0-9a-fA-F]{24}$/, { message: 'Invalid program ID reference' }),
-  regulationId: z.string().regex(/^[0-9a-fA-F]{24}$/, { message: 'Invalid regulation ID reference' }),
   description: z.string().optional()
 });
 

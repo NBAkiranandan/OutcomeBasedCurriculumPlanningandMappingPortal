@@ -20,6 +20,16 @@ const ProgramSchema = new mongoose.Schema({
     watermarkText: { type: String, default: '' }
   },
   // CODEx-added end
+  outcomes: [{
+    name: { type: String, required: true },
+    isGlobal: { type: Boolean, default: false },
+    isLocal: { type: Boolean, default: false },
+    isMapped: { type: Boolean, default: false },
+    items: [{
+      code: { type: String, required: true },
+      description: { type: String, required: true }
+    }]
+  }],
   isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 
