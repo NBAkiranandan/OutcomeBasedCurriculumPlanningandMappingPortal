@@ -231,18 +231,9 @@ export const CurriculumBookManager = () => {
     try {
       setLoading(true);
       await handleSaveBook();
-      const res = await api.curriculumBooks.exportPdf({ curriculumBookId: selectedBook._id });
-      const url = res.url ? `${API_ORIGIN}${res.url}` : '';
-      setGeneratedUrl(url);
-      if (res.html) {
-        const printWindow = window.open('', '_blank');
-        if (printWindow) {
-          printWindow.document.open();
-          printWindow.document.write(res.html);
-          printWindow.document.close();
-          printWindow.focus();
-        }
-      }
+      // exportPdf now streams a binary PDF directly — it returns void and auto-downloads
+      await api.curriculumBooks.exportPdf({ curriculumBookId: selectedBook._id });
+      setGeneratedUrl('');
     } catch (err: any) {
       alert(`PDF generation failed: ${err.message}`);
     } finally {

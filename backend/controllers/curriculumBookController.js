@@ -11,6 +11,9 @@ import Regulation from '../models/Regulation.js';
 import MinorStream from '../models/MinorStream.js';
 import Course from '../models/Course.js';
 import CourseCategory from '../models/CourseCategory.js';
+import Department from '../models/Department.js';
+import Program from '../models/Program.js';
+import { generateCurriculumDocx } from '../services/curriculumDocxService.js';
 
 const STATUS_VALUES = ['Draft', 'Published', 'Archived'];
 const GENERATED_DIR = path.resolve('uploads', 'generated');
@@ -1209,85 +1212,171 @@ export const updateStatus = async (req, res, next) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  EXPORT PDF — USING PUPPETEER
+//  EXPORT PDF — USING PUPPETEER (streams binary PDF directly)
 // ─────────────────────────────────────────────────────────────────────────────
 export const exportPdf = async (req, res, next) => {
   let browser = null;
   try {
-    const { curriculumBookId } = req.body;
-    if (!mongoose.Types.ObjectId.isValid(curriculumBookId)) {
-      return res.status(400).json({ message: 'Invalid curriculum book ID' });
+    // Support two modes:
+    // Mode A: regulationId + departmentId  → generates curriculum handbook PDF on the fly
+    // Mode B: curriculumBookId             → generates PDF from an uploaded curriculum book record
+    const { curriculumBookId, regulationId, departmentId } = req.body;
+
+    let html = '';
+    let pdfFilename = 'curriculum_book.pdf';
+
+    if (regulationId) {
+      // Mode A: Handbook generator (from CurriculumBookGenerator page)
+      if (!mongoose.Types.ObjectId.isValid(regulationId)) {
+        return res.status(400).json({ message: 'Invalid regulation ID' });
+      }
+
+      const regulation  = await Regulation.findById(regulationId).lean();
+      if (!regulation) return res.status(404).json({ message: 'Regulation not found' });
+
+      let dept = null;
+      if (departmentId && mongoose.Types.ObjectId.isValid(departmentId)) {
+        dept = await Department.findById(departmentId).lean();
+      }
+
+      // Build a lightweight book proxy so we can reuse buildPdfReadyHtml
+      const bookProxy = {
+        _id: regulationId,
+        title: `${regulation.code} Curriculum Book`,
+        regulation: regulation.code,
+        academicYear: regulation.academicYear || '2024-25',
+        currentVersion: 1,
+        departmentId: dept || { name: 'Computer Science and Engineering', code: 'CSE' },
+      };
+
+      const dynamicContext = await getDynamicCurriculumContext(bookProxy);
+      html = buildPdfReadyHtml(bookProxy, [], dynamicContext);
+
+      const deptCode = dept?.code || 'CSE';
+      const progCode = regulation.code || 'R24';
+      pdfFilename = `${progCode}_${deptCode}_CurriculumBook.pdf`;
+
+    } else if (curriculumBookId) {
+      // Mode B: Existing curriculum book record
+      if (!mongoose.Types.ObjectId.isValid(curriculumBookId)) {
+        return res.status(400).json({ message: 'Invalid curriculum book ID' });
+      }
+      const book = await CurriculumBook.findById(curriculumBookId).populate('departmentId', 'name code');
+      if (!book) return res.status(404).json({ message: 'Curriculum book not found' });
+
+      const sections = await CurriculumSection.find({ curriculumBookId }).sort({ orderNumber: 1 }).lean();
+      const dynamicContext = await getDynamicCurriculumContext(book);
+      html = buildPdfReadyHtml(book, sections, dynamicContext);
+      pdfFilename = `${book.title.replace(/[^\w.-]+/g, '_')}_v${book.currentVersion}.pdf`;
+    } else {
+      return res.status(400).json({ message: 'Provide either regulationId or curriculumBookId.' });
     }
 
-    const book = await CurriculumBook.findById(curriculumBookId).populate('departmentId', 'name code');
-    if (!book) return res.status(404).json({ message: 'Curriculum book not found' });
-
-    const sections = await CurriculumSection.find({ curriculumBookId }).sort({ orderNumber: 1 }).lean();
-    const dynamicContext = await getDynamicCurriculumContext(book);
-    const html = buildPdfReadyHtml(book, sections, dynamicContext);
-
-    await fs.promises.mkdir(GENERATED_DIR, { recursive: true });
-
-    // Save HTML for reference
-    const htmlFilename = `${book._id}-v${book.currentVersion}-curriculum.html`;
-    const htmlPath = path.join(GENERATED_DIR, htmlFilename);
-    await fs.promises.writeFile(htmlPath, html, 'utf8');
-
-    // Generate PDF with Puppeteer
-    const pdfFilename = `${book._id}-v${book.currentVersion}-curriculum.pdf`;
-    const pdfPath = path.join(GENERATED_DIR, pdfFilename);
-
+    // ── Launch Puppeteer and generate PDF ──
     browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
     });
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
     await page.evaluate(() => document.body.classList.add('is-puppeteer'));
-    await page.pdf({
-      path: pdfPath,
+
+    const logoBase64 = getLogoBase64();
+    const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
-      margin: { top: '24mm', right: '15mm', bottom: '20mm', left: '15mm' },
+      margin: { top: '28mm', right: '18mm', bottom: '24mm', left: '18mm' },
       displayHeaderFooter: true,
       headerTemplate: `
-        <div style="font-family:'Times New Roman',serif; width:100%; display:flex; justify-content:space-between; align-items:flex-start; padding:0 15mm; background:white; -webkit-print-color-adjust: exact;">
-          <div style="font-size:8.5pt; font-weight:600; color:#374151; line-height:1.3; max-width:130mm;">
-            <strong style="color:black;">Department of ${book.departmentId?.name || 'Computer Science and Engineering'}</strong><br>
-            <span style="color:black;">B.Tech Program Curriculum-${(book.regulation || 'R24').replace('R', '20')} (Applicable for batches admitted from A.Y. ${book.academicYear || '2024-25'})</span>
+        <div style="font-family:'Times New Roman',serif; font-size:8pt; width:100%;
+             display:flex; justify-content:space-between; align-items:flex-start;
+             padding:4mm 18mm 0; box-sizing:border-box; background:white;">
+          <div style="font-weight:700; color:#111; line-height:1.3; max-width:75%;">
+            <span style="display:block;">Aditya University — Outcome Based Curriculum Portal</span>
           </div>
-          ${getLogoBase64() ? `<img src="${getLogoBase64()}" style="height:12mm; width:auto; display:block;" />` : ''}
+          ${logoBase64 ? `<img src="${logoBase64}" style="height:10mm;width:auto;" />` : ''}
         </div>
       `,
       footerTemplate: `
-        <div style="font-family:'Times New Roman',serif; font-size:9pt; width:100%; padding:0 15mm; display:flex; justify-content:space-between; color:#374151; border-top:1px solid #374151;">
-          <span style="color:black;">B.Tech (${book.departmentId?.code || 'CSE'}) Curriculum-${book.academicYear || '2024-25'}</span>
-          <span style="color:black;">Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
-          <span style="color:black;">Aditya University</span>
+        <div style="font-family:'Times New Roman',serif; font-size:8pt; width:100%;
+             padding:0 18mm 3mm; box-sizing:border-box; display:flex;
+             justify-content:space-between; color:#374151;
+             border-top:0.5pt solid #374151;">
+          <span>Academic Curriculum &amp; Syllabus Book</span>
+          <span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
+          <span>Aditya University</span>
         </div>
       `,
     });
+
     await browser.close();
     browser = null;
 
-    const publicHtmlPath = `/uploads/generated/${htmlFilename}`;
-    const publicPdfPath = `/uploads/generated/${pdfFilename}`;
+    // ── Stream the PDF directly to the client ──
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${pdfFilename}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    return res.end(pdfBuffer);
 
-    await CurriculumVersion.findOneAndUpdate(
-      { curriculumBookId, versionNumber: book.currentVersion },
-      { pdfPath: publicPdfPath, generatedPdfPath: publicPdfPath },
-      { new: true }
-    );
-
-    return res.status(200).json({
-      message: 'Curriculum book PDF generated successfully',
-      url: publicPdfPath,
-      htmlUrl: publicHtmlPath,
-      html,
-      filename: `${book.title.replace(/[^\w.-]+/g, '_')}_v${book.currentVersion}.pdf`,
-    });
   } catch (error) {
     if (browser) { try { await browser.close(); } catch (_) {} }
+    return next(error);
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  EXPORT DOCX — streams a rich .docx via curriculumDocxService
+// ─────────────────────────────────────────────────────────────────────────────
+export const exportDocx = async (req, res, next) => {
+  try {
+    const { regulationId, departmentId } = req.query;
+
+    if (!regulationId || !mongoose.Types.ObjectId.isValid(regulationId)) {
+      return res.status(400).json({ message: 'Invalid or missing regulationId query param.' });
+    }
+
+    let dept = null;
+    if (departmentId && mongoose.Types.ObjectId.isValid(departmentId)) {
+      dept = await Department.findById(departmentId).lean();
+    }
+
+    const regulation = await Regulation.findById(regulationId).lean();
+    if (!regulation) return res.status(404).json({ message: 'Regulation not found.' });
+
+    // Resolve program info
+    let programName = 'B. Tech. Four Year Degree Program';
+    let programCode = 'B.Tech';
+    let totalCredits = 160;
+    if (regulation.programId) {
+      try {
+        const prog = await Program.findById(regulation.programId).lean();
+        if (prog) {
+          programName   = prog.degree || prog.name || programName;
+          programCode   = prog.code   || programCode;
+          totalCredits  = prog.totalCredits || totalCredits;
+        }
+      } catch (_) {}
+    }
+
+    const buffer = await generateCurriculumDocx({
+      regulationId,
+      departmentId: departmentId || null,
+      departmentName:      dept?.name || 'Computer Science and Engineering',
+      departmentCode:      dept?.code || 'CSE',
+      programName,
+      programCode,
+      programTotalCredits: totalCredits,
+    });
+
+    const deptCode = dept?.code || 'CSE';
+    const filename = `${regulation.code}_${deptCode}_CurriculumBook.docx`;
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', buffer.length);
+    return res.end(buffer);
+
+  } catch (error) {
     return next(error);
   }
 };

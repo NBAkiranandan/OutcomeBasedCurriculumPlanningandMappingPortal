@@ -261,7 +261,51 @@ export const api = {
     versionHistory: (bookId: string) => apiRequest(`/api/curriculum-books/version/history?curriculumBookId=${bookId}`),
     createVersion: (body: any) => apiRequest('/api/curriculum-books/version/create', { method: 'POST', body: JSON.stringify(body) }),
     restoreVersion: (bookId: string, versionId: string) => apiRequest(`/api/curriculum-books/${bookId}/versions/${versionId}/restore`, { method: 'POST' }),
-    exportPdf: (body: any) => apiRequest('/api/curriculum-books/export/pdf', { method: 'POST', body: JSON.stringify(body) }),
+    exportPdf: async (body: any) => {
+      const { accessToken } = useAuthStore.getState();
+      const response = await fetch('/api/curriculum-books/export/pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) {
+        let msg = `Export failed (${response.status})`;
+        try { const d = await response.json(); msg = d.message || msg; } catch (_) {}
+        throw new Error(msg);
+      }
+      const blob = await response.blob();
+      const cd = response.headers.get('content-disposition') || '';
+      const match = cd.match(/filename="?([^"]+)"?/);
+      const filename = match?.[1] || 'curriculum_book.pdf';
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      window.URL.revokeObjectURL(url);
+    },
+    exportDocx: async (params: { regulationId: string; departmentId?: string }) => {
+      const { accessToken } = useAuthStore.getState();
+      const qs = new URLSearchParams(params as any).toString();
+      const response = await fetch(`/api/curriculum-books/export/docx?${qs}`, {
+        method: 'GET',
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      });
+      if (!response.ok) {
+        let msg = `Export failed (${response.status})`;
+        try { const d = await response.json(); msg = d.message || msg; } catch (_) {}
+        throw new Error(msg);
+      }
+      const blob = await response.blob();
+      const cd = response.headers.get('content-disposition') || '';
+      const match = cd.match(/filename="?([^"]+)"?/);
+      const filename = match?.[1] || 'curriculum_book.docx';
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      window.URL.revokeObjectURL(url);
+    },
     livePreview: (curriculumBookId: string) => apiRequest(`/api/curriculum-books/live-preview?curriculumBookId=${curriculumBookId}`),
     creditSummary: (params: any = {}) => {
       const qs = new URLSearchParams(params).toString();

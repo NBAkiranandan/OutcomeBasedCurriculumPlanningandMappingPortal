@@ -3,9 +3,9 @@ import { api } from '../../services/api';
 import { useContextStore } from '../../store/contextStore';
 import { 
   FileText, Download, Printer, BookOpen, Layers, Award, Sparkles, 
-  HelpCircle, ChevronRight, Activity, ArrowRight, Grid3X3, Database
+  HelpCircle, ChevronRight, Activity, ArrowRight, Grid3X3, Database,
+  Loader2, CheckCircle2, XCircle, FileDown
 } from 'lucide-react';
-import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, BorderStyle, WidthType } from 'docx';
 // CODEx-added: Uses the existing university logo asset to match the reference PDF cover and page header style.
 import adityaLogo from '../../assets/aditya-logo.png';
 import { PdfCoursePage, PdfCoursePageStyles } from './PdfCoursePage';
@@ -18,9 +18,11 @@ export const CurriculumBookGenerator: React.FC = () => {
   const [prereqLinks, setPrereqLinks] = useState<any[]>([]);
   const [minorStreams, setMinorStreams] = useState<any[]>([]);
   const [dbCategories, setDbCategories] = useState<any[]>([]);
+  // Export state
+  const [pdfExporting, setPdfExporting] = useState(false);
+  const [docxExporting, setDocxExporting] = useState(false);
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   
-  // Loaded context data
-  const [programDetails, setProgramDetails] = useState<any>(null);
   // CODEx-added start: Default curriculum book branding used when Admin has not configured a program/regulation.
   const defaultBookTemplate = {
     coverTitle: 'Academic Curriculum & Syllabus Book',
@@ -32,24 +34,22 @@ export const CurriculumBookGenerator: React.FC = () => {
   };
   // CODEx-added end
 
-  // CODEx-added start: Merge program-level defaults with regulation-level overrides for this handbook.
-  const programTemplate = programDetails?.curriculumBookTemplate || {};
-  // CODEx-added: Regulation layout overrides win over program defaults for the selected regulation.
-  const regulationLayout = selectedRegulation?.curriculumLayout || {};
-  // CODEx-added: Resolved handbook layout drives preview, print, and DOCX content.
-  const resolvedBookLayout = {
-    coverTitle: regulationLayout.coverTitle || programTemplate.coverTitle || defaultBookTemplate.coverTitle,
-    coverSubtitle: regulationLayout.coverSubtitle || programTemplate.coverSubtitle || defaultBookTemplate.coverSubtitle,
-    coverNote: programTemplate.coverNote || defaultBookTemplate.coverNote,
-    headerText: regulationLayout.headerText || programTemplate.headerText || defaultBookTemplate.headerText,
-    footerText: regulationLayout.footerText || programTemplate.footerText || defaultBookTemplate.footerText,
-    watermarkText: regulationLayout.watermarkText || programTemplate.watermarkText || defaultBookTemplate.watermarkText,
-    pageBorderStyle: regulationLayout.pageBorderStyle || 'classic',
-    accentColor: regulationLayout.accentColor || '#1d4ed8'
-  };
-  // CODEx-added end
+  // Loaded context data for the on-screen preview
+  const [programDetails, setProgramDetails] = useState<any>(null);
 
-  // CODEx-added start: Computes the cover page border class from the selected regulation layout.
+  // CODEx-added start: Merge program-level defaults with regulation-level overrides.
+  const programTemplate    = programDetails?.curriculumBookTemplate || {};
+  const regulationLayout   = (selectedRegulation as any)?.curriculumLayout || {};
+  const resolvedBookLayout = {
+    coverTitle:      regulationLayout.coverTitle      || programTemplate.coverTitle      || defaultBookTemplate.coverTitle,
+    coverSubtitle:   regulationLayout.coverSubtitle   || programTemplate.coverSubtitle   || defaultBookTemplate.coverSubtitle,
+    coverNote:       programTemplate.coverNote        || defaultBookTemplate.coverNote,
+    headerText:      regulationLayout.headerText      || programTemplate.headerText      || defaultBookTemplate.headerText,
+    footerText:      regulationLayout.footerText      || programTemplate.footerText      || defaultBookTemplate.footerText,
+    watermarkText:   regulationLayout.watermarkText   || programTemplate.watermarkText   || defaultBookTemplate.watermarkText,
+    pageBorderStyle: regulationLayout.pageBorderStyle || 'classic',
+    accentColor:     regulationLayout.accentColor     || '#1d4ed8',
+  };
   const coverBorderClass = resolvedBookLayout.pageBorderStyle === 'none'
     ? 'border-0'
     : resolvedBookLayout.pageBorderStyle === 'minimal'
@@ -62,34 +62,21 @@ export const CurriculumBookGenerator: React.FC = () => {
       if (!selectedDepartment || !selectedRegulation || !selectedProgram) return;
       setLoading(true);
       try {
-        // Fetch detailed program context
         const progRes = await api.programs.list();
         const fullProg = progRes.programs.find((p: any) => p._id === selectedProgram._id);
         setProgramDetails(fullProg);
-
-        // Fetch PEOs/PSOs/POs
         const peoRes = await api.peoPso.getByDept(selectedDepartment._id);
         if (peoRes.peoPso) setPeoPso(peoRes.peoPso);
-
-        // Fetch Course Versions
         const verRes = await api.courses.listByReg(selectedRegulation._id);
         setCourseVersions(verRes.versions || []);
-
-        // Fetch Prerequisites
         const prereqRes = await api.prerequisites.list({ regulationId: selectedRegulation._id });
         setPrereqLinks(prereqRes.links || []);
-
-        // Fetch Minor Streams
         const minorRes = await api.minorStreams.list({ departmentId: selectedDepartment._id, regulationId: selectedRegulation._id });
         setMinorStreams(minorRes.streams || []);
-
-        // Fetch Course Categories from DB
         try {
           const catRes = await api.courseCategories.list();
           setDbCategories(catRes.categories || []);
-        } catch (e) {
-          console.error('Failed to load DB course categories', e);
-        }
+        } catch (e) { console.error('Failed to load DB course categories', e); }
       } catch (err) {
         console.error('Failed to load handbook generator data', err);
       } finally {
@@ -99,83 +86,54 @@ export const CurriculumBookGenerator: React.FC = () => {
     loadData();
   }, [selectedProgram, selectedDepartment, selectedRegulation]);
 
-  const handlePrint = () => {
+  const showToast = (type: 'success' | 'error', msg: string) => {
+    setToast({ type, msg });
+    setTimeout(() => setToast(null), 4500);
+  };
+
+  const handlePrintPreview = () => {
     window.print();
   };
 
-  // DOCX Generation
-  const handleExportDocx = async () => {
-    if (!selectedRegulation || !selectedDepartment) return;
-    
+  // PDF Export via Puppeteer backend
+  const handleExportPdf = async () => {
+    if (!selectedRegulation || !selectedDepartment) {
+      showToast('error', 'Please select a regulation and department first.');
+      return;
+    }
+    setPdfExporting(true);
     try {
-      const doc = new Document({
-        sections: [
-          {
-            properties: {},
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    // CODEx-added: Uses the resolved Admin-configured cover title in DOCX export.
-                    text: resolvedBookLayout.coverTitle,
-                    bold: true,
-                    size: 32,
-                  }),
-                ],
-              }),
-              // CODEx-added start: Includes program/regulation cover subtitle and branding metadata in DOCX export.
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: resolvedBookLayout.coverSubtitle || `${selectedProgram?.name || 'B.Tech'} - ${selectedDepartment.name}`,
-                    bold: true,
-                    size: 26,
-                  }),
-                ],
-              }),
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `ACADEMIC REGULATION HANDBOOK: ${selectedRegulation.code}`,
-                    bold: true,
-                    size: 20,
-                  }),
-                ],
-              }),
-              new Paragraph({
-                text: `Header: ${resolvedBookLayout.headerText}`,
-                spacing: { before: 160 }
-              }),
-              new Paragraph({
-                text: `Watermark: ${resolvedBookLayout.watermarkText}`,
-                spacing: { before: 80 }
-              }),
-              new Paragraph({
-                text: `Footer: ${resolvedBookLayout.footerText}`,
-                spacing: { before: 80 }
-              }),
-              // CODEx-added end
-              new Paragraph({
-                text: "Generated dynamically from AU OBCPMP Portal",
-                spacing: { before: 200 }
-              }),
-            ],
-          },
-        ],
+      await (api.curriculumBooks as any).exportPdf({
+        regulationId:  selectedRegulation._id,
+        departmentId:  selectedDepartment._id,
       });
+      showToast('success', 'PDF exported successfully!');
+    } catch (err: any) {
+      console.error('[PDF Export]', err);
+      showToast('error', err?.message || 'Failed to export PDF. Please try again.');
+    } finally {
+      setPdfExporting(false);
+    }
+  };
 
-      const blob = await Packer.toBlob(doc);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${selectedProgram?.code}_${selectedDepartment.code}_${selectedRegulation.code}_CurriculumBook.docx`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error(err);
-      alert('Failed to generate DOCX handbook.');
+  // DOCX Export via backend curriculumDocxService
+  const handleExportDocx = async () => {
+    if (!selectedRegulation || !selectedDepartment) {
+      showToast('error', 'Please select a regulation and department first.');
+      return;
+    }
+    setDocxExporting(true);
+    try {
+      await (api.curriculumBooks as any).exportDocx({
+        regulationId:  selectedRegulation._id,
+        departmentId:  selectedDepartment._id,
+      });
+      showToast('success', 'Word document exported successfully!');
+    } catch (err: any) {
+      console.error('[DOCX Export]', err);
+      showToast('error', err?.message || 'Failed to export DOCX. Please try again.');
+    } finally {
+      setDocxExporting(false);
     }
   };
 
@@ -306,25 +264,62 @@ export const CurriculumBookGenerator: React.FC = () => {
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between no-print">
         <div>
           <h1 className="text-xl font-extrabold text-slate-800">Curriculum Handbook Generator</h1>
-          <p className="text-xs text-slate-500 mt-1">One-click compile and generate a complete academic handbook with full syllabus mappings and assessments.</p>
+          <p className="text-xs text-slate-500 mt-1">Server-generated PDF (Puppeteer) and Word document from live curriculum data.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          {/* Print Preview — browser native */}
           <button
-            onClick={handleExportDocx}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all border border-slate-200 cursor-pointer shadow-sm"
-          >
-            <Download className="w-4 h-4" />
-            <span>Export DOCX</span>
-          </button>
-          <button
-            onClick={handlePrint}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow"
+            onClick={handlePrintPreview}
+            id="curriculum-print-preview-btn"
+            className="flex items-center gap-1.5 px-3 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg text-xs font-bold transition-all border border-slate-200 cursor-pointer shadow-sm"
+            title="Open browser print dialog for quick preview"
           >
             <Printer className="w-4 h-4" />
-            <span>Print / Save PDF</span>
+            <span>Print Preview</span>
+          </button>
+          {/* DOCX Export */}
+          <button
+            onClick={handleExportDocx}
+            disabled={docxExporting || !selectedRegulation || !selectedDepartment}
+            id="curriculum-export-docx-btn"
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all border border-slate-200 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {docxExporting
+              ? <Loader2 className="w-4 h-4 animate-spin" />
+              : <FileDown className="w-4 h-4" />}
+            <span>{docxExporting ? 'Generating DOCX…' : 'Export DOCX'}</span>
+          </button>
+          {/* PDF Export */}
+          <button
+            onClick={handleExportPdf}
+            disabled={pdfExporting || !selectedRegulation || !selectedDepartment}
+            id="curriculum-export-pdf-btn"
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {pdfExporting
+              ? <Loader2 className="w-4 h-4 animate-spin" />
+              : <Download className="w-4 h-4" />}
+            <span>{pdfExporting ? 'Generating PDF…' : 'Export PDF'}</span>
           </button>
         </div>
       </div>
+
+      {/* Toast notification */}
+      {toast && (
+        <div
+          className={`fixed top-5 right-5 z-50 flex items-center gap-2 px-5 py-3 rounded-xl shadow-xl text-sm font-semibold transition-all animate-fade-in ${
+            toast.type === 'success'
+              ? 'bg-emerald-600 text-white'
+              : 'bg-red-600 text-white'
+          }`}
+          id="curriculum-export-toast"
+        >
+          {toast.type === 'success'
+            ? <CheckCircle2 className="w-5 h-5 shrink-0" />
+            : <XCircle className="w-5 h-5 shrink-0" />}
+          {toast.msg}
+        </div>
+      )}
 
       {/* Main Preview Container */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-12 max-w-[900px] mx-auto print:p-0 print:border-0 print:shadow-none print-layout" id="curriculum-handbook-print-root">

@@ -41,7 +41,8 @@ router.post('/upload', authorizeRoles('HOD', 'Admin'), upload.single('curriculum
 router.get('/list', curriculumBookController.listCurriculums);
 router.get('/version/history', curriculumBookController.getVersionHistory);
 router.post('/version/create', authorizeRoles('HOD', 'Admin'), curriculumBookController.createVersion);
-router.post('/export/pdf', authorizeRoles('HOD', 'Admin'), curriculumBookController.exportPdf);
+router.post('/export/pdf', authorizeRoles('HOD', 'Admin', 'Coordinator'), curriculumBookController.exportPdf);
+router.get('/export/docx', authorizeRoles('HOD', 'Admin', 'Coordinator'), curriculumBookController.exportDocx);
 router.get('/live-preview', curriculumBookController.livePreview);
 router.get('/credit-summary', curriculumBookController.creditSummary);
 
