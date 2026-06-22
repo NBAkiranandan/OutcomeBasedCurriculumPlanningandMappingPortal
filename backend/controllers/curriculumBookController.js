@@ -999,7 +999,7 @@ export const uploadCurriculum = async (req, res, next) => {
 export const listCurriculums = async (req, res, next) => {
   try {
     const { departmentId, status } = req.query;
-    const query = {};
+    const query = { isDeleted: { $ne: true } };
     if (departmentId) query.departmentId = departmentId;
     if (status) query.status = status;
 
@@ -1020,13 +1020,13 @@ export const getCurriculum = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: 'Invalid curriculum book ID' });
     }
-    const book = await CurriculumBook.findById(req.params.id)
+    const book = await CurriculumBook.findOne({ _id: req.params.id, isDeleted: { $ne: true } })
       .populate('departmentId', 'name code')
       .populate('createdBy', 'name email')
       .populate('updatedBy', 'name email');
     if (!book) return res.status(404).json({ message: 'Curriculum book not found' });
 
-    const sections = await CurriculumSection.find({ curriculumBookId: book._id }).sort({ orderNumber: 1 });
+    const sections = await CurriculumSection.find({ curriculumBookId: book._id, isDeleted: { $ne: true } }).sort({ orderNumber: 1 });
     return res.status(200).json({ curriculumBook: book, sections });
   } catch (error) {
     return next(error);
@@ -1039,7 +1039,7 @@ export const updateCurriculum = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid curriculum book ID' });
     }
     const { sections, ...body } = req.body;
-    const book = await CurriculumBook.findById(req.params.id);
+    const book = await CurriculumBook.findOne({ _id: req.params.id, isDeleted: { $ne: true } });
     if (!book) return res.status(404).json({ message: 'Curriculum book not found' });
 
     ['title', 'regulation', 'academicYear', 'status'].forEach(field => {
@@ -1081,11 +1081,21 @@ export const deleteCurriculum = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: 'Invalid curriculum book ID' });
     }
-    const book = await CurriculumBook.findByIdAndDelete(req.params.id);
+    const book = await CurriculumBook.findByIdAndUpdate(
+      req.params.id,
+      { isDeleted: true, deletedAt: new Date() },
+      { new: true }
+    );
     if (!book) return res.status(404).json({ message: 'Curriculum book not found' });
 
-    await CurriculumSection.deleteMany({ curriculumBookId: req.params.id });
-    await CurriculumVersion.deleteMany({ curriculumBookId: req.params.id });
+    await CurriculumSection.updateMany(
+      { curriculumBookId: req.params.id },
+      { isDeleted: true, deletedAt: new Date() }
+    );
+    await CurriculumVersion.updateMany(
+      { curriculumBookId: req.params.id },
+      { isDeleted: true, deletedAt: new Date() }
+    );
     return res.status(200).json({ message: 'Curriculum book deleted successfully' });
   } catch (error) {
     return next(error);
@@ -1098,7 +1108,7 @@ export const createVersion = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(curriculumBookId)) {
       return res.status(400).json({ message: 'Invalid curriculum book ID' });
     }
-    const book = await CurriculumBook.findById(curriculumBookId);
+    const book = await CurriculumBook.findOne({ _id: curriculumBookId, isDeleted: { $ne: true } });
     if (!book) return res.status(404).json({ message: 'Curriculum book not found' });
 
     const newVersionNumber = book.currentVersion + 1;
@@ -1125,7 +1135,7 @@ export const getVersionHistory = async (req, res, next) => {
     if (!curriculumBookId || !mongoose.Types.ObjectId.isValid(curriculumBookId)) {
       return res.status(400).json({ message: 'Invalid curriculum book ID' });
     }
-    const versions = await CurriculumVersion.find({ curriculumBookId })
+    const versions = await CurriculumVersion.find({ curriculumBookId, isDeleted: { $ne: true } })
       .populate('editedBy', 'name email')
       .populate('modifiedBy', 'name email')
       .sort({ versionNumber: -1 });
@@ -1141,8 +1151,8 @@ export const restoreVersion = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(versionId)) {
       return res.status(400).json({ message: 'Invalid ID parameters' });
     }
-    const version = await CurriculumVersion.findOne({ _id: versionId, curriculumBookId: id });
-    const book = await CurriculumBook.findById(id);
+    const version = await CurriculumVersion.findOne({ _id: versionId, curriculumBookId: id, isDeleted: { $ne: true } });
+    const book = await CurriculumBook.findOne({ _id: id, isDeleted: { $ne: true } });
     if (!book || !version) return res.status(404).json({ message: 'Curriculum book or version not found' });
 
     const snapshot = version.content || version.editedContent || {};
@@ -1251,7 +1261,7 @@ export const exportPdf = async (req, res, next) => {
         return res.status(400).json({ message: 'Invalid regulation ID' });
       }
 
-      const regulation  = await Regulation.findById(regulationId).lean();
+      const regulation  = await Regulation.findOne({ _id: regulationId, isDeleted: { $ne: true } }).lean();
       if (!regulation) return res.status(404).json({ message: 'Regulation not found' });
 
       let dept = null;
@@ -1281,10 +1291,10 @@ export const exportPdf = async (req, res, next) => {
       if (!mongoose.Types.ObjectId.isValid(curriculumBookId)) {
         return res.status(400).json({ message: 'Invalid curriculum book ID' });
       }
-      const book = await CurriculumBook.findById(curriculumBookId).populate('departmentId', 'name code');
+      const book = await CurriculumBook.findOne({ _id: curriculumBookId, isDeleted: { $ne: true } }).populate('departmentId', 'name code');
       if (!book) return res.status(404).json({ message: 'Curriculum book not found' });
 
-      const sections = await CurriculumSection.find({ curriculumBookId }).sort({ orderNumber: 1 }).lean();
+      const sections = await CurriculumSection.find({ curriculumBookId, isDeleted: { $ne: true } }).sort({ orderNumber: 1 }).lean();
       const dynamicContext = await getDynamicCurriculumContext(book);
       html = buildPdfReadyHtml(book, sections, dynamicContext);
       pdfFilename = `${book.title.replace(/[^\w.-]+/g, '_')}_v${book.currentVersion}.pdf`;
@@ -1374,7 +1384,7 @@ export const exportDocx = async (req, res, next) => {
       dept = await Department.findById(departmentId).lean();
     }
 
-    const regulation = await Regulation.findById(regulationId).lean();
+    const regulation = await Regulation.findOne({ _id: regulationId, isDeleted: { $ne: true } }).lean();
     if (!regulation) return res.status(404).json({ message: 'Regulation not found.' });
 
     // Resolve program info
@@ -1425,10 +1435,10 @@ export const livePreview = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid curriculum book ID' });
     }
 
-    const book = await CurriculumBook.findById(curriculumBookId).populate('departmentId', 'name code');
+    const book = await CurriculumBook.findOne({ _id: curriculumBookId, isDeleted: { $ne: true } }).populate('departmentId', 'name code');
     if (!book) return res.status(404).json({ message: 'Curriculum book not found' });
 
-    const sections = await CurriculumSection.find({ curriculumBookId }).sort({ orderNumber: 1 }).lean();
+    const sections = await CurriculumSection.find({ curriculumBookId, isDeleted: { $ne: true } }).sort({ orderNumber: 1 }).lean();
     const dynamicContext = await getDynamicCurriculumContext(book);
     const html = buildPdfReadyHtml(book, sections, dynamicContext);
 

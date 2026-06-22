@@ -29,7 +29,7 @@ export const updateCourseById = async (id, updateData) => {
 
 // Regulation Centric CourseVersion Repository
 export const findVersionById = async (versionId) => {
-  return CourseVersion.findById(versionId)
+  return CourseVersion.findOne({ _id: versionId, isDeleted: { $ne: true } })
     .populate({
       path: 'courseId',
       populate: { path: 'departmentId' }
@@ -39,14 +39,14 @@ export const findVersionById = async (versionId) => {
 };
 
 export const findVersionByCourseAndRegulation = async (courseId, regulationId) => {
-  return CourseVersion.findOne({ courseId, regulationId })
+  return CourseVersion.findOne({ courseId, regulationId, isDeleted: { $ne: true } })
     .populate('courseId')
     .populate('regulationId')
     .populate('assignedCoordinator', '-password');
 };
 
 export const findVersionsByRegulation = async (regulationId) => {
-  return CourseVersion.find({ regulationId })
+  return CourseVersion.find({ regulationId, isDeleted: { $ne: true } })
     .populate({
       path: 'courseId',
       populate: { path: 'departmentId' }
@@ -56,7 +56,7 @@ export const findVersionsByRegulation = async (regulationId) => {
 };
 
 export const findVersionsByCoordinator = async (coordinatorId) => {
-  return CourseVersion.find({ assignedCoordinator: coordinatorId })
+  return CourseVersion.find({ assignedCoordinator: coordinatorId, isDeleted: { $ne: true } })
     .populate({
       path: 'courseId',
       populate: { path: 'departmentId' }

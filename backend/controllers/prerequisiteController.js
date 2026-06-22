@@ -4,7 +4,7 @@ import AuditLog from '../models/AuditLog.js';
 export const getPrerequisites = async (req, res, next) => {
   try {
     const { regulationId } = req.query;
-    const filter = {};
+    const filter = { isDeleted: { $ne: true } };
     if (regulationId) filter.regulationId = regulationId;
     
     const links = await PrerequisiteLink.find(filter)
@@ -23,6 +23,14 @@ export const createPrerequisite = async (req, res, next) => {
     
     if (sourceCourseId === targetCourseId) {
       return res.status(400).json({ message: 'A course cannot be a prerequisite of itself.' });
+    }
+
+    if (req.user.role === 'HOD') {
+      const Regulation = (await import('../models/Regulation.js')).default;
+      const reg = await Regulation.findById(regulationId);
+      if (!reg || (reg.programId && reg.programId.toString() !== req.user.programId.toString())) {
+        return res.status(403).json({ message: 'Forbidden: You can only add prerequisites to regulations of your own program.' });
+      }
     }
     
     const newLink = new PrerequisiteLink({
@@ -51,15 +59,23 @@ export const createPrerequisite = async (req, res, next) => {
 export const deletePrerequisite = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const link = await PrerequisiteLink.findByIdAndDelete(id);
+    const link = await PrerequisiteLink.findOne({ _id: id, isDeleted: { $ne: true } }).populate('regulationId');
     if (!link) return res.status(404).json({ message: 'Prerequisite link not found.' });
+
+    if (req.user.role === 'HOD' && link.regulationId?.programId && link.regulationId.programId.toString() !== req.user.programId.toString()) {
+      return res.status(403).json({ message: 'Forbidden: You can only delete prerequisite links of your own program.' });
+    }
+
+    link.isDeleted = true;
+    link.deletedAt = new Date();
+    await link.save();
     
     await AuditLog.create({
       userId: req.user.id,
       userName: req.user.name,
       userEmail: req.user.email,
       action: 'DELETE_PREREQUISITE',
-      details: `Deleted prerequisite link ID ${id}`,
+      details: `Soft-deleted prerequisite link ID ${id}`,
       category: 'Academic'
     });
     

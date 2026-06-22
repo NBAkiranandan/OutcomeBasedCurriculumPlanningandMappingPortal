@@ -16,24 +16,49 @@ const defaultPOs = [
   { code: 'PO12', description: 'Life-long Learning: Recognize the need for, and have the preparation and ability to engage in independent and life-long learning.' }
 ];
 
-export const getPeoPsoByDept = async (departmentId) => {
-  let record = await PeoPso.findOne({ departmentId });
+export const getPeoPsoByDept = async (departmentId, regulationId) => {
+  const query = { departmentId };
+  if (regulationId) {
+    query.regulationId = regulationId;
+  } else {
+    query.regulationId = { $exists: false };
+  }
+
+  let record = await PeoPso.findOne(query);
   if (!record) {
-    // Auto-seed default POs when accessed for the first time for a department
+    // Attempt to find any existing PeoPso for this department to use as template
+    const templateRecord = await PeoPso.findOne({ departmentId }).sort({ createdAt: -1 });
+
     record = await PeoPso.create({
       departmentId,
-      peos: [],
-      psos: [],
-      pos: defaultPOs
+      regulationId: regulationId || undefined,
+      peos: templateRecord ? templateRecord.peos : [],
+      psos: templateRecord ? templateRecord.psos : [],
+      pos: templateRecord ? templateRecord.pos : defaultPOs
     });
   }
   return record;
 };
 
-export const updatePeoPso = async (departmentId, data, operatorUser) => {
+export const updatePeoPso = async (departmentId, data, operatorUser, regulationId) => {
+  const query = { departmentId };
+  if (regulationId) {
+    query.regulationId = regulationId;
+  } else {
+    query.regulationId = { $exists: false };
+  }
+
+  const updateFields = {
+    ...data,
+    departmentId
+  };
+  if (regulationId) {
+    updateFields.regulationId = regulationId;
+  }
+
   const updated = await PeoPso.findOneAndUpdate(
-    { departmentId },
-    { ...data, departmentId },
+    query,
+    updateFields,
     { new: true, upsert: true }
   );
   
@@ -43,7 +68,7 @@ export const updatePeoPso = async (departmentId, data, operatorUser) => {
       userName: operatorUser.name,
       userEmail: operatorUser.email,
       action: 'UPDATE_PEO_PSO',
-      details: `Updated PEO/PSO/PO objectives for department ID ${departmentId}`,
+      details: `Updated PEO/PSO/PO objectives for department ID ${departmentId}${regulationId ? ` and regulation ID ${regulationId}` : ''}`,
       category: 'Academic'
     });
   }

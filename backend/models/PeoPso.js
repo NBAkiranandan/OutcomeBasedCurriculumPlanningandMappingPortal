@@ -6,10 +6,16 @@ const ObjectiveOutcomeSchema = new mongoose.Schema({
 });
 
 const PeoPsoSchema = new mongoose.Schema({
-  departmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Department', required: true, unique: true },
+  departmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Department', required: true },
+  regulationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Regulation' },
   peos: [ObjectiveOutcomeSchema],
   psos: [ObjectiveOutcomeSchema],
-  pos: [ObjectiveOutcomeSchema] // Standard PO1-PO12 descriptions
+  pos: [ObjectiveOutcomeSchema], // Standard PO1-PO12 descriptions
+  isDeleted: { type: Boolean, default: false },
+  deletedAt: { type: Date }
 }, { timestamps: true });
+
+// Compound index for uniqueness of PEO/PSO matrices per department and regulation
+PeoPsoSchema.index({ departmentId: 1, regulationId: 1 }, { unique: true });
 
 export default mongoose.model('PeoPso', PeoPsoSchema);

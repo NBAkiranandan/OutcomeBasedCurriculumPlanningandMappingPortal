@@ -3,7 +3,7 @@ export interface User {
   name: string;
   email: string;
   role: 'Admin' | 'HOD' | 'Coordinator' | 'Faculty';
-  department?: { id: string; name: string; code: string } | null;
+  department?: { id: string; name: string; code: string; outcomes?: any[] } | null;
   program?: { id: string; name: string } | null;
   isActive: boolean;
 }
@@ -32,15 +32,31 @@ export interface Department {
   outcomes?: any[];
 }
 
+export interface RegulationLifecycleEntry {
+  status: 'DRAFT' | 'ACTIVE' | 'LOCKED' | 'ARCHIVED';
+  changedByName?: string;
+  changedByRole?: string;
+  changedAt: string;
+  notes?: string;
+}
+
 export interface Regulation {
   _id: string;
   code: string;
   academicYear: number;
   programId: string | Program;
-  departmentId: string | Department;
+  departmentId?: string | Department;
   durationYears: number;
   semesterCount: number;
   isActive: boolean;
+  status: 'DRAFT' | 'ACTIVE' | 'LOCKED' | 'ARCHIVED';
+  activatedBy?: string | null;
+  activatedAt?: string | null;
+  lockedBy?: string | null;
+  lockedAt?: string | null;
+  archivedBy?: string | null;
+  archivedAt?: string | null;
+  lifecycleHistory?: RegulationLifecycleEntry[];
   curriculumLayout?: {
     coverTitle?: string;
     coverSubtitle?: string;

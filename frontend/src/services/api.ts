@@ -131,6 +131,7 @@ export const api = {
     logout: () => apiRequest('/api/auth/logout', { method: 'POST' }),
     profile: () => apiRequest('/api/auth/profile'),
     getFaculty: () => apiRequest('/api/auth/faculty'),
+    myDepartment: () => apiRequest('/api/auth/my-department'),
     changePassword: (body: any) => apiRequest('/api/auth/change-password', { method: 'POST', body: JSON.stringify(body) })
   },
   programs: {
@@ -151,7 +152,12 @@ export const api = {
     listByDept: (deptId: string) => apiRequest(`/api/regulations/dept/${deptId}`),
     create: (body: any) => apiRequest('/api/regulations', { method: 'POST', body: JSON.stringify(body) }),
     update: (id: string, body: any) => apiRequest(`/api/regulations/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
-    delete: (id: string) => apiRequest(`/api/regulations/${id}`, { method: 'DELETE' })
+    delete: (id: string) => apiRequest(`/api/regulations/${id}`, { method: 'DELETE' }),
+    listDeleted: () => apiRequest('/api/regulations/deleted'),
+    getDeletionStats: (id: string) => apiRequest(`/api/regulations/${id}/deletion-stats`),
+    restore: (id: string) => apiRequest(`/api/regulations/${id}/restore`, { method: 'POST' }),
+    transitionStatus: (id: string, body: { status: string; notes?: string; lockPreviousActive?: boolean }) =>
+      apiRequest(`/api/regulations/${id}/status`, { method: 'POST', body: JSON.stringify(body) })
   },
   courses: {
     list: () => apiRequest('/api/courses'),
@@ -176,8 +182,14 @@ export const api = {
     delete: (id: string) => apiRequest(`/api/users/${id}`, { method: 'DELETE' })
   },
   peoPso: {
-    getByDept: (deptId: string) => apiRequest(`/api/peo-pso/dept/${deptId}`),
-    updateByDept: (deptId: string, body: any) => apiRequest(`/api/peo-pso/dept/${deptId}`, { method: 'PUT', body: JSON.stringify(body) })
+    getByDept: (deptId: string, regulationId?: string) => {
+      const url = regulationId ? `/api/peo-pso/dept/${deptId}?regulationId=${regulationId}` : `/api/peo-pso/dept/${deptId}`;
+      return apiRequest(url);
+    },
+    updateByDept: (deptId: string, body: any, regulationId?: string) => {
+      const url = regulationId ? `/api/peo-pso/dept/${deptId}?regulationId=${regulationId}` : `/api/peo-pso/dept/${deptId}`;
+      return apiRequest(url, { method: 'PUT', body: JSON.stringify(body) });
+    }
   },
   curriculum: {
     getFull: (regulationId: string) => apiRequest(`/api/curriculum/${regulationId}`),

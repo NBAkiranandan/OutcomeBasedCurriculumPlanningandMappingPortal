@@ -45,7 +45,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
   // Regulation Manager states
   const [createRegOpen, setCreateRegOpen] = useState(false);
-  const [newRegData, setNewRegData] = useState({ code: '', academicYear: 2025 });
+  const [newRegData, setNewRegData] = useState({ code: '', academicYear: 2025, programId: '' });
   const [cloneSourceId, setCloneSourceId] = useState('');
   const [selectedClonePeos, setSelectedClonePeos] = useState<string[]>([]);
   const [selectedClonePsos, setSelectedClonePsos] = useState<string[]>([]);
@@ -60,7 +60,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [bulkFile, setBulkFile] = useState<File | null>(null);
   const [newCourseData, setNewCourseData] = useState({
-    code: '', title: '', programId: '', category: 'PC', semester: 1,
+    code: '', title: '', programId: '', regulationId: '', category: 'PC', semester: 1,
     L: 3, T: 0, P: 0, S: 0, credits: 3, cieMarks: 40, seeMarks: 60, coordinatorId: '',
     courseLevel: 'FC - Foundation', suggestiveSemester: '1', status: 'Active', prerequisites: '',
     description: '', offeredFor: ['CSE'], objectives: ['']
@@ -94,7 +94,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   const [approvalComments, setApprovalComments] = useState<Record<string, string>>({});
   const [approvalEditModal, setApprovalEditModal] = useState<{ open: boolean, version: any }>({ open: false, version: null });
   const [editCourseData, setEditCourseData] = useState({
-    title: '', code: '', programId: '', category: 'PC', semester: 1, courseLevel: 'FC - Foundation', status: 'Active',
+    title: '', code: '', programId: '', regulationId: '', category: 'PC', semester: 1, courseLevel: 'FC - Foundation', status: 'Active',
     L: 3, T: 0, P: 0, S: 0, C: 3, cieMarks: 40, seeMarks: 60,
     description: '', offeredFor: ['CSE'], objectives: [''], coordinatorId: '', prerequisites: ''
   });
@@ -125,40 +125,65 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   const [deptAnnouncements, setDeptAnnouncements] = useState(false);
   const [curriculumReviewAlerts, setCurriculumReviewAlerts] = useState(true);
 
-  // Load HOD Portal Data
+  // Load HOD Portal Data — all scoped to HOD's assigned department only
   const loadData = async () => {
-    if (!selectedDepartment) return;
     setLoading(true);
     try {
-      // 1. Load context-centric curriculum course versions
+      // 1. Fetch HOD's assigned department (secured by JWT on backend)
+      const deptRes = await api.auth.myDepartment();
+      const hodDept = deptRes.department;
+      if (!hodDept) {
+        console.error('[HOD Dashboard] No department assigned to this HOD.');
+        setLoading(false);
+        return;
+      }
+      setSelectedDepartment(hodDept);
+
+      // 2. Resolve program from the department
+      const program = hodDept.programId;
+      if (program) {
+        setSelectedProgram({ _id: program._id, name: program.name, code: program.code } as any);
+      }
+
+      // 3. Load regulations filtered to this department's program
+      const regRes = await api.regulations.list();
+      const allRegs = regRes.regulations || [];
+      setRegulations(allRegs);
+
+      // 4. Auto-select regulation if none selected yet
+      if (!selectedRegulation && program) {
+        const deptRegs = allRegs.filter((r: any) => {
+          const rProgId = typeof r.programId === 'object' ? r.programId._id : r.programId;
+          return rProgId === program._id;
+        });
+        if (deptRegs.length > 0) {
+          setSelectedRegulation(deptRegs[0]);
+          setBuilderRegulationId(deptRegs[0]._id);
+        }
+      }
+
+      // 5. Load courses for this department
+      const courseRes = await api.courses.listByDept(hodDept._id);
+      setCourses(courseRes.courses || []);
+
+      // 6. Load regulation-specific course versions
       if (selectedRegulation) {
         const verRes = await api.courses.listByReg(selectedRegulation._id);
         setVersions(verRes.versions || []);
         setBuilderRegulationId(selectedRegulation._id);
       }
 
-      // 1.5 Load Department PEO/PSO/POs
-      const peoRes = await api.peoPso.getByDept(selectedDepartment._id);
-      if (peoRes.peoPso) {
-        setPeoPso(peoRes.peoPso);
-      }
-
-      // 2. Load Department Shared Course Repository
-      const courseRes = await api.courses.listByDept(selectedDepartment._id);
-      setCourses(courseRes.courses || []);
-
-      // 3. Load Department Faculty list
+      // 7. Load faculty for this department
       const facRes = await api.auth.getFaculty();
       setFaculty(facRes.faculty || []);
 
-      let currentPrograms = programs;
+      // 8. Load programs list (for course add forms etc.)
       if (programs.length === 0) {
         const progRes = await api.programs.list();
         setPrograms(progRes.programs || []);
-        currentPrograms = progRes.programs;
       }
 
-      // 5. Load dynamic course categories
+      // 9. Load course categories
       try {
         const catRes = await api.courseCategories.list();
         setCourseCategories(catRes.categories || []);
@@ -166,26 +191,12 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
         console.error('Failed to load categories:', err);
       }
 
-      const progId = typeof selectedDepartment.programId === 'object' ? selectedDepartment.programId._id : selectedDepartment.programId;
-      if (!selectedProgram && selectedDepartment) {
-        const prog = currentPrograms.find((p: any) => p._id === progId);
-        if (prog) setSelectedProgram(prog);
-      }
-
-      // 5. Load Regulations to contextual picker list
-      const regRes = await api.regulations.list();
-      const progRegs = regRes.regulations.filter((r: any) => {
-        const rProgId = typeof r.programId === 'object' ? r.programId._id : r.programId;
-        return rProgId === progId;
-      });
-
-      setRegulations(progRegs);
-
-      if (selectedRegulation && selectedDepartment) {
+      // 10. Load minor streams and prerequisites if regulation selected
+      if (selectedRegulation && hodDept) {
         try {
           const streamsRes = await api.minorStreams.list({
             regulationId: selectedRegulation._id,
-            departmentId: selectedDepartment._id
+            departmentId: hodDept._id
           });
           setMinorStreams(streamsRes.minorStreams || []);
         } catch (e) {
@@ -210,7 +221,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
   useEffect(() => {
     loadData();
-  }, [selectedRegulation, selectedDepartment]);
+  }, [selectedRegulation]);
 
   // Handle clone source change -> pre-populate outcomes checklist
   const handleCloneSourceChange = (sourceId: string) => {
@@ -235,7 +246,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       const payload = {
         code: newRegData.code,
         academicYear: newRegData.academicYear,
-        programId: programs[0]?._id,
+        programId: newRegData.programId || selectedProgram?._id || programs[0]?._id,
         departmentId: selectedDepartment?._id,
         durationYears: 4,
         semesterCount: 8
@@ -244,7 +255,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
       alert('Regulation created successfully!');
       setCreateRegOpen(false);
-      setNewRegData({ code: '', academicYear: 2025 });
+      setNewRegData({ code: '', academicYear: 2025, programId: '' });
       loadData();
     } catch (err: any) {
       alert(err.message || 'Failed to update workflow.');
@@ -296,60 +307,72 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
     }
   };
 
-  // Add Statement Workspace
+  // Add Statement to Department Outcomes (PEO/PSO)
   const handleAddWorkspaceStatement = async () => {
     if (!selectedDepartment) return;
     if (!newStatement.code || !newStatement.description) return;
-    const type = workspaceTab === 'peo' ? 'peos' : workspaceTab === 'pso' ? 'psos' : 'pos';
-    const updated = { ...peoPso };
-    if (!updated[type]) updated[type] = [];
-    updated[type].push({
+    const outcomeName = workspaceTab === 'peo' ? 'PEO' : workspaceTab === 'pso' ? 'PSO' : 'PO';
+    
+    const outcomes = [...((selectedDepartment as any).outcomes || [])];
+    let groupIndex = outcomes.findIndex((o: any) => o.name === outcomeName);
+    if (groupIndex === -1) {
+      outcomes.push({ name: outcomeName, isGlobal: false, isLocal: true, isMapped: false, items: [] });
+      groupIndex = outcomes.length - 1;
+    }
+    outcomes[groupIndex].items = [...(outcomes[groupIndex].items || []), {
       code: newStatement.code,
-      description: newStatement.description,
-      status: newStatement.status
-    });
+      description: newStatement.description
+    }];
 
     try {
-      await api.peoPso.updateByDept(selectedDepartment._id, updated);
-      setPeoPso(updated);
+      await api.programs.updateDept((selectedDepartment as any)._id, { outcomes });
+      const refreshed = await api.auth.myDepartment();
+      if (refreshed.department) setSelectedDepartment(refreshed.department);
       setNewStatement({ code: '', description: '', status: 'Draft' });
       alert('Statement added successfully!');
-      loadData();
     } catch (err: any) {
       alert(`Failed to save: ${err.message}`);
     }
   };
 
-  // Delete Workspace Statement
+  // Delete Statement from Department Outcomes
   const handleDeleteStatement = async (idx: number) => {
     if (!selectedDepartment) return;
-    const type = workspaceTab === 'peo' ? 'peos' : workspaceTab === 'pso' ? 'psos' : 'pos';
-    const updated = { ...peoPso };
-    updated[type].splice(idx, 1);
+    const outcomeName = workspaceTab === 'peo' ? 'PEO' : workspaceTab === 'pso' ? 'PSO' : 'PO';
+    
+    const outcomes = [...((selectedDepartment as any).outcomes || [])];
+    const groupIndex = outcomes.findIndex((o: any) => o.name === outcomeName);
+    if (groupIndex > -1) {
+      outcomes[groupIndex].items = outcomes[groupIndex].items.filter((_: any, i: number) => i !== idx);
+    }
     try {
-      await api.peoPso.updateByDept(selectedDepartment._id, updated);
-      setPeoPso(updated);
+      await api.programs.updateDept((selectedDepartment as any)._id, { outcomes });
+      const refreshed = await api.auth.myDepartment();
+      if (refreshed.department) setSelectedDepartment(refreshed.department);
       alert('Statement removed.');
-      loadData();
     } catch (err: any) {
       alert(`Failed to delete: ${err.message}`);
     }
   };
 
-  // Update Workspace Statement
+  // Update Statement in Department Outcomes
   const handleUpdateStatement = async () => {
     if (!selectedDepartment || !editingStatement) return;
-    const { idx, type, code, description, status } = editingStatement;
-    const updated = { ...peoPso };
-    if (!updated[type]) updated[type] = [];
-    updated[type][idx] = { code, description, status };
+    const { idx, type, code, description } = editingStatement;
+    const outcomeName = type === 'peos' ? 'PEO' : type === 'psos' ? 'PSO' : 'PO';
+    
+    const outcomes = [...((selectedDepartment as any).outcomes || [])];
+    const groupIndex = outcomes.findIndex((o: any) => o.name === outcomeName);
+    if (groupIndex > -1 && outcomes[groupIndex].items[idx]) {
+      outcomes[groupIndex].items[idx] = { ...outcomes[groupIndex].items[idx], code, description };
+    }
 
     try {
-      await api.peoPso.updateByDept(selectedDepartment._id, updated);
-      setPeoPso(updated);
+      await api.programs.updateDept((selectedDepartment as any)._id, { outcomes });
+      const refreshed = await api.auth.myDepartment();
+      if (refreshed.department) setSelectedDepartment(refreshed.department);
       setEditingStatement(null);
       alert('Statement updated successfully!');
-      loadData();
     } catch (err: any) {
       alert(`Failed to save: ${err.message}`);
     }
@@ -447,10 +470,11 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       };
 
       // 2. Add course to active regulation context
-      if (selectedRegulation) {
+      const targetRegId = newCourseData.regulationId || selectedRegulation?._id;
+      if (targetRegId) {
         const createdVerRes = await api.courses.create({
           ...coursePayload,
-          regulationId: selectedRegulation._id,
+          regulationId: targetRegId,
           semester: newCourseData.semester,
           category: newCourseData.category
         });
@@ -489,7 +513,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       alert('Course successfully registered in repository!');
       setAddCourseOpen(false);
       setNewCourseData({
-        code: '', title: '', programId: '', category: 'PC', semester: 1,
+        code: '', title: '', programId: '', regulationId: '', category: 'PC', semester: 1,
         L: 3, T: 0, P: 0, S: 0, credits: 3, cieMarks: 40, seeMarks: 60, coordinatorId: '',
         courseLevel: 'FC - Foundation', suggestiveSemester: '1', status: 'Active', prerequisites: '',
         description: '', offeredFor: ['CSE'], objectives: ['']
@@ -691,6 +715,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       await api.courses.saveDraft(approvalEditModal.version._id, {
         title: editCourseData.title,
         code: editCourseData.code,
+        regulationId: editCourseData.regulationId,
         semester: editCourseData.semester,
         category: editCourseData.category,
         courseLevel: editCourseData.courseLevel,
@@ -768,26 +793,98 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   const curriculumCoverage = courses.length > 0 ? Math.round((versions.length / courses.length) * 100) : 0;
   const approvalRate = versions.length > 0 ? Math.round((approvedCount / versions.length) * 100) : 0;
 
+  // === REGULATION LIFECYCLE READ-ONLY GUARD ===
+  const isRegulationLocked = selectedRegulation?.status === 'LOCKED' || selectedRegulation?.status === 'ARCHIVED';
+  const isRegulationArchived = selectedRegulation?.status === 'ARCHIVED';
 
   if (editingSyllabusId) {
     return <HodSyllabusEditor courseVersionId={editingSyllabusId} onClose={() => { setEditingSyllabusId(null); loadData(); }} />;
   }
 
+  // Guard: Show meaningful error if HOD has no department assigned
+  if (!loading && !selectedDepartment) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center">
+        <div className="w-20 h-20 rounded-3xl bg-amber-50 border border-amber-200 flex items-center justify-center">
+          <Building2 className="w-10 h-10 text-amber-500" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-slate-800">No Department Assigned</h2>
+          <p className="text-sm text-slate-500 mt-2 max-w-md">
+            Your account is not linked to any department yet. Please contact the <strong>System Administrator</strong> to assign you to a department from the Admin Module → Departments.
+          </p>
+        </div>
+        <button
+          onClick={() => loadData()}
+          className="flex items-center gap-2 px-5 py-2.5 bg-teal-700 text-white rounded-xl text-sm font-bold hover:bg-teal-800 transition-all cursor-pointer"
+        >
+          <RotateCw className="w-4 h-4" />
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 font-sans">
 
+      {/* === REGULATION LOCKED/ARCHIVED BANNER === */}
+      {isRegulationLocked && (
+        <div className={`flex items-start gap-3 px-5 py-4 rounded-2xl border font-semibold text-sm ${isRegulationArchived
+          ? 'bg-slate-100 border-slate-300 text-slate-700'
+          : 'bg-red-50 border-red-200 text-red-800'
+        }`}>
+          <div className="text-xl mt-0.5">{isRegulationArchived ? '📦' : '🔒'}</div>
+          <div>
+            <p className="font-extrabold text-base">
+              Regulation {selectedRegulation?.code} is {isRegulationArchived ? 'ARCHIVED' : 'LOCKED'}
+            </p>
+            <p className="text-xs font-medium mt-0.5 opacity-80">
+              {isRegulationArchived
+                ? 'This regulation is permanently archived for historical reference. All content is read-only. Contact the System Administrator for any queries.'
+                : 'This regulation has been locked by Admin. All course, PEO/PSO, curriculum, and mapping operations are read-only. Contact the System Administrator to request an unlock.'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* TOPBAR BANNER */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-extrabold text-slate-800">{selectedDepartment?.name || 'Computer Science and Engineering'}</h1>
+          <h1 className="text-xl font-extrabold text-slate-800">{selectedDepartment?.name || 'Loading Department...'}</h1>
           <p className="text-xs text-slate-500 mt-1 font-semibold">
-            AY {new Date().getFullYear()}-{new Date().getFullYear() + 1} • {selectedRegulation?.code || 'R2025'} Regulation context
+            Active Context: {(selectedDepartment as any)?.programId?.name || selectedProgram?.name || 'No Program'} &bull; {selectedRegulation?.code || 'No Regulation'}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-500">Regulation:</span>
+            <select
+              value={selectedRegulation?._id || ''}
+              onChange={(e) => {
+                const reg = regulations.find(r => r._id === e.target.value);
+                if (reg) setSelectedRegulation(reg);
+              }}
+              className="border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-700 outline-none bg-white shadow-sm focus:ring-1 focus:ring-teal-700 cursor-pointer"
+            >
+              <option value="">Select Regulation</option>
+              {regulations
+                .filter((r: any) => {
+                  const rProgId = typeof r.programId === 'object' ? r.programId._id : r.programId;
+                  const deptProgId = typeof (selectedDepartment as any)?.programId === 'object'
+                    ? (selectedDepartment as any).programId._id
+                    : (selectedDepartment as any)?.programId;
+                  return !deptProgId || rProgId === deptProgId;
+                })
+                .map((r: any) => (
+                  <option key={r._id} value={r._id}>{r.code} - {r.academicYear}</option>
+                ))}
+            </select>
+          </div>
+
           <button
             onClick={() => setActiveTab('curriculum-book')}
-            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-bold transition-all border shadow-sm ${activeTab === 'curriculum-book' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'}`}
+            className={`flex items-center gap-1.5 px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 text-xs font-semibold cursor-pointer border border-slate-800 transition-colors shadow-sm`}
           >
             <BookOpen className="w-4 h-4" />
             <span>Curriculum Book</span>
@@ -981,17 +1078,25 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
               <h1 className="text-xl font-extrabold text-slate-800 font-sans">PEO & PSO Management</h1>
-              <p className="text-xs text-slate-500 mt-1">Configure Program Educational Objectives (PEOs) and Program Specific Outcomes (PSOs) for your department.</p>
+              <p className="text-xs text-slate-500 mt-1">Configure Program Educational Objectives (PEOs) and Program Specific Outcomes (PSOs) for your department. Changes are saved directly to the department record.</p>
             </div>
             <button
-              onClick={() => {
+              onClick={async () => {
                 if (!(selectedDepartment as any)) return alert('No department selected.');
-                api.programs.updateDept((selectedDepartment as any)._id, { outcomes: (selectedDepartment as any).outcomes }).then(() => {
-                  alert('PEOs and PSOs successfully saved to department!');
-                  loadData();
-                }).catch((err: any) => alert(err.message));
+                try {
+                  await api.programs.updateDept((selectedDepartment as any)._id, { outcomes: (selectedDepartment as any).outcomes });
+                  // Refresh the local department data to confirm save
+                  const refreshed = await api.auth.myDepartment();
+                  if (refreshed.department) setSelectedDepartment(refreshed.department);
+                  alert('PEOs and PSOs saved successfully!');
+                } catch(err: any) { alert(err.message); }
               }}
-              className="flex items-center gap-1.5 px-4.5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold transition-all shadow cursor-pointer"
+              disabled={isRegulationLocked}
+              className={`flex items-center gap-1.5 px-4.5 py-2.5 rounded-lg text-xs font-bold transition-all shadow ${
+                isRegulationLocked
+                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  : 'bg-teal-700 hover:bg-teal-800 text-white cursor-pointer'
+              }`}
             >
               <FileSpreadsheet className="w-4 h-4" />
               <span>Save PEOs & PSOs</span>
@@ -1258,15 +1363,38 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => setAddCourseOpen(true)}
-                className="flex items-center gap-1.5 px-4 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold transition-all shadow cursor-pointer"
+                onClick={() => {
+                  setNewCourseData({
+                    code: '', title: '',
+                    programId: selectedProgram?._id || '',
+                    regulationId: selectedRegulation?._id || '',
+                    category: 'PC', semester: 1,
+                    L: 3, T: 0, P: 0, S: 0, credits: 3, cieMarks: 40, seeMarks: 60, coordinatorId: '',
+                    courseLevel: 'FC - Foundation', suggestiveSemester: '1', status: 'Active', prerequisites: '',
+                    description: '', offeredFor: [selectedDepartment?.code || 'CSE'], objectives: ['']
+                  });
+                  setAddCourseOpen(true);
+                }}
+                disabled={isRegulationLocked}
+                title={isRegulationLocked ? 'Regulation is locked. Contact Admin to unlock.' : ''}
+                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-bold transition-all shadow ${
+                  isRegulationLocked 
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
+                    : 'bg-teal-700 hover:bg-teal-800 text-white cursor-pointer'
+                }`}
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Course</span>
               </button>
               <button
                 onClick={() => setBulkImportOpen(true)}
-                className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                disabled={isRegulationLocked}
+                title={isRegulationLocked ? 'Regulation is locked. Contact Admin to unlock.' : ''}
+                className={`flex items-center gap-1.5 px-4 py-2.5 border rounded-lg text-xs font-bold transition-all ${
+                  isRegulationLocked 
+                    ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed' 
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300 cursor-pointer'
+                }`}
               >
                 <Upload className="w-4 h-4" />
                 <span>Bulk Import</span>
@@ -1343,6 +1471,12 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                   .map((c) => {
                     const v = versions.find((ver: any) => ver.courseId?._id === c._id || ver.courseId === c._id);
                     const category = v?.category || 'PC';
+                    const reg = regulations.find(r => r._id === (v?.regulationId?._id || v?.regulationId || selectedRegulation?._id));
+                    const regProgId = reg?.programId && typeof reg.programId === 'object' ? (reg.programId as any)._id : reg?.programId;
+                    const selProgId = selectedProgram?._id || '';
+                    const prog = programs.find(p => p._id === (regProgId || selProgId));
+                    const programName = prog?.name || 'B.Tech';
+                    const regulationCode = reg?.code || selectedRegulation?.code || 'R2025';
 
                     const formatCategory = (cat: string) => {
                       switch (cat) {
@@ -1366,9 +1500,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                       <tr key={c._id} className="border-b border-slate-100 hover:bg-slate-50/20 text-slate-600 font-medium">
                         <td className="p-4 pl-6 font-mono font-bold text-teal-650">{c.code}</td>
                         <td className="p-4 font-bold text-slate-800">{c.title}</td>
-                        <td className="p-4">B.Tech</td>
+                        <td className="p-4">{programName}</td>
                         <td className="p-4">{selectedDepartment?.code || 'CSE'}</td>
-                        <td className="p-4 font-semibold text-slate-500">{selectedRegulation?.code || 'R2025'}</td>
+                        <td className="p-4 font-semibold text-slate-500">{regulationCode}</td>
                         <td className="p-4 font-bold text-slate-650">{formatCategory(category)}</td>
                         <td className="p-4 font-mono font-semibold">{creditsStr}</td>
                         <td className="p-4 text-center">{sem}</td>
@@ -1377,10 +1511,13 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                             <>
                               <button
                                 onClick={() => {
+                                  const reg = regulations.find(r => r._id === (v.regulationId?._id || v.regulationId));
+                                  const progId = reg ? (typeof reg.programId === 'object' ? reg.programId._id : reg.programId) : '';
                                   setEditCourseData({
                                     title: v.courseId?.title || '',
                                     code: v.courseId?.code || '',
-                                    programId: v.programId || '',
+                                    programId: progId,
+                                    regulationId: v.regulationId?._id || v.regulationId || '',
                                     category: v.category || 'PC',
                                     semester: v.semester || 1,
                                     courseLevel: v.courseLevel || 'FC - Foundation',
@@ -1400,24 +1537,33 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                                   });
                                   setApprovalEditModal({ open: true, version: v });
                                 }}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors cursor-pointer"
-                                title="Edit Course Details"
+                                disabled={isRegulationLocked}
+                                title={isRegulationLocked ? 'Regulation is locked' : 'Edit Course Details'}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                                  isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer'
+                                }`}
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
                                 Edit
                               </button>
                               <button
                                 onClick={() => setEditingSyllabusId(v._id)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 text-teal-700 rounded-lg text-xs font-bold hover:bg-teal-100 transition-colors cursor-pointer"
-                                title="Edit Complete Syllabus"
+                                disabled={isRegulationLocked}
+                                title={isRegulationLocked ? 'Regulation is locked' : 'Edit Complete Syllabus'}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                                  isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-teal-50 text-teal-700 hover:bg-teal-100 cursor-pointer'
+                                }`}
                               >
                                 <BookOpen className="w-3.5 h-3.5" />
                                 Syllabus Console
                               </button>
                               <button
                                 onClick={() => handleRemoveCourseVersion(v._id)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors cursor-pointer"
-                                title="Remove course from regulation"
+                                disabled={isRegulationLocked}
+                                title={isRegulationLocked ? 'Regulation is locked' : 'Remove course from regulation'}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                                  isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-red-50 text-red-700 hover:bg-red-100 cursor-pointer'
+                                }`}
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1425,8 +1571,11 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                           ) : (
                             <button
                               onClick={() => handleCreateCourseVersion(c)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-colors cursor-pointer"
-                              title="Add this course to current regulation"
+                              disabled={isRegulationLocked}
+                              title={isRegulationLocked ? 'Regulation is locked' : 'Add this course to current regulation'}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                                isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 cursor-pointer'
+                              }`}
                             >
                               <Plus className="w-3.5 h-3.5" />
                               Add to Regulation
@@ -1434,8 +1583,11 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                           )}
                           <button
                             onClick={() => handleDeleteGlobalCourse(c._id)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors cursor-pointer ml-1"
-                            title="Delete Global Course and all its versions"
+                            disabled={isRegulationLocked}
+                            title={isRegulationLocked ? 'Regulation is locked' : 'Delete Global Course and all its versions'}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ml-1 ${
+                              isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-red-600 text-white hover:bg-red-700 cursor-pointer'
+                            }`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                             Delete Base Course
@@ -1610,7 +1762,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                 Back to Directory
               </button>
               <div className="h-[calc(100vh-140px)]">
-                <CurriculumBuilder />
+                <CurriculumBuilder readOnly={isRegulationLocked} />
               </div>
             </div>
           ) : (
@@ -1622,11 +1774,32 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
               <div className="space-y-8 animate-fadeIn">
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                  <h3 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">
-                    {selectedDepartment?.name || 'Your Department'} Regulations
-                  </h3>
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+                    <h3 className="text-lg font-bold text-slate-800">
+                      {selectedDepartment?.name || 'Your Department'} Regulations
+                    </h3>
+                    <button
+                      onClick={() => {
+                        setNewRegData({
+                          code: '',
+                          academicYear: new Date().getFullYear(),
+                          programId: selectedProgram?._id || programs[0]?._id || ''
+                        });
+                        setCreateRegOpen(true);
+                      }}
+                      className="flex items-center gap-1.5 px-4.5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold transition-all shadow cursor-pointer border border-teal-700"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Create Regulation</span>
+                    </button>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {regulations.map((reg) => (
+                    {regulations
+                      .filter((r: any) => {
+                        const rProgId = typeof r.programId === 'object' ? r.programId._id : r.programId;
+                        return !selectedProgram || rProgId === selectedProgram._id;
+                      })
+                      .map((reg) => (
                       <div key={reg._id} className="border border-slate-200 rounded-xl p-5 hover:border-blue-300 transition-colors bg-slate-50 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-16 h-16 bg-blue-100/50 rounded-bl-full -z-0 group-hover:scale-110 transition-transform"></div>
                         <h4 className="font-extrabold text-slate-800 text-lg relative z-10">{reg.code}</h4>
@@ -1650,7 +1823,13 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                               setBuilderViewMode('edit');
                               setBookViewMode('directory');
                             }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-100 transition-colors cursor-pointer"
+                            disabled={reg.status === 'LOCKED' || reg.status === 'ARCHIVED'}
+                            title={reg.status === 'LOCKED' || reg.status === 'ARCHIVED' ? 'Regulation is locked' : 'Edit Curriculum Builder'}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                              reg.status === 'LOCKED' || reg.status === 'ARCHIVED'
+                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 cursor-pointer'
+                            }`}
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                             Edit Builder
@@ -1938,10 +2117,13 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     <td className="p-4 pr-6 text-right flex justify-end gap-1.5">
                       <button
                         onClick={() => {
+                          const reg = regulations.find(r => r._id === (v.regulationId?._id || v.regulationId));
+                          const progId = reg ? (typeof reg.programId === 'object' ? reg.programId._id : reg.programId) : '';
                           setEditCourseData({
                             title: v.courseId?.title || '',
                             code: v.courseId?.code || '',
-                            programId: v.programId || '',
+                            programId: progId,
+                            regulationId: v.regulationId?._id || v.regulationId || '',
                             category: v.category || 'PC',
                             semester: v.semester || 1,
                             courseLevel: v.courseLevel || 'FC - Foundation',
@@ -2019,7 +2201,11 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                 setNewMinorStreamData(defaultMinorStreamData);
                 setMinorStreamModalOpen(true);
               }}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold transition-all shadow cursor-pointer font-sans"
+              disabled={isRegulationLocked}
+              title={isRegulationLocked ? 'Regulation is locked' : 'Create Minor Stream'}
+              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-bold transition-all shadow font-sans ${
+                isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-800 text-white cursor-pointer'
+              }`}
             >
               <Plus className="w-4 h-4" />
               <span>Create Minor Stream</span>
@@ -2066,15 +2252,21 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                           });
                           setMinorStreamModalOpen(true);
                         }}
-                        className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-200 cursor-pointer"
-                        title="Edit Stream"
+                        disabled={isRegulationLocked}
+                        title={isRegulationLocked ? 'Regulation is locked' : 'Edit Stream'}
+                        className={`p-1.5 rounded border transition-colors ${
+                          isRegulationLocked ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200 cursor-pointer'
+                        }`}
                       >
                         <Edit3 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleDeleteMinorStream(stream._id)}
-                        className="p-1.5 bg-red-50 hover:bg-red-100 text-red-655 rounded border border-red-150 cursor-pointer"
-                        title="Delete Stream"
+                        disabled={isRegulationLocked}
+                        title={isRegulationLocked ? 'Regulation is locked' : 'Delete Stream'}
+                        className={`p-1.5 rounded border transition-colors ${
+                          isRegulationLocked ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-red-50 hover:bg-red-100 text-red-655 border-red-150 cursor-pointer'
+                        }`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -2109,7 +2301,11 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                 setNewPrereqData({ sourceCourseId: '', targetCourseId: '' });
                 setAddPrereqOpen(true);
               }}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold transition-all shadow cursor-pointer font-sans"
+              disabled={isRegulationLocked}
+              title={isRegulationLocked ? 'Regulation is locked' : 'Add Prerequisite Link'}
+              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-bold transition-all shadow font-sans ${
+                isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-800 text-white cursor-pointer'
+              }`}
             >
               <Plus className="w-4 h-4" />
               <span>Add Prerequisite Link</span>
@@ -2143,8 +2339,11 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     <td className="p-4 pr-6 text-right flex justify-end">
                       <button
                         onClick={() => handleDeletePrereq(link._id)}
-                        className="p-1.5 bg-red-50 hover:bg-red-100 text-red-650 rounded border border-red-150 cursor-pointer"
-                        title="Remove Link"
+                        disabled={isRegulationLocked}
+                        title={isRegulationLocked ? 'Regulation is locked' : 'Remove Link'}
+                        className={`p-1.5 rounded border transition-colors ${
+                          isRegulationLocked ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-red-50 hover:bg-red-100 text-red-650 border-red-150 cursor-pointer'
+                        }`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -2517,6 +2716,31 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     />
                   </div>
                 </div>
+                <div className="space-y-1 pt-2">
+                  <span>Program</span>
+                  <select
+                    value={newRegData.programId}
+                    onChange={(e) => setNewRegData({ ...newRegData, programId: e.target.value })}
+                    className={`w-full border rounded-lg p-2.5 font-semibold outline-none ${
+                      selectedProgram 
+                        ? 'border-slate-200 text-slate-500 bg-slate-50 cursor-not-allowed' 
+                        : 'border-slate-300 text-slate-700 bg-white cursor-pointer focus:ring-1 focus:ring-teal-700 focus:border-teal-700'
+                    }`}
+                    disabled={!!selectedProgram}
+                    required
+                  >
+                    {selectedProgram ? (
+                      <option value={selectedProgram._id}>{selectedProgram.name}</option>
+                    ) : (
+                      <>
+                        <option value="">Select Program</option>
+                        {programs.map((p: any) => (
+                          <option key={p._id} value={p._id}>{p.name}</option>
+                        ))}
+                      </>
+                    )}
+                  </select>
+                </div>
               </div>
 
 
@@ -2579,14 +2803,32 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <span>Program *</span>
+                  <span>Program</span>
+                  {/* HOD's program is fixed — locked to their assigned department's program */}
                   <select
                     value={newCourseData.programId}
-                    onChange={(e) => setNewCourseData({ ...newCourseData, programId: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none bg-white"
+                    onChange={(e) => {
+                      const selectedProgId = e.target.value;
+                      const filteredRegs = regulations.filter((r: any) => {
+                        const rProgId = typeof r.programId === 'object' ? r.programId._id : r.programId;
+                        return rProgId === selectedProgId;
+                      });
+                      setNewCourseData({
+                        ...newCourseData,
+                        programId: selectedProgId,
+                        regulationId: filteredRegs[0]?._id || ''
+                      });
+                    }}
+                    className="w-full border border-slate-200 rounded-lg p-2.5 text-slate-500 font-semibold outline-none bg-slate-50 cursor-not-allowed"
+                    disabled
                   >
-                    <option value="">B.Tech</option>
+                    {selectedProgram ? (
+                      <option value={selectedProgram._id}>{selectedProgram.name}</option>
+                    ) : (
+                      <option value="">No program assigned</option>
+                    )}
                   </select>
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Fixed to your department's program</p>
                 </div>
                 <div className="space-y-1">
                   <span>Department *</span>
@@ -2603,10 +2845,21 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                 <div className="space-y-1">
                   <span>Regulation *</span>
                   <select
-                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-400 outline-none bg-slate-50 font-semibold"
-                    disabled
+                    value={newCourseData.regulationId}
+                    onChange={(e) => setNewCourseData({ ...newCourseData, regulationId: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none bg-white cursor-pointer"
+                    required
                   >
-                    <option>{selectedRegulation?.code || 'R2025'}</option>
+                    <option value="">Select Regulation</option>
+                    {regulations
+                      .filter((r: any) => {
+                        const rProgId = typeof r.programId === 'object' ? r.programId._id : r.programId;
+                        const hodProgId = selectedProgram?._id;
+                        return hodProgId ? rProgId === hodProgId : true;
+                      })
+                      .map((r: any) => (
+                        <option key={r._id} value={r._id}>{r.code} - {r.academicYear}</option>
+                      ))}
                   </select>
                 </div>
                 <div className="space-y-1">
@@ -3015,16 +3268,22 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <span>Program</span>
+                  {/* HOD's program is fixed — locked to their assigned department's program */}
                   <select
                     value={editCourseData.programId}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-400 outline-none bg-slate-50 font-semibold"
+                    className="w-full border border-slate-200 rounded-lg p-2.5 text-slate-500 font-semibold outline-none bg-slate-50 cursor-not-allowed"
                     disabled
                   >
-                    <option value="">B.Tech</option>
+                    {selectedProgram ? (
+                      <option value={selectedProgram._id}>{selectedProgram.name}</option>
+                    ) : (
+                      <option value={editCourseData.programId}>{editCourseData.programId || 'No program assigned'}</option>
+                    )}
                   </select>
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Fixed to your department's program</p>
                 </div>
                 <div className="space-y-1">
-                  <span>Department</span>
+                  <span>Department *</span>
                   <select className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-400 outline-none bg-slate-50 font-semibold" disabled>
                     <option>{selectedDepartment?.name || 'Computer Science and Engineering'}</option>
                   </select>
@@ -3033,9 +3292,23 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <span>Regulation</span>
-                  <select className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-400 outline-none bg-slate-50 font-semibold" disabled>
-                    <option>{selectedRegulation?.code || 'R2025'}</option>
+                  <span>Regulation *</span>
+                  <select
+                    value={editCourseData.regulationId}
+                    onChange={(e) => setEditCourseData({ ...editCourseData, regulationId: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none bg-white cursor-pointer"
+                    required
+                  >
+                    <option value="">Select Regulation</option>
+                    {regulations
+                      .filter((r: any) => {
+                        const rProgId = typeof r.programId === 'object' ? r.programId._id : r.programId;
+                        const hodProgId = selectedProgram?._id;
+                        return hodProgId ? rProgId === hodProgId : true;
+                      })
+                      .map((r: any) => (
+                        <option key={r._id} value={r._id}>{r.code} - {r.academicYear}</option>
+                      ))}
                   </select>
                 </div>
                 <div className="space-y-1">

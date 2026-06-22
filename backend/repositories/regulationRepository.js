@@ -3,13 +3,13 @@ import PeoPso from '../models/PeoPso.js';
 import Department from '../models/Department.js';
 
 export const findAllRegulations = async () => {
-  return Regulation.find()
+  return Regulation.find({ isDeleted: { $ne: true } })
     .populate('programId')
     .sort({ academicYear: -1, code: -1 });
 };
 
 export const findRegulationsByProgram = async (programId) => {
-  return Regulation.find({ programId })
+  return Regulation.find({ programId, isDeleted: { $ne: true } })
     .populate('programId')
     .sort({ academicYear: -1 });
 };
@@ -17,13 +17,13 @@ export const findRegulationsByProgram = async (programId) => {
 export const findRegulationsByDept = async (departmentId) => {
   const dept = await Department.findById(departmentId);
   if (!dept) return [];
-  return Regulation.find({ programId: dept.programId })
+  return Regulation.find({ programId: dept.programId, isDeleted: { $ne: true } })
     .populate('programId')
     .sort({ academicYear: -1 });
 };
 
 export const findRegulationById = async (id) => {
-  return Regulation.findById(id)
+  return Regulation.findOne({ _id: id, isDeleted: { $ne: true } })
     .populate('programId');
 };
 

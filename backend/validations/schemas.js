@@ -49,7 +49,7 @@ export const regulationSchema = z.object({
   programId: z.string().min(10),
   durationYears: z.number().int().min(1).max(6).default(4),
   semesterCount: z.number().int().min(1).max(12).default(8),
-  status: z.enum(['Draft', 'Published', 'Archived']).default('Draft'),
+  status: z.enum(['DRAFT', 'ACTIVE', 'LOCKED', 'ARCHIVED']).default('DRAFT'),
   version: z.number().default(1),
   isActive: z.boolean().default(true)
 });
@@ -74,6 +74,7 @@ export const assignCoordinatorSchema = z.object({
 export const updateCourseVersionSchema = z.object({
   title: z.string().optional(),
   code: z.string().optional(),
+  regulationId: z.string().regex(/^[0-9a-fA-F]{24}$/).optional(),
   credits: z.object({
     L: z.number().int().min(0).max(10),
     T: z.number().int().min(0).max(10),

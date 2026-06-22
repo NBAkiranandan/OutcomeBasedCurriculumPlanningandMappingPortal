@@ -54,12 +54,12 @@ const buildCategorySummary = (versions) => {
 export const getCurriculumByRegulation = async (req, res, next) => {
   try {
     const { regulationId } = req.params;
-    const regulation = await Regulation.findById(regulationId).populate('programId');
+    const regulation = await Regulation.findOne({ _id: regulationId, isDeleted: { $ne: true } }).populate('programId');
     if (!regulation) {
       return res.status(404).json({ message: 'Regulation not found.' });
     }
 
-    const versions = await CourseVersion.find({ regulationId })
+    const versions = await CourseVersion.find({ regulationId, isDeleted: { $ne: true } })
       .populate({ path: 'courseId', populate: { path: 'departmentId' } })
       .sort({ semester: 1, 'courseId.code': 1 });
 
@@ -102,12 +102,12 @@ export const getCurriculumByRegulation = async (req, res, next) => {
 export const getCurriculumSummary = async (req, res, next) => {
   try {
     const { regulationId } = req.params;
-    const regulation = await Regulation.findById(regulationId).populate('programId');
+    const regulation = await Regulation.findOne({ _id: regulationId, isDeleted: { $ne: true } }).populate('programId');
     if (!regulation) {
       return res.status(404).json({ message: 'Regulation not found.' });
     }
 
-    const versions = await CourseVersion.find({ regulationId }).sort({ semester: 1, 'courseId.code': 1 });
+    const versions = await CourseVersion.find({ regulationId, isDeleted: { $ne: true } }).sort({ semester: 1, 'courseId.code': 1 });
     const semesterSummaries = buildCategorySummary(versions);
     const cumulativeTotals = semesterSummaries.reduce((acc, sem) => {
       Object.entries(sem.categoryCredits).forEach(([category, credits]) => {
@@ -137,13 +137,13 @@ export const getCurriculumSummary = async (req, res, next) => {
 export const getSemesterCourses = async (req, res, next) => {
   try {
     const { regulationId, semester } = req.params;
-    const regulation = await Regulation.findById(regulationId);
+    const regulation = await Regulation.findOne({ _id: regulationId, isDeleted: { $ne: true } });
     if (!regulation) {
       return res.status(404).json({ message: 'Regulation not found.' });
     }
 
     const semesterNumber = Number(semester);
-    const versions = await CourseVersion.find({ regulationId, semester: semesterNumber })
+    const versions = await CourseVersion.find({ regulationId, semester: semesterNumber, isDeleted: { $ne: true } })
       .populate({ path: 'courseId', populate: { path: 'departmentId' } })
       .sort({ 'courseId.code': 1 });
 
@@ -153,11 +153,12 @@ export const getSemesterCourses = async (req, res, next) => {
     return next(error);
   }
 };
+
 // CODEx-added start: API to get book layout configuration for a regulation.
 export const getBookLayoutConfig = async (req, res, next) => {
   try {
     const { regulationId } = req.params;
-    const regulation = await Regulation.findById(regulationId).populate('programId');
+    const regulation = await Regulation.findOne({ _id: regulationId, isDeleted: { $ne: true } }).populate('programId');
     if (!regulation) {
       return res.status(404).json({ message: 'Regulation not found.' });
     }
@@ -192,8 +193,8 @@ export const saveBookLayoutConfig = async (req, res, next) => {
     const { regulationId } = req.params;
     const updates = req.body;
 
-    const regulation = await Regulation.findByIdAndUpdate(
-      regulationId,
+    const regulation = await Regulation.findOneAndUpdate(
+      { _id: regulationId, isDeleted: { $ne: true } },
       {
         $set: {
           curriculumLayout: {

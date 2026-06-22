@@ -39,6 +39,13 @@ const curriculumVersionSchema = new mongoose.Schema({
     type: String,
     enum: ['Draft', 'Published', 'Archived'],
     default: 'Draft',
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
+  deletedAt: {
+    type: Date,
   }
 }, {
   timestamps: true,

@@ -100,6 +100,17 @@ export const getAllCourses = async () => {
 };
 
 export const createNewCourse = async (courseData, regulationId, semester, operatorUser) => {
+  if (operatorUser.role === 'HOD') {
+    courseData.departmentId = operatorUser.departmentId;
+    
+    // Validate that the regulation belongs to the HOD's program/department context
+    const Regulation = (await import('../models/Regulation.js')).default;
+    const reg = await Regulation.findById(regulationId);
+    if (!reg || (reg.programId && reg.programId.toString() !== operatorUser.programId.toString())) {
+      throw new Error('Unauthorized: You can only add courses to regulations of your own program.');
+    }
+  }
+
   // 1. Check if course code already exists globally
   let course = await courseRepository.findCourseByCode(courseData.code);
   
@@ -156,6 +167,17 @@ export const createNewCourse = async (courseData, regulationId, semester, operat
 
 
 export const assignCourseCoordinator = async (versionId, coordinatorId, operatorUser) => {
+  const version = await courseRepository.findVersionById(versionId);
+  if (!version) {
+    throw new Error('Course version not found.');
+  }
+  if (operatorUser.role === 'HOD') {
+    const courseDeptId = version.courseId?.departmentId?._id || version.courseId?.departmentId;
+    if (courseDeptId && courseDeptId.toString() !== operatorUser.departmentId.toString()) {
+      throw new Error('Unauthorized: You can only assign coordinators to courses of your own department.');
+    }
+  }
+
   const updated = await courseRepository.updateCourseVersion(versionId, { assignedCoordinator: coordinatorId });
   
   await AuditLog.create({
@@ -227,6 +249,13 @@ export const saveSyllabusDraft = async (versionId, updateData, operatorUser) => 
     throw new Error('Course version not found.');
   }
 
+  if (operatorUser.role === 'HOD') {
+    const courseDeptId = version.courseId?.departmentId?._id || version.courseId?.departmentId;
+    if (courseDeptId && courseDeptId.toString() !== operatorUser.departmentId.toString()) {
+      throw new Error('Unauthorized: You can only save drafts for courses of your own department.');
+    }
+  }
+
   const assignedId = version.assignedCoordinator?._id?.toString() || version.assignedCoordinator?.toString();
   if (operatorUser.role === 'Coordinator' && assignedId !== operatorUser.id) {
     throw new Error('Unauthorized: You are not the assigned coordinator for this course version.');
@@ -295,6 +324,13 @@ export const updateWorkflow = async (versionId, status, comments = '', operatorU
   const version = await courseRepository.findVersionById(versionId);
   if (!version) {
     throw new Error('Course version not found.');
+  }
+
+  if (operatorUser.role === 'HOD') {
+    const courseDeptId = version.courseId?.departmentId?._id || version.courseId?.departmentId;
+    if (courseDeptId && courseDeptId.toString() !== operatorUser.departmentId.toString()) {
+      throw new Error('Unauthorized: You can only transition workflow for courses of your own department.');
+    }
   }
 
   const prevStatus = version.status;
@@ -440,6 +476,13 @@ export const deleteCourseVersion = async (versionId, operatorUser) => {
     throw new Error('Course version not found.');
   }
 
+  if (operatorUser.role === 'HOD') {
+    const courseDeptId = version.courseId?.departmentId?._id || version.courseId?.departmentId;
+    if (courseDeptId && courseDeptId.toString() !== operatorUser.departmentId.toString()) {
+      throw new Error('Unauthorized: You can only remove courses of your own department.');
+    }
+  }
+
   await courseRepository.deleteCourseVersion(versionId);
 
   await AuditLog.create({
@@ -456,6 +499,13 @@ export const deleteGlobalCourse = async (courseId, operatorUser) => {
   const course = await courseRepository.findCourseById(courseId);
   if (!course) {
     throw new Error('Course not found.');
+  }
+
+  if (operatorUser.role === 'HOD') {
+    const courseDeptId = course.departmentId?._id || course.departmentId;
+    if (courseDeptId && courseDeptId.toString() !== operatorUser.departmentId.toString()) {
+      throw new Error('Unauthorized: You can only delete global courses of your own department.');
+    }
   }
 
   await courseRepository.deleteVersionsByCourseId(courseId);

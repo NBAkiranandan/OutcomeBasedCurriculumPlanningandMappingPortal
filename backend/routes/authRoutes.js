@@ -13,6 +13,7 @@ router.post('/refresh', authController.refresh);
 router.post('/logout', authenticateJWT, authController.logout);
 router.get('/profile', authenticateJWT, authController.getProfile);
 router.get('/faculty', authenticateJWT, authorizeRoles('Admin', 'HOD'), authController.getFaculty);
+router.get('/my-department', authenticateJWT, authorizeRoles('HOD'), authController.getMyDepartment);
 router.post('/change-password', authenticateJWT, validateBody(changePasswordSchema), authController.changePassword);
 
 export default router;

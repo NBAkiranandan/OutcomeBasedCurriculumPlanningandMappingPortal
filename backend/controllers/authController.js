@@ -109,3 +109,31 @@ export const changePassword = async (req, res, next) => {
   }
 };
 
+// GET /api/auth/my-department
+// Returns the department assigned to the currently logged-in HOD.
+export const getMyDepartment = async (req, res, next) => {
+  try {
+    let deptId = req.user.departmentId;
+
+    // Fallback: If departmentId wasn't in the JWT payload, fetch from DB
+    if (!deptId) {
+      const userRecord = await userRepository.findById(req.user.id);
+      deptId = userRecord?.departmentId?._id || userRecord?.departmentId;
+    }
+
+    if (!deptId) {
+      return res.status(404).json({ message: 'No department is assigned to your account. Please contact the Administrator.' });
+    }
+
+    const Department = (await import('../models/Department.js')).default;
+    const department = await Department.findById(deptId).populate('programId', 'name code');
+    
+    if (!department) {
+      return res.status(404).json({ message: 'Assigned department not found in database. Please contact the Administrator.' });
+    }
+
+    return res.status(200).json({ department });
+  } catch (error) {
+    return next(error);
+  }
+};

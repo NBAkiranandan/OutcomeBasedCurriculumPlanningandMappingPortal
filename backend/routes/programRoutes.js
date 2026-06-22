@@ -13,7 +13,7 @@ router.post('/', authorizeRoles('Admin'), validateBody(programSchema), programCo
 router.get('/departments', programController.getDepartments);
 router.get('/:programId/departments', programController.getDepartmentsByProgram);
 router.post('/departments', authorizeRoles('Admin'), validateBody(departmentSchema), programController.createDepartment);
-router.put('/departments/:id', authorizeRoles('Admin'), programController.updateDepartment);
+router.put('/departments/:id', authorizeRoles('Admin', 'HOD'), programController.updateDepartment);
 router.post('/departments/:id/assign-hod', authorizeRoles('Admin'), programController.assignHod);
 router.delete('/departments/:id', authorizeRoles('Admin'), programController.deleteDepartment);
 

@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
+    "kill-port": "npx kill-port 5001",
     "seed": "node utils/seed.js",
     "seed:pdf": "node utils/parse_and_seed_pdf.js",
     "seed:r24": "node utils/seed_curriculum_r24.js"

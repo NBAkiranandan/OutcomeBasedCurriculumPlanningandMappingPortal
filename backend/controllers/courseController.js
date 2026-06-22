@@ -9,7 +9,12 @@ const __dirname = path.dirname(__filename);
 
 export const getCoursesByDept = async (req, res, next) => {
   try {
-    const deptId = req.params.departmentId || req.user.departmentId;
+    let deptId = req.params.departmentId;
+    if (req.user.role === 'HOD') {
+      deptId = req.user.departmentId;
+    } else if (!deptId) {
+      deptId = req.user.departmentId;
+    }
     if (!deptId) {
       return res.status(400).json({ message: 'Department context required.' });
     }

@@ -1,10 +1,11 @@
 import CourseAssignment from '../models/CourseAssignment.js';
+import CourseVersion from '../models/CourseVersion.js';
 import AuditLog from '../models/AuditLog.js';
 
 export const getAssignments = async (req, res, next) => {
   try {
     const { departmentId, academicYear, semester } = req.query;
-    const filter = { is_active: true };
+    const filter = { isDeleted: { $ne: true }, is_active: true };
     if (departmentId) filter.departmentId = departmentId;
     if (academicYear) filter.academicYear = academicYear;
     if (semester) filter.semester = semester;
@@ -23,8 +24,22 @@ export const createAssignment = async (req, res, next) => {
   try {
     const { facultyId, courseId, academicYear, semester, section, departmentId } = req.body;
     
+    // Automatically resolve regulationId from CourseVersion
+    let regulationId = null;
+    const courseVer = await CourseVersion.findOne({ courseId, semester, isDeleted: { $ne: true } });
+    if (courseVer) {
+      regulationId = courseVer.regulationId;
+    }
+    
     const newAssignment = new CourseAssignment({
-      facultyId, courseId, academicYear, semester, section, departmentId, created_by: req.user.id
+      facultyId,
+      courseId,
+      academicYear,
+      semester,
+      section,
+      departmentId,
+      regulationId,
+      created_by: req.user.id
     });
     
     await newAssignment.save();
@@ -45,7 +60,11 @@ export const updateAssignment = async (req, res, next) => {
     const { id } = req.params;
     const updateData = { ...req.body, updated_by: req.user.id };
     
-    const assignment = await CourseAssignment.findByIdAndUpdate(id, updateData, { new: true });
+    const assignment = await CourseAssignment.findOneAndUpdate(
+      { _id: id, isDeleted: { $ne: true } },
+      updateData,
+      { new: true }
+    );
     if (!assignment) return res.status(404).json({ message: 'Assignment not found.' });
     
     return res.status(200).json({ assignment, message: 'Assignment updated successfully.' });
@@ -57,8 +76,11 @@ export const updateAssignment = async (req, res, next) => {
 export const deleteAssignment = async (req, res, next) => {
   try {
     const { id } = req.params;
-    // Hard delete is okay here or soft delete
-    const assignment = await CourseAssignment.findByIdAndDelete(id);
+    const assignment = await CourseAssignment.findByIdAndUpdate(
+      id,
+      { isDeleted: true, deletedAt: new Date() },
+      { new: true }
+    );
     if (!assignment) return res.status(404).json({ message: 'Assignment not found.' });
     
     return res.status(200).json({ message: 'Assignment removed successfully.' });

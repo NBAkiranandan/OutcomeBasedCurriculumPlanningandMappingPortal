@@ -7,9 +7,9 @@ import {
   Building, Settings, FileSpreadsheet, Shield, Plus,
   RotateCw, Layers, CheckCircle2, AlertCircle, Calendar,
   CheckSquare, Award, Users, FileText, Bell, Sparkles,
-  UserPlus, Edit3, Trash2, Check, X, ArrowLeft, Download,
+  UserPlus, Edit3, Trash2, Check, X, ArrowLeft, ArrowRight, Download,
   Eye, KeyRound, Globe, User, BookOpen, Printer, CheckSquare as CheckSquareIcon,
-  Briefcase, Phone, Cpu, Building2, Mail
+  Briefcase, Phone, Cpu, Building2, Mail, Lock, Unlock
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -103,6 +103,50 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
   const [erpMaintenanceUpdates, setErpMaintenanceUpdates] = useState(false);
   const [backupCompletionNotif, setBackupCompletionNotif] = useState(true);
 
+  // Safe Regulation Deletion and Archived state
+  const [deletedRegulations, setDeletedRegulations] = useState<any[]>([]);
+  const [deleteConfirmationModal, setDeleteConfirmationModal] = useState<{
+    open: boolean;
+    regId: string | null;
+    regCode: string;
+    stats: {
+      totalCourses: number;
+      totalPeos: number;
+      totalPsos: number;
+      totalMappings: number;
+      totalCurriculumRecords: number;
+    } | null;
+    loadingStats: boolean;
+  }>({
+    open: false,
+    regId: null,
+    regCode: '',
+    stats: null,
+    loadingStats: false
+  });
+
+  // === LIFECYCLE MODAL STATE ===
+  const [lifecycleModal, setLifecycleModal] = useState<{
+    open: boolean;
+    reg: any | null;
+    targetStatus: 'DRAFT' | 'ACTIVE' | 'LOCKED' | 'ARCHIVED' | null;
+    notes: string;
+    loading: boolean;
+    lockPreviousActive: boolean;
+    hasOtherActive: boolean;
+  }>({
+    open: false,
+    reg: null,
+    targetStatus: null,
+    notes: '',
+    loading: false,
+    lockPreviousActive: true,
+    hasOtherActive: false
+  });
+
+  // Lifecycle history accordion â€” reg._id => expanded
+  const [expandedHistory, setExpandedHistory] = useState<Record<string, boolean>>({});
+
   // Load backend data
   const loadData = async () => {
     setLoading(true);
@@ -118,6 +162,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
       // Fetch Regulations
       const regRes = await api.regulations.list();
       setRegulations(regRes.regulations);
+
+      // Fetch Archived Regulations for admin dashboard
+      try {
+        const delRegRes = await api.regulations.listDeleted();
+        setDeletedRegulations(delRegRes.regulations || []);
+      } catch (err) {
+        console.error('[AdminDashboard] Error loading archived regulations:', err);
+      }
 
       // Fetch Users
       const userRes = await api.users.list();
@@ -285,14 +337,112 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
     }
   };
 
-  // Toggle Regulation Status
-  const handleToggleReg = async (id: string) => {
-    if (!confirm('Are you sure you want to permanently delete this regulation? This action cannot be undone.')) return;
+  // Open lifecycle transition modal
+  const openLifecycleModal = (reg: any, targetStatus: 'DRAFT' | 'ACTIVE' | 'LOCKED' | 'ARCHIVED') => {
+    const otherActive = regulations.some((r: any) => r._id !== reg._id && r.status === 'ACTIVE');
+    setLifecycleModal({
+      open: true,
+      reg,
+      targetStatus,
+      notes: '',
+      loading: false,
+      lockPreviousActive: true,
+      hasOtherActive: otherActive && targetStatus === 'ACTIVE'
+    });
+  };
+
+  // Confirm lifecycle transition
+  const handleConfirmTransition = async () => {
+    const { reg, targetStatus, notes, lockPreviousActive } = lifecycleModal;
+    if (!reg || !targetStatus) return;
+    setLifecycleModal(prev => ({ ...prev, loading: true }));
     try {
-      await api.regulations.delete(id);
-      loadData();
+      await api.regulations.transitionStatus(reg._id, {
+        status: targetStatus,
+        notes,
+        lockPreviousActive
+      });
+      setLifecycleModal({ open: false, reg: null, targetStatus: null, notes: '', loading: false, lockPreviousActive: true, hasOtherActive: false });
+      await loadData();
+    } catch (err: any) {
+      alert(`Transition failed: ${err.message}`);
+      setLifecycleModal(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  // Toggle Regulation soft-delete
+  const handleToggleReg = async (id: string) => {
+    const reg = regulations.find(r => r._id === id);
+    if (!reg) return;
+    
+    setDeleteConfirmationModal({
+      open: true,
+      regId: id,
+      regCode: reg.code,
+      stats: null,
+      loadingStats: true
+    });
+
+    try {
+      const statsRes = await api.regulations.getDeletionStats(id);
+      setDeleteConfirmationModal(prev => ({
+        ...prev,
+        stats: statsRes.stats,
+        loadingStats: false
+      }));
+    } catch (err: any) {
+      console.error('Failed to load deletion stats:', err);
+      alert(`Failed to fetch deletion stats: ${err.message}`);
+      setDeleteConfirmationModal({ open: false, regId: null, regCode: '', stats: null, loadingStats: false });
+    }
+  };
+
+  // Confirm hard soft-delete
+  const handleConfirmDeleteReg = async () => {
+    const { regId, regCode } = deleteConfirmationModal;
+    if (!regId) return;
+    try {
+      setLoading(true);
+      await api.regulations.delete(regId);
+      alert(`Regulation ${regCode} has been successfully soft-deleted.`);
+      setDeleteConfirmationModal({ open: false, regId: null, regCode: '', stats: null, loadingStats: false });
+      await loadData();
     } catch (err: any) {
       alert(`Failed to delete regulation: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Restore soft-deleted regulation
+  const handleRestoreReg = async (id: string) => {
+    const reg = deletedRegulations.find(r => r._id === id);
+    const regCode = reg ? reg.code : 'this regulation';
+    if (!confirm(`Are you sure you want to restore ${regCode} regulation and all its associated resources?`)) return;
+    try {
+      setLoading(true);
+      await api.regulations.restore(id);
+      alert(`Regulation ${regCode} and its associated entities were successfully restored.`);
+      await loadData();
+    } catch (err: any) {
+      alert(`Failed to restore regulation: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Toggle lifecycle history accordion
+  const toggleHistoryAccordion = (regId: string) => {
+    setExpandedHistory(prev => ({ ...prev, [regId]: !prev[regId] }));
+  };
+
+  // Lifecycle status config helper
+  const getStatusConfig = (status: string) => {
+    switch (status) {
+      case 'ACTIVE': return { label: 'ACTIVE', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' };
+      case 'LOCKED': return { label: 'LOCKED', color: 'bg-red-50 text-red-700 border-red-200', dot: 'bg-red-500' };
+      case 'ARCHIVED': return { label: 'ARCHIVED', color: 'bg-slate-100 text-slate-600 border-slate-300', dot: 'bg-slate-400' };
+      default: return { label: 'DRAFT', color: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-400' };
     }
   };
 
@@ -434,7 +584,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
 
       // Header branding
       page.drawText('ADITYA UNIVERSITY', { x: 50, y: height - 60, size: 20, color: rgb(0.04, 0.1, 0.28) });
-      page.drawText('Accreditation Governance Portal — OBE Syllabus Scheme', { x: 50, y: height - 80, size: 10, color: rgb(0.4, 0.4, 0.4) });
+      page.drawText('Accreditation Governance Portal â€” OBE Syllabus Scheme', { x: 50, y: height - 80, size: 10, color: rgb(0.4, 0.4, 0.4) });
 
       // Report Title
       page.drawText(reportName.toUpperCase(), { x: 50, y: height - 130, size: 15, color: rgb(0.11, 0.3, 0.85) });
@@ -561,7 +711,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
       {activeTab === 'dashboard' && (
         <div className="space-y-6">
 
-          {/* ── Welcome Header ─────────────────────────────────────────── */}
+          {/* â”€â”€ Welcome Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
           <div className="bg-white rounded-2xl border border-border shadow-card p-6 flex flex-col sm:flex-row items-start gap-5">
             <div className="w-14 h-14 rounded-2xl bg-primary-600 text-white flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0">
               {(() => {
@@ -572,7 +722,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
             <div className="flex-1 min-w-0">
               <div className="flex justify-between items-start flex-wrap gap-3">
                 <div>
-                  <p className="text-[10px] font-semibold text-text-subtle uppercase tracking-widest">Aditya University · OBE Portal</p>
+                  <p className="text-[10px] font-semibold text-text-subtle uppercase tracking-widest">Aditya University Â· OBE Portal</p>
                   <h1 className="text-xl font-bold text-text-primary mt-0.5">Welcome back, {user?.name || 'Administrator'}</h1>
                 </div>
                 <button
@@ -586,7 +736,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
               <div className="flex flex-wrap items-center gap-2 mt-3">
                 <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-violet-50 text-violet-700 border border-violet-100 text-[11px] font-semibold">System Administrator</span>
                 <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 text-[11px] font-semibold">Office of Academic Governance</span>
-                <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-success-50 text-success-700 border border-success-100 text-[11px] font-semibold">AU Main Campus · Administration</span>
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-success-50 text-success-700 border border-success-100 text-[11px] font-semibold">AU Main Campus Â· Administration</span>
               </div>
               <p className="text-sm text-text-muted mt-3 leading-relaxed">
                 Managing {stats.programs} programs, {stats.departments} departments, and {stats.regulations} active regulation contexts with accreditation audit tracking.
@@ -594,7 +744,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
             </div>
           </div>
 
-          {/* ── KPI Stat Cards ─────────────────────────────────────────── */}
+          {/* â”€â”€ KPI Stat Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
             {[
               { label: 'Total Programs', sub: 'Active academic programs', count: stats.programs, icon: Layers, bg: 'bg-blue-50', iconCl: 'text-blue-600', border: 'border-blue-100' },
@@ -1019,10 +1169,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
       {/* 4. REGULATION MANAGEMENT PAGE */}
       {activeTab === 'regulations' && (
         <div className="space-y-6">
+          {/* Header */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-extrabold text-slate-800">Regulation Management</h1>
-              <p className="text-xs text-slate-500 mt-1">Configure active regulation schemes.</p>
+              <h1 className="text-xl font-extrabold text-slate-800">Regulation Lifecycle Management</h1>
+              <p className="text-xs text-slate-500 mt-1">Control the full lifecycle of academic regulations â€” Draft â†’ Active â†’ Locked â†’ Archived.</p>
             </div>
             <div className="flex gap-2">
               <button
@@ -1030,90 +1181,357 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 className="flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>Add Regulation</span>
+                <span>New Regulation</span>
               </button>
             </div>
           </div>
 
-          {/* Regulations Card grid */}
-          <div className="grid grid-cols-3 gap-6">
-            {regulations.map((reg) => (
-              <div key={reg._id} className={`bg-white p-6 rounded-2xl border ${reg.isActive ? 'border-slate-200' : 'border-red-200 opacity-60'} shadow-sm flex flex-col justify-between h-[220px]`}>
-                <div>
-                  <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-mono text-slate-400 font-bold uppercase tracking-wider">{reg.programId?.name} Scheme</span>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2 py-0.5 rounded text-[8px] font-bold border ${reg.status === 'Published'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                          : reg.status === 'Archived'
-                          ? 'bg-red-50 text-red-700 border-red-100'
-                          : 'bg-amber-50 text-amber-700 border-amber-100'
-                        }`}>
-                        {reg.status || 'Draft'}
-                      </span>
-                      <button 
-                        onClick={() => setRegModal({ open: true, mode: 'edit', data: JSON.parse(JSON.stringify(reg)) })} 
-                        className="text-slate-300 hover:text-blue-500 transition-colors" 
-                        title="Edit Regulation"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleToggleReg(reg._id)} className="text-slate-300 hover:text-red-500 transition-colors" title={reg.isActive ? "Deactivate Regulation" : "Activate Regulation"}>
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <h3 className="text-xl font-extrabold text-academic-primary mt-2">{reg.code} Regulation</h3>
-                  <p className="text-[11px] text-slate-500 font-semibold mt-1">Program Owner: {reg.programId?.name || 'All'}</p>
-
-                  <div className="grid grid-cols-2 gap-3 mt-4 text-xs font-medium text-slate-500">
-                    <div>Academic Year: <strong className="text-slate-700">{reg.academicYear}</strong></div>
-                    <div>Duration: <strong className="text-slate-700">{reg.durationYears} Years</strong></div>
-                  </div>
-                </div>
-
-                <div className="border-t border-slate-100 pt-4 mt-4 flex gap-2">
-                  {(!reg.status || reg.status === 'Draft') && (
-                    <button
-                      onClick={async () => {
-                        if (confirm(`Are you sure you want to publish regulation ${reg.code}?`)) {
-                          await api.regulations.update(reg._id, { ...reg, status: 'Published' });
-                          loadData();
-                        }
-                      }}
-                      className="flex-1 py-2 bg-emerald-650 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-extrabold uppercase transition-all cursor-pointer text-center"
-                    >
-                      Publish
-                    </button>
-                  )}
-                  {reg.status === 'Published' && (
-                    <button
-                      onClick={async () => {
-                        if (confirm(`Are you sure you want to archive regulation ${reg.code}?`)) {
-                          await api.regulations.update(reg._id, { ...reg, status: 'Archived' });
-                          loadData();
-                        }
-                      }}
-                      className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-extrabold uppercase transition-all cursor-pointer text-center"
-                    >
-                      Archive
-                    </button>
-                  )}
-                  {reg.status === 'Archived' && (
-                    <button
-                      onClick={async () => {
-                        await api.regulations.update(reg._id, { ...reg, status: 'Draft' });
-                        loadData();
-                      }}
-                      className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[10px] font-extrabold uppercase transition-all cursor-pointer text-center"
-                    >
-                      Restore Draft
-                    </button>
-                  )}
-                </div>
+          {/* Lifecycle Status Legend */}
+          <div className="bg-gradient-to-r from-slate-50 to-white border border-slate-200 rounded-2xl p-4 flex flex-wrap gap-4 items-center">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status Legend:</span>
+            {[
+              { label: 'DRAFT', color: 'bg-amber-100 text-amber-700 border-amber-200', desc: 'In preparation â€” editable by Admin & HOD' },
+              { label: 'ACTIVE', color: 'bg-emerald-100 text-emerald-700 border-emerald-200', desc: 'Official regulation in use' },
+              { label: 'LOCKED', color: 'bg-red-100 text-red-700 border-red-200', desc: 'Read-only â€” Admin can unlock' },
+              { label: 'ARCHIVED', color: 'bg-slate-200 text-slate-600 border-slate-300', desc: 'Historical record â€” permanent read-only' },
+            ].map(s => (
+              <div key={s.label} className="flex items-center gap-2">
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${s.color}`}>{s.label}</span>
+                <span className="text-[10px] text-slate-400">{s.desc}</span>
               </div>
             ))}
           </div>
+
+          {/* Regulations Grid */}
+          {regulations.length === 0 ? (
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-12 text-center text-slate-400 text-xs font-semibold">
+              <Layers className="w-10 h-10 mx-auto text-slate-300 mb-3" />
+              No regulations found. Create one to begin.
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-6">
+              {regulations.map((reg: any) => {
+                const statusCfg = getStatusConfig(reg.status || 'DRAFT');
+                const isHistExpanded = expandedHistory[reg._id];
+                const history = reg.lifecycleHistory || [];
+                return (
+                  <div
+                    key={reg._id}
+                    className={`bg-white rounded-2xl border shadow-sm flex flex-col overflow-hidden transition-all ${
+                      reg.status === 'LOCKED' ? 'border-red-200' :
+                      reg.status === 'ACTIVE' ? 'border-emerald-200' :
+                      reg.status === 'ARCHIVED' ? 'border-slate-300 opacity-75' :
+                      'border-slate-200'
+                    }`}
+                  >
+                    {/* Card Top Color Strip */}
+                    <div className={`h-1 w-full ${
+                      reg.status === 'LOCKED' ? 'bg-red-400' :
+                      reg.status === 'ACTIVE' ? 'bg-emerald-500' :
+                      reg.status === 'ARCHIVED' ? 'bg-slate-400' :
+                      'bg-amber-400'
+                    }`} />
+
+                    <div className="p-5 flex-1 flex flex-col">
+                      {/* Top Row: program label + status badge + actions */}
+                      <div className="flex justify-between items-start gap-2">
+                        <span className="text-[9px] font-mono text-slate-400 font-bold uppercase tracking-wider truncate">{reg.programId?.name || 'Unknown'} Scheme</span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold border ${statusCfg.color}`}>
+                            {statusCfg.label}
+                          </span>
+                          <button
+                            onClick={() => setRegModal({ open: true, mode: 'edit', data: JSON.parse(JSON.stringify(reg)) })}
+                            className="text-slate-300 hover:text-blue-500 transition-colors p-0.5"
+                            title="Edit Regulation Details"
+                            disabled={reg.status === 'LOCKED' || reg.status === 'ARCHIVED'}
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleToggleReg(reg._id)}
+                            className="text-slate-300 hover:text-red-500 transition-colors p-0.5"
+                            title="Soft-Delete Regulation"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Regulation Code */}
+                      <h3 className="text-2xl font-extrabold text-slate-800 mt-2 leading-tight">{reg.code}</h3>
+                      <p className="text-[11px] text-slate-500 font-semibold mt-0.5">{reg.programId?.name || 'â€”'}</p>
+
+                      {/* Metadata */}
+                      <div className="grid grid-cols-2 gap-2 mt-3 text-[10px] font-medium text-slate-500">
+                        <div>Year: <strong className="text-slate-700">{reg.academicYear}</strong></div>
+                        <div>Duration: <strong className="text-slate-700">{reg.durationYears}Y / {reg.semesterCount}S</strong></div>
+                        {reg.activatedAt && <div className="col-span-2">Activated: <strong className="text-emerald-700">{new Date(reg.activatedAt).toLocaleDateString()}</strong></div>}
+                        {reg.lockedAt && <div className="col-span-2">Locked: <strong className="text-red-700">{new Date(reg.lockedAt).toLocaleDateString()}</strong></div>}
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="mt-4 flex flex-wrap gap-1.5">
+                        {/* DRAFT â†’ ACTIVE */}
+                        {(!reg.status || reg.status === 'DRAFT') && (
+                          <button
+                            id={`reg-activate-${reg._id}`}
+                            onClick={() => openLifecycleModal(reg, 'ACTIVE')}
+                            className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-extrabold uppercase transition-all cursor-pointer text-center flex items-center justify-center gap-1"
+                          >
+                            <CheckCircle2 className="w-3 h-3" /> Activate
+                          </button>
+                        )}
+                        {/* ACTIVE â†’ LOCKED */}
+                        {reg.status === 'ACTIVE' && (
+                          <button
+                            id={`reg-lock-${reg._id}`}
+                            onClick={() => openLifecycleModal(reg, 'LOCKED')}
+                            className="flex-1 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-extrabold uppercase transition-all cursor-pointer text-center flex items-center justify-center gap-1"
+                          >
+                            <Lock className="w-3 h-3" /> Lock
+                          </button>
+                        )}
+                        {/* ACTIVE â†’ ARCHIVED */}
+                        {reg.status === 'ACTIVE' && (
+                          <button
+                            id={`reg-archive-${reg._id}`}
+                            onClick={() => openLifecycleModal(reg, 'ARCHIVED')}
+                            className="flex-1 py-1.5 bg-slate-500 hover:bg-slate-600 text-white rounded-lg text-[10px] font-extrabold uppercase transition-all cursor-pointer text-center flex items-center justify-center gap-1"
+                          >
+                            <Layers className="w-3 h-3" /> Archive
+                          </button>
+                        )}
+                        {/* LOCKED â†’ ACTIVE (Unlock) */}
+                        {reg.status === 'LOCKED' && (
+                          <button
+                            id={`reg-unlock-${reg._id}`}
+                            onClick={() => openLifecycleModal(reg, 'ACTIVE')}
+                            className="flex-1 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[10px] font-extrabold uppercase transition-all cursor-pointer text-center flex items-center justify-center gap-1"
+                          >
+                            <Unlock className="w-3 h-3" /> Unlock
+                          </button>
+                        )}
+                        {/* LOCKED â†’ ARCHIVED */}
+                        {reg.status === 'LOCKED' && (
+                          <button
+                            id={`reg-lock-archive-${reg._id}`}
+                            onClick={() => openLifecycleModal(reg, 'ARCHIVED')}
+                            className="flex-1 py-1.5 bg-slate-500 hover:bg-slate-600 text-white rounded-lg text-[10px] font-extrabold uppercase transition-all cursor-pointer text-center flex items-center justify-center gap-1"
+                          >
+                            <Layers className="w-3 h-3" /> Archive
+                          </button>
+                        )}
+                        {/* ARCHIVED â†’ DRAFT (Restore to Draft) */}
+                        {reg.status === 'ARCHIVED' && (
+                          <button
+                            id={`reg-restore-draft-${reg._id}`}
+                            onClick={() => openLifecycleModal(reg, 'DRAFT')}
+                            className="flex-1 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[10px] font-extrabold uppercase transition-all cursor-pointer text-center flex items-center justify-center gap-1"
+                          >
+                            <RotateCw className="w-3 h-3" /> Restore Draft
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Lifecycle History Accordion */}
+                      {history.length > 0 && (
+                        <div className="mt-3 border-t border-slate-100 pt-3">
+                          <button
+                            onClick={() => toggleHistoryAccordion(reg._id)}
+                            className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-slate-600 font-semibold transition-colors w-full"
+                          >
+                            <Eye className="w-3 h-3" />
+                            {isHistExpanded ? 'Hide' : 'Show'} History ({history.length})
+                          </button>
+                          {isHistExpanded && (
+                            <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                              {[...history].reverse().map((h: any, i: number) => {
+                                const hCfg = getStatusConfig(h.status);
+                                return (
+                                  <div key={i} className="flex items-start gap-2 text-[9px] text-slate-500">
+                                    <span className={`px-1.5 py-0.5 rounded font-bold border shrink-0 ${hCfg.color}`}>{h.status}</span>
+                                    <div>
+                                      <span className="font-semibold text-slate-600">{h.changedByName || 'System'}</span>
+                                      <span className="text-slate-400"> Â· {new Date(h.changedAt).toLocaleDateString()} {new Date(h.changedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                      {h.notes && <p className="text-slate-400 italic">{h.notes}</p>}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Soft-Deleted (Hard Archive) Regulations Section */}
+          <div className="pt-6 border-t border-slate-200 space-y-4">
+            <div>
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <span className="w-2.5 h-6 bg-red-400 rounded-full inline-block"></span>
+                Soft-Deleted Regulations
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">Records permanently removed from active portal usage. Can be restored if needed.</p>
+            </div>
+
+            {deletedRegulations.length === 0 ? (
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-8 text-center text-slate-400">
+                <Settings className="w-10 h-10 mx-auto text-slate-300 mb-2 opacity-50" />
+                <p className="text-sm font-semibold">No soft-deleted regulations</p>
+                <p className="text-xs text-slate-400 mt-1">Deleted regulations will appear here for audit and restoration.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-6">
+                {deletedRegulations.map((reg: any) => (
+                  <div key={reg._id} className="bg-red-50/20 p-5 rounded-2xl border border-red-100 shadow-sm flex flex-col justify-between">
+                    <div>
+                      <div className="flex justify-between items-start">
+                        <span className="text-[9px] font-mono text-slate-400 font-bold uppercase tracking-wider">{reg.programId?.name || 'Unknown'} Scheme</span>
+                        <span className="px-2 py-0.5 rounded text-[9px] font-bold border bg-red-100 text-red-700 border-red-200">DELETED</span>
+                      </div>
+                      <h3 className="text-xl font-extrabold text-slate-700 mt-1.5">{reg.code}</h3>
+                      <p className="text-[10px] text-slate-500 font-semibold mt-0.5">{reg.programId?.name || 'All'}</p>
+                      <div className="grid grid-cols-2 gap-2 mt-3 text-[10px] font-medium text-slate-500">
+                        <div>Year: <strong className="text-slate-700">{reg.academicYear}</strong></div>
+                        <div>Deleted: <strong className="text-red-700">{reg.deletedAt ? new Date(reg.deletedAt).toLocaleDateString() : 'N/A'}</strong></div>
+                      </div>
+                    </div>
+                    <div className="border-t border-red-100 pt-3 mt-3">
+                      <button
+                        onClick={() => handleRestoreReg(reg._id)}
+                        className="w-full py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[10px] font-extrabold uppercase transition-all cursor-pointer text-center flex items-center justify-center gap-1"
+                      >
+                        <RotateCw className="w-3 h-3" />
+                        Restore Regulation
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* === LIFECYCLE TRANSITION MODAL === */}
+          {lifecycleModal.open && lifecycleModal.reg && lifecycleModal.targetStatus && (() => {
+            const reg = lifecycleModal.reg;
+            const target = lifecycleModal.targetStatus;
+            const current = reg.status || 'DRAFT';
+            const targetCfg = getStatusConfig(target);
+
+            const titles: Record<string, string> = {
+              ACTIVE: current === 'LOCKED' ? 'Unlock Regulation' : 'Activate Regulation',
+              LOCKED: 'Lock Regulation',
+              ARCHIVED: 'Archive Regulation',
+              DRAFT: 'Restore to Draft'
+            };
+
+            const descriptions: Record<string, string> = {
+              ACTIVE: current === 'LOCKED'
+                ? `Unlocking ${reg.code} will allow HODs to edit courses, PEO/PSO, and curriculum again.`
+                : `Activating ${reg.code} will make it the official current regulation. HODs can edit content. Consider locking older active regulations.`,
+              LOCKED: `Locking ${reg.code} will make it read-only for all HODs, Coordinators, and Faculty. Only Admin can unlock it. Historical data will be preserved.`,
+              ARCHIVED: `Archiving ${reg.code} will make it permanently read-only for everyone except Admin. It will remain available for NBA/NAAC audit evidence.`,
+              DRAFT: `Restoring ${reg.code} to DRAFT will allow Admin and HOD to edit it again. It will not be considered an active regulation.`
+            };
+
+            return (
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 overflow-hidden">
+                  {/* Modal header strip */}
+                  <div className={`h-1.5 w-full ${
+                    target === 'ACTIVE' ? 'bg-emerald-500' :
+                    target === 'LOCKED' ? 'bg-red-500' :
+                    target === 'ARCHIVED' ? 'bg-slate-500' :
+                    'bg-amber-400'
+                  }`} />
+
+                  <div className="p-6">
+                    <h2 className="text-lg font-extrabold text-slate-800">{titles[target]}</h2>
+                    <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{descriptions[target]}</p>
+
+                    {/* Transition Summary */}
+                    <div className="mt-4 flex items-center gap-3 bg-slate-50 rounded-xl p-3 border border-slate-200">
+                      <div className="text-center">
+                        <div className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border ${getStatusConfig(current).color}`}>{current}</div>
+                        <div className="text-[9px] text-slate-400 mt-0.5">Current</div>
+                      </div>
+                      <div className="text-slate-400 flex items-center justify-center"><ArrowRight className="w-5 h-5" /></div>
+                      <div className="text-center">
+                        <div className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border ${targetCfg.color}`}>{target}</div>
+                        <div className="text-[9px] text-slate-400 mt-0.5">New Status</div>
+                      </div>
+                      <div className="ml-auto text-right">
+                        <div className="font-extrabold text-slate-800 text-sm">{reg.code}</div>
+                        <div className="text-[10px] text-slate-400">{reg.programId?.name || ''}</div>
+                      </div>
+                    </div>
+
+                    {/* Auto-lock previous active prompt */}
+                    {lifecycleModal.hasOtherActive && target === 'ACTIVE' && (
+                      <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
+                        <p className="text-[11px] font-semibold text-amber-800">âš  Another regulation is currently ACTIVE.</p>
+                        <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={lifecycleModal.lockPreviousActive}
+                            onChange={e => setLifecycleModal(prev => ({ ...prev, lockPreviousActive: e.target.checked }))}
+                            className="w-4 h-4 accent-amber-500"
+                          />
+                          <span className="text-[11px] text-amber-700 font-medium">Auto-lock the previous ACTIVE regulation</span>
+                        </label>
+                      </div>
+                    )}
+
+                    {/* Notes */}
+                    <div className="mt-4">
+                      <label className="text-[11px] font-bold text-slate-600 block mb-1">Notes / Reason <span className="text-slate-400 font-normal">(optional)</span></label>
+                      <textarea
+                        value={lifecycleModal.notes}
+                        onChange={e => setLifecycleModal(prev => ({ ...prev, notes: e.target.value }))}
+                        rows={2}
+                        placeholder={`Reason for transitioning to ${target}...`}
+                        className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                      />
+                    </div>
+
+                    {/* Actions */}
+                    <div className="mt-5 flex gap-3">
+                      <button
+                        onClick={() => setLifecycleModal({ open: false, reg: null, targetStatus: null, notes: '', loading: false, lockPreviousActive: true, hasOtherActive: false })}
+                        disabled={lifecycleModal.loading}
+                        className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        id="lifecycle-confirm-btn"
+                        onClick={handleConfirmTransition}
+                        disabled={lifecycleModal.loading}
+                        className={`flex-1 py-2.5 text-white rounded-xl text-xs font-extrabold uppercase transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                          target === 'ACTIVE' ? 'bg-emerald-600 hover:bg-emerald-700' :
+                          target === 'LOCKED' ? 'bg-red-600 hover:bg-red-700' :
+                          target === 'ARCHIVED' ? 'bg-slate-600 hover:bg-slate-700' :
+                          'bg-amber-500 hover:bg-amber-600'
+                        }`}
+                      >
+                        {lifecycleModal.loading ? (
+                          <><RotateCw className="w-3.5 h-3.5 animate-spin" /> Processing...</>
+                        ) : (
+                          <>Confirm {target}</>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -2109,7 +2527,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 <Layers className="w-5 h-5 text-blue-600" />
                 <span>{programModal.mode === 'add' ? 'Add Academic Program' : 'Edit Academic Program'}</span>
               </h3>
-              <button onClick={() => setProgramModal({ open: false, mode: 'add', data: { outcomes: [] } })} className="text-slate-400 hover:text-slate-700">✕</button>
+              <button onClick={() => setProgramModal({ open: false, mode: 'add', data: { outcomes: [] } })} className="text-slate-400 hover:text-slate-700">âœ•</button>
             </div>
             <form onSubmit={handleProgramSubmit} className="p-6 space-y-4 text-xs font-bold text-slate-500 overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
@@ -2247,7 +2665,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 <Building className="w-5 h-5 text-blue-600" />
                 <span>{deptModal.mode === 'add' ? 'Add Academic Department' : 'Edit Academic Department'}</span>
               </h3>
-              <button onClick={() => setDeptModal({ open: false, mode: 'add', data: {} })} className="text-slate-400 hover:text-slate-700">✕</button>
+              <button onClick={() => setDeptModal({ open: false, mode: 'add', data: {} })} className="text-slate-400 hover:text-slate-700">âœ•</button>
             </div>
             <form onSubmit={handleDeptSubmit} className="p-6 space-y-4 text-xs font-bold text-slate-500">
               <div className="grid grid-cols-2 gap-4">
@@ -2399,7 +2817,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 <FileText className="w-5 h-5 text-emerald-600" />
                 <span>{regModal.mode === 'add' ? 'Add Regulation Scheme' : 'Edit Regulation Scheme'}</span>
               </h3>
-              <button onClick={() => setRegModal({ open: false, mode: 'add', data: {} })} className="text-slate-400 hover:text-slate-700">✕</button>
+              <button onClick={() => setRegModal({ open: false, mode: 'add', data: {} })} className="text-slate-400 hover:text-slate-700">âœ•</button>
             </div>
             <form onSubmit={handleRegSubmit} className="p-6 space-y-4 text-xs font-bold text-slate-500">
               <div className="space-y-1">
@@ -2518,7 +2936,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 <UserPlus className="w-5 h-5 text-blue-600" />
                 <span>{userModal.mode === 'add' ? 'Register New User account' : 'Modify User Details'}</span>
               </h3>
-              <button onClick={() => setUserModal({ open: false, mode: 'add', data: {} })} className="text-slate-400 hover:text-slate-700">✕</button>
+              <button onClick={() => setUserModal({ open: false, mode: 'add', data: {} })} className="text-slate-400 hover:text-slate-700">âœ•</button>
             </div>
             <form onSubmit={handleUserSubmit} className="p-6 space-y-4 text-xs font-bold text-slate-500">
               <div className="grid grid-cols-2 gap-4">
@@ -2551,7 +2969,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                   <span className="uppercase text-[10px]">Password</span>
                   <input
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                     value={userModal.data.password}
                     onChange={(e) => setUserModal({ ...userModal, data: { ...userModal.data, password: e.target.value } })}
                     className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none focus:ring-1 focus:ring-blue-500 bg-white"
@@ -2676,7 +3094,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
               <h3 className="text-base font-bold text-slate-800">
                 {reviewCommentsModal.action} Submissions Review
               </h3>
-              <button onClick={() => setReviewCommentsModal({ open: false, version: null, action: 'Approve' })} className="text-slate-400 hover:text-slate-700">✕</button>
+              <button onClick={() => setReviewCommentsModal({ open: false, version: null, action: 'Approve' })} className="text-slate-400 hover:text-slate-700">âœ•</button>
             </div>
             <form onSubmit={handleWorkflowSubmission} className="p-6 space-y-4 text-xs font-bold text-slate-500">
               <div className="space-y-1">
@@ -2721,7 +3139,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 <Settings className="w-5 h-5 text-blue-600" />
                 <span>Regulations for {programRegModal.program?.name}</span>
               </h3>
-              <button onClick={() => setProgramRegModal({ open: false, program: null, regulations: [] })} className="text-slate-400 hover:text-slate-700">✕</button>
+              <button onClick={() => setProgramRegModal({ open: false, program: null, regulations: [] })} className="text-slate-400 hover:text-slate-700">âœ•</button>
             </div>
             <div className="p-6">
               {programRegModal.regulations.length === 0 ? (
@@ -2732,7 +3150,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                     <div key={reg._id} className="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-200">
                       <div>
                         <h4 className="font-bold text-slate-800">{reg.code} Regulation</h4>
-                        <p className="text-xs text-slate-500 mt-0.5">Academic Year: {reg.academicYear} • Duration: {reg.durationYears} Years</p>
+                        <p className="text-xs text-slate-500 mt-0.5">Academic Year: {reg.academicYear} â€¢ Duration: {reg.durationYears} Years</p>
                       </div>
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${reg.status === 'Published'
                           ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
@@ -2746,6 +3164,84 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REGULATION DELETION CONFIRMATION MODAL */}
+      {deleteConfirmationModal.open && (
+        <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+          <div className="bg-white w-[520px] rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="p-5 border-b border-slate-200 flex justify-between items-center bg-red-50">
+              <h3 className="text-base font-bold text-red-700 flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-red-600 animate-pulse" />
+                <span>Confirm Regulation Deletion</span>
+              </h3>
+              <button 
+                onClick={() => setDeleteConfirmationModal({ open: false, regId: null, regCode: '', stats: null, loadingStats: false })}
+                className="text-slate-400 hover:text-slate-700 text-lg"
+              >
+                âœ•
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl">
+                <p className="text-xs text-red-800 font-semibold leading-relaxed">
+                  <strong>WARNING:</strong> Deleting the <strong>{deleteConfirmationModal.regCode} Regulation</strong> will perform a safe soft-delete. This regulation and all its associated records listed below will be deactivated and hidden from active usage across HOD, Faculty, and Coordinator portals.
+                </p>
+              </div>
+
+              {deleteConfirmationModal.loadingStats ? (
+                <div className="flex flex-col items-center justify-center py-8 space-y-2">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                  <span className="text-xs text-slate-500 font-semibold">Calculating linked records and dependency metrics...</span>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Affected Records & Dependencies:</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { label: 'Total Courses', val: deleteConfirmationModal.stats?.totalCourses || 0 },
+                      { label: 'Total PEOs', val: deleteConfirmationModal.stats?.totalPeos || 0 },
+                      { label: 'Total PSOs', val: deleteConfirmationModal.stats?.totalPsos || 0 },
+                      { label: 'Total Mappings', val: deleteConfirmationModal.stats?.totalMappings || 0 },
+                      { label: 'Curriculum Books', val: deleteConfirmationModal.stats?.totalCurriculumRecords || 0 },
+                    ].map((item, idx) => (
+                      <div key={idx} className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex justify-between items-center">
+                        <span className="text-xs text-slate-500 font-medium">{item.label}</span>
+                        <span className="text-sm font-extrabold text-slate-800 font-mono">{item.val}</span>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                    <p className="text-[11px] text-amber-800 font-medium leading-relaxed">
+                      <strong>Cascade Operations:</strong> All Course Outcomes (COs), Syllabus structures, Semester schemes, and Course Assignments associated with this regulation will be soft-deleted automatically.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirmationModal({ open: false, regId: null, regCode: '', stats: null, loadingStats: false })}
+                  className="flex-1 py-2.5 border border-slate-300 text-slate-600 rounded-lg font-bold hover:bg-slate-50 cursor-pointer text-center text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={deleteConfirmationModal.loadingStats}
+                  onClick={handleConfirmDeleteReg}
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg font-bold shadow cursor-pointer text-center text-xs flex items-center justify-center gap-1.5"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Confirm Delete Regulation
+                </button>
+              </div>
             </div>
           </div>
         </div>

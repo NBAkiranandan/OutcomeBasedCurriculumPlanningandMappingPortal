@@ -123,7 +123,9 @@ const CourseVersionSchema = new mongoose.Schema({
     lab: { type: Number, default: 0 }
   },
 
-  comments: { type: String, default: '' } // Review/Return comments from HOD/Admin
+  comments: { type: String, default: '' }, // Review/Return comments from HOD/Admin
+  isDeleted: { type: Boolean, default: false },
+  deletedAt: { type: Date }
 }, { timestamps: true });
 
 // A course version should be unique per course and regulation
