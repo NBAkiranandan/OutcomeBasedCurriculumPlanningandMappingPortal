@@ -24,6 +24,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.4.1",
     "multer": "^2.2.0",
+    "nodemailer": "^9.0.1",
+    "obcpmp": "file:..",
     "pdf-parse": "^1.1.1",
     "puppeteer": "^25.1.0",
     "zod": "^3.23.8"

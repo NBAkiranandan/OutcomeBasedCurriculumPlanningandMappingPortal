@@ -132,7 +132,9 @@ export const api = {
     profile: () => apiRequest('/api/auth/profile'),
     getFaculty: () => apiRequest('/api/auth/faculty'),
     myDepartment: () => apiRequest('/api/auth/my-department'),
-    changePassword: (body: any) => apiRequest('/api/auth/change-password', { method: 'POST', body: JSON.stringify(body) })
+    changePassword: (body: any) => apiRequest('/api/auth/change-password', { method: 'POST', body: JSON.stringify(body) }),
+    forgotPassword: (email: string) => apiRequest('/api/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
+    resetPassword: (body: any) => apiRequest('/api/auth/reset-password', { method: 'POST', body: JSON.stringify(body) })
   },
   programs: {
     list: () => apiRequest('/api/programs'),

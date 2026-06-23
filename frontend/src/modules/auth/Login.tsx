@@ -7,11 +7,10 @@ import { useAuthStore } from '../../store/authStore';
 import { api } from '../../services/api';
 import {
   Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, ShieldAlert,
-  AlertTriangle, Shield, Building2, BookOpen, Users,
-  Zap, Award, BookMarked, BarChart3, ShieldCheck,
+  AlertTriangle, Zap, Award, BookMarked, BarChart3, ShieldCheck,
 } from 'lucide-react';
-import heroBg from '../../assets/hero-bg.png';
-import adityaLogo from '../../assets/aditya-logo-gold.png';
+import heroBg from '../../assets/background.png';
+import adityaLogoTransparent from '../../assets/aditya-logo-gold-transparent.png';
 
 /* ═══════════════════════════════════════════════════
    SCHEMA — auth logic untouched
@@ -22,50 +21,22 @@ const loginFormSchema = z.object({
 });
 type LoginFormValues = z.infer<typeof loginFormSchema>;
 
-/* ═══════════════════════════════════════════════════
-   ROLE CONFIG — credentials untouched
-═══════════════════════════════════════════════════ */
-const ROLE_CONFIG = [
-  {
-    role: 'Admin' as const,
-    email: 'admin@aditya.edu.in',
-    password: 'admin123',
-    Icon: Shield,
-    label: 'Administrator',
-    desc: 'System & University Mgmt.',
-  },
-  {
-    role: 'HOD' as const,
-    email: 'hod.cse@aditya.edu.in',
-    password: 'hod123',
-    Icon: Building2,
-    label: 'Head of Dept.',
-    desc: 'Department Planning',
-  },
-  {
-    role: 'Coordinator' as const,
-    email: 'coord.cse@aditya.edu.in',
-    password: 'coord123',
-    Icon: BookOpen,
-    label: 'Course Coordinator',
-    desc: 'Curriculum & CO-PO',
-  },
-  {
-    role: 'Faculty' as const,
-    email: 'faculty.cse@aditya.edu.in',
-    password: 'faculty123',
-    Icon: Users,
-    label: 'Faculty Member',
-    desc: 'Teaching & Attainment',
-  },
-] as const;
+const forgotFormSchema = z.object({
+  email: z.string().email({ message: 'Enter a valid university email' }),
+});
+type ForgotFormValues = z.infer<typeof forgotFormSchema>;
 
-/* ── Feature cards ── */
-const FEATURES = [
-  { Icon: Zap, label: 'CO-PO Mapping', sub: 'Automated attainment' },
-  { Icon: Award, label: 'NBA Accreditation', sub: 'Ready workflows' },
-  { Icon: BookMarked, label: 'Curriculum Mgmt.', sub: 'Syllabus governance' },
-];
+const resetFormSchema = z.object({
+  otp: z.string().min(6, { message: 'OTP must be 6 characters' }),
+  newPassword: z.string().min(5, { message: 'Minimum 5 characters required' }),
+});
+type ResetFormValues = z.infer<typeof resetFormSchema>;
+
+
+
+
+
+
 
 /* ═══════════════════════════════════════════════════
    LIVE CLOCK
@@ -112,13 +83,18 @@ export const Login: React.FC = () => {
   const { login } = useAuthStore();
 
   /* State */
+  const [view, setView] = useState<'login' | 'forgot' | 'reset'>('login');
+  const [resetEmail, setResetEmail] = useState('');
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+
   const [showPass, setShowPass] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passFocused, setPassFocused] = useState(false);
+  const [otpFocused, setOtpFocused] = useState(false);
   const ts = useClock();
   const btnRef = useRef<HTMLButtonElement>(null);
 
@@ -132,27 +108,63 @@ export const Login: React.FC = () => {
   }, [onKey]);
 
   /* Form */
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<LoginFormValues>({
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
   });
 
-  /* Fill credentials — unchanged */
-  const fillCredentials = (rc: typeof ROLE_CONFIG[number]) => {
-    setValue('email', rc.email, { shouldValidate: true });
-    setValue('password', rc.password, { shouldValidate: true });
-    setSelectedRole(rc.role);
-    setErrorMsg(null);
-  };
+  const { register: registerForgot, handleSubmit: handleSubmitForgot, formState: { errors: errorsForgot }, reset: resetForgot } = useForm<ForgotFormValues>({
+    resolver: zodResolver(forgotFormSchema),
+  });
 
-  /* Submit — unchanged API */
+  const { register: registerReset, handleSubmit: handleSubmitReset, formState: { errors: errorsReset }, reset: resetReset } = useForm<ResetFormValues>({
+    resolver: zodResolver(resetFormSchema),
+  });
+
+  /* Submit — Login */
   const onSubmit = async (values: LoginFormValues) => {
     setLoading(true);
     setErrorMsg(null);
+    setSuccessMsg(null);
     try {
       const data = await api.auth.login(values);
       login(data.user, data.accessToken, data.refreshToken);
     } catch (err: any) {
       setErrorMsg(err.message || 'Authentication failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* Submit — Forgot */
+  const onForgotSubmit = async (values: ForgotFormValues) => {
+    setLoading(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    try {
+      await api.auth.forgotPassword(values.email);
+      setResetEmail(values.email);
+      setView('reset');
+      setSuccessMsg('OTP sent to your email.');
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to send OTP.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* Submit — Reset */
+  const onResetSubmit = async (values: ResetFormValues) => {
+    setLoading(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    try {
+      await api.auth.resetPassword({ email: resetEmail, otp: values.otp, newPassword: values.newPassword });
+      setView('login');
+      setSuccessMsg('Password reset successful. Please login.');
+      resetForgot();
+      resetReset();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to reset password.');
     } finally {
       setLoading(false);
     }
@@ -183,7 +195,7 @@ export const Login: React.FC = () => {
         position: 'absolute', inset: 0,
         backgroundImage: `url(${heroBg})`,
         backgroundSize: 'cover',
-        backgroundPosition: 'center 20%',
+        backgroundPosition: 'center bottom',
       }} />
 
       {/* Ultra-thin left-side overlay for text contrast only */}
@@ -199,6 +211,25 @@ export const Login: React.FC = () => {
         color: 'rgba(255,255,255,0.35)', fontSize: 10.5,
         fontWeight: 500, letterSpacing: '0.04em',
       }}>{ts}</div>
+
+      {/* Top Left Logo */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        style={{
+          position: 'absolute', top: 32, left: 44, zIndex: 20,
+        }}
+      >
+        <img
+          src={adityaLogoTransparent}
+          alt="Aditya University"
+          style={{
+            height: 72, width: 'auto',
+            filter: `drop-shadow(0 0 14px rgba(212,175,55,0.55))`,
+          }}
+        />
+      </motion.div>
 
       {/* ░░ CONTENT ROW ░░ */}
       <div style={{
@@ -216,70 +247,48 @@ export const Login: React.FC = () => {
             flex: '0 0 58%',
             display: 'flex', flexDirection: 'column',
             gap: 0, height: '100%',
-            justifyContent: 'center',
+            justifyContent: 'flex-end',
+            paddingBottom: 24,
           }}
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
-          {/* Logo */}
-          <div style={{ marginBottom: 28 }}>
-            <div style={{
-              display: 'inline-flex',
-              background: '#ffffff',
-              padding: '14px 28px',
-              borderRadius: 18,
-              boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(212,175,55,0.3)',
-            }}>
-              <img
-                src={adityaLogo}
-                alt="Aditya University"
-                style={{
-                  height: 64, width: 'auto',
-                  display: 'block',
-                }}
-              />
-            </div>
-          </div>
+          {/* Logo was moved to top left corner */}
 
-          {/* NBA badge */}
-          <div style={{ marginBottom: 16 }}>
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 7,
-              padding: '5px 14px', borderRadius: 99,
-              background: 'rgba(212,175,55,0.12)',
-              border: `1px solid rgba(212,175,55,0.40)`,
-              color: C.gold,
-              fontSize: 10.5, fontWeight: 700, letterSpacing: '0.09em',
-              textTransform: 'uppercase',
-            }}>
-              🏆&nbsp; NBA &amp; NAAC Accreditation Ready Platform
-            </span>
-          </div>
 
           {/* Main heading */}
-          <div style={{ marginBottom: 16 }}>
-            <h1 style={{
-              color: C.text,
-              fontSize: 'clamp(22px, 2.8vw, 38px)',
-              fontWeight: 900, lineHeight: 1.14,
-              letterSpacing: '-0.01em', margin: 0,
-              textTransform: 'uppercase',
-              textShadow: '0 2px 20px rgba(0,0,0,0.6)',
+          <div style={{ marginBottom: 20 }}>
+            <motion.h1 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                fontFamily: "'Cinzel', serif",
+                color: C.text,
+                fontSize: 'clamp(26px, 3.2vw, 44px)',
+                fontWeight: 700, lineHeight: 1.25,
+                letterSpacing: '0.02em', margin: 0,
+                textTransform: 'uppercase',
+                textShadow: '0 4px 24px rgba(0,0,0,0.8), 0 0 10px rgba(212,175,55,0.3)',
             }}>
-              OUTCOME BASED<br />
-              <span style={{
-                background: `linear-gradient(90deg, ${C.orange}, ${C.gold}, ${C.orange})`,
-                backgroundSize: '200%',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+              Outcome Based<br />
+              <motion.span 
+                animate={{ backgroundPosition: ['0% center', '200% center'] }}
+                transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+                style={{
+                  display: 'inline-block',
+                  background: `linear-gradient(to right, #D4AF37 0%, #FFF2CD 25%, #D4AF37 50%, #FFF2CD 75%, #D4AF37 100%)`,
+                  backgroundSize: '200% auto',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  filter: 'drop-shadow(0px 0px 8px rgba(212,175,55,0.6))',
+                  paddingRight: 10,
               }}>
-                CURRICULUM<br />
-                PLANNING
-              </span>
+                Curriculum Planning
+              </motion.span>
               <br />
-              &amp; MAPPING PORTAL
-            </h1>
+              <span style={{ fontSize: '0.85em', color: 'rgba(255,255,255,0.9)', letterSpacing: '0.06em' }}>&amp; Mapping Portal</span>
+            </motion.h1>
           </div>
 
           {/* Subtitle */}
@@ -287,9 +296,8 @@ export const Login: React.FC = () => {
             color: 'rgba(255,255,255,0.68)', fontSize: 13, lineHeight: 1.65,
             margin: '0 0 24px', maxWidth: 480,
           }}>
-            A unified platform for Outcome Based Curriculum Design,<br />
-            CO-PO Mapping, Syllabus Governance,<br />
-            and NBA Accreditation.
+            A unified platform for Outcome Based Curriculum Design, CO-PO Mapping,
+            Syllabus Governance, and NBA Accreditation.
           </p>
 
 
@@ -332,106 +340,32 @@ export const Login: React.FC = () => {
               background: `radial-gradient(circle, rgba(249,115,22,0.10) 0%, transparent 70%)`,
             }} />
 
-            {/* ── Sign In header ── */}
-            <h2 style={{
-              color: C.text, fontSize: 21, fontWeight: 800,
-              letterSpacing: '-0.01em', margin: '0 0 4px',
-            }}>Sign In</h2>
-            <p style={{ color: C.muted, fontSize: 12, margin: '0 0 20px', lineHeight: 1.5 }}>
-              Access your academic workspace and manage curriculum activities.
-            </p>
+            {/* ── Dynamic Header ── */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={view}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <h2 style={{
+                  color: C.text, fontSize: 21, fontWeight: 800,
+                  letterSpacing: '-0.01em', margin: '0 0 4px',
+                }}>
+                  {view === 'login' && 'Sign In'}
+                  {view === 'forgot' && 'Reset Password'}
+                  {view === 'reset' && 'Create New Password'}
+                </h2>
+                <p style={{ color: C.muted, fontSize: 12, margin: '0 0 20px', lineHeight: 1.5 }}>
+                  {view === 'login' && 'Access your academic workspace and manage curriculum activities.'}
+                  {view === 'forgot' && 'Enter your university email to receive an OTP.'}
+                  {view === 'reset' && `Enter the OTP sent to ${resetEmail} and your new password.`}
+                </p>
+              </motion.div>
+            </AnimatePresence>
 
-            {/* ── Role Selector ── */}
-            <p style={{
-              color: 'rgba(255,255,255,0.35)', fontSize: 10, fontWeight: 700,
-              letterSpacing: '0.12em', textTransform: 'uppercase', margin: '0 0 9px',
-            }}>Select Role</p>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7, marginBottom: 16 }}>
-              {ROLE_CONFIG.map((rc) => {
-                const isSel = selectedRole === rc.role;
-                return (
-                  <motion.button
-                    key={rc.role}
-                    type="button"
-                    onClick={() => fillCredentials(rc)}
-                    whileHover={{ scale: 1.025, y: -1 }}
-                    whileTap={{ scale: 0.97 }}
-                    transition={{ type: 'spring', stiffness: 420, damping: 22 }}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 9,
-                      padding: '9px 11px',
-                      borderRadius: 10, cursor: 'pointer',
-                      background: isSel
-                        ? 'rgba(249,115,22,0.14)'
-                        : 'rgba(255,255,255,0.04)',
-                      border: isSel
-                        ? `1.5px solid ${C.orange}`
-                        : '1.5px solid rgba(255,255,255,0.09)',
-                      boxShadow: isSel ? `0 0 16px ${C.glow}` : 'none',
-                      transition: 'all 0.22s ease',
-                      position: 'relative', overflow: 'hidden',
-                    }}
-                  >
-                    {/* Shimmer on selected */}
-                    {isSel && (
-                      <motion.div
-                        style={{
-                          position: 'absolute', inset: 0, pointerEvents: 'none',
-                          background:
-                            'linear-gradient(105deg, transparent 35%, rgba(249,115,22,0.12) 50%, transparent 65%)',
-                        }}
-                        animate={{ x: ['-100%', '200%'] }}
-                        transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 1.2 }}
-                      />
-                    )}
-
-                    {/* Icon */}
-                    <div style={{
-                      width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: isSel ? 'rgba(249,115,22,0.22)' : 'rgba(255,255,255,0.06)',
-                      border: isSel ? `1px solid rgba(249,115,22,0.45)` : '1px solid rgba(255,255,255,0.09)',
-                      transition: 'all 0.22s ease',
-                    }}>
-                      <rc.Icon style={{
-                        width: 14, height: 14,
-                        color: isSel ? C.orange : 'rgba(255,255,255,0.45)',
-                        transition: 'color 0.22s',
-                      }} />
-                    </div>
-
-                    {/* Label */}
-                    <div style={{ minWidth: 0, flex: 1, textAlign: 'left' }}>
-                      <p style={{
-                        color: isSel ? '#fff' : 'rgba(255,255,255,0.75)',
-                        fontSize: 11.5, fontWeight: 700, margin: 0, lineHeight: 1.2,
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        transition: 'color 0.22s',
-                      }}>{rc.label}</p>
-                      <p style={{
-                        color: isSel ? C.orange : 'rgba(255,255,255,0.35)',
-                        fontSize: 10, margin: '2px 0 0', lineHeight: 1.2,
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        transition: 'color 0.22s',
-                      }}>{rc.desc}</p>
-                    </div>
-                  </motion.button>
-                );
-              })}
-            </div>
-
-            {/* ── Divider ── */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-              <span style={{
-                color: 'rgba(255,255,255,0.28)', fontSize: 10, fontWeight: 600,
-                letterSpacing: '0.07em', textTransform: 'uppercase', whiteSpace: 'nowrap',
-              }}>or enter credentials</span>
-              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-            </div>
-
-            {/* ── Error ── */}
+            {/* ── Messages ── */}
             <AnimatePresence>
               {errorMsg && (
                 <motion.div
@@ -450,10 +384,36 @@ export const Login: React.FC = () => {
                   <span style={{ color: '#fca5a5', fontSize: 12, fontWeight: 500 }}>{errorMsg}</span>
                 </motion.div>
               )}
+              {successMsg && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  animate={{ opacity: 1, height: 'auto', marginBottom: 12 }}
+                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  transition={{ duration: 0.22 }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '9px 12px', borderRadius: 9,
+                    background: 'rgba(34,197,94,0.09)',
+                    border: '1px solid rgba(34,197,94,0.28)',
+                  }}
+                >
+                  <ShieldCheck style={{ width: 13, height: 13, color: '#4ade80', flexShrink: 0 }} />
+                  <span style={{ color: '#86efac', fontSize: 12, fontWeight: 500 }}>{successMsg}</span>
+                </motion.div>
+              )}
             </AnimatePresence>
 
-            {/* ── Form ── */}
-            <form onSubmit={handleSubmit(onSubmit)}>
+            {/* ── Forms ── */}
+            <AnimatePresence mode="wait">
+              {view === 'login' && (
+                <motion.form
+                  key="login"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3 }}
+                  onSubmit={handleSubmit(onSubmit)}
+                >
 
               {/* Email */}
               <div style={{ marginBottom: 11 }}>
@@ -477,7 +437,6 @@ export const Login: React.FC = () => {
                   <input
                     type="email"
                     id="login-email"
-                    placeholder="yourname@adityauniversity.in"
                     {...register('email')}
                     onFocus={() => setEmailFocused(true)}
                     onBlur={() => setEmailFocused(false)}
@@ -507,12 +466,15 @@ export const Login: React.FC = () => {
                   <label style={{ color: 'rgba(255,255,255,0.60)', fontSize: 11.5, fontWeight: 600 }}>
                     Password
                   </label>
+                  {/* 
                   <a
                     href="#"
+                    onClick={(e) => { e.preventDefault(); setErrorMsg(null); setSuccessMsg(null); setView('forgot'); }}
                     style={{ color: C.orange, fontSize: 11, fontWeight: 600, textDecoration: 'none', transition: 'color 0.2s' }}
                     onMouseEnter={(e) => { e.currentTarget.style.color = C.gold; }}
                     onMouseLeave={(e) => { e.currentTarget.style.color = C.orange; }}
                   >Forgot?</a>
+                  */}
                 </div>
                 <div style={{
                   display: 'flex', alignItems: 'center',
@@ -530,7 +492,6 @@ export const Login: React.FC = () => {
                   <input
                     type={showPass ? 'text' : 'password'}
                     id="login-password"
-                    placeholder="••••••••"
                     {...register('password')}
                     onFocus={() => setPassFocused(true)}
                     onBlur={() => setPassFocused(false)}
@@ -633,7 +594,186 @@ export const Login: React.FC = () => {
                   )}
                 </span>
               </motion.button>
-            </form>
+                </motion.form>
+              )}
+
+
+              {view === 'forgot' && (
+                <motion.form
+                  key="forgot"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3 }}
+                  onSubmit={handleSubmitForgot(onForgotSubmit)}
+                >
+                  {/* Email */}
+                  <div style={{ marginBottom: 11 }}>
+                    <label style={{ display: 'block', color: 'rgba(255,255,255,0.60)', fontSize: 11.5, fontWeight: 600, marginBottom: 5 }}>
+                      University Email
+                    </label>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', background: C.inputBg, border: iBorder(emailFocused, !!errorsForgot.email),
+                      borderRadius: 10, padding: '0 12px', gap: 9, boxShadow: iShadow(emailFocused), transition: 'all 0.2s ease',
+                    }}>
+                      <Mail style={{ width: 14, height: 14, color: emailFocused ? C.orange : 'rgba(255,255,255,0.30)' }} />
+                      <input
+                        type="email"
+                        {...registerForgot('email')}
+                        onFocus={() => setEmailFocused(true)}
+                        onBlur={() => setEmailFocused(false)}
+                        autoComplete="email"
+                        style={{ flex: 1, height: 42, background: 'transparent', border: 'none', outline: 'none', color: '#fff', fontSize: 13, caretColor: C.orange }}
+                      />
+                    </div>
+                    <AnimatePresence>
+                      {errorsForgot.email && (
+                        <motion.p initial={{ opacity: 0, y: -3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} style={{ color: '#f87171', fontSize: 11, fontWeight: 600, margin: '4px 0 0 2px' }}>
+                          {errorsForgot.email.message}
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+                    <motion.button
+                      type="button"
+                      onClick={() => { setView('login'); setErrorMsg(null); setSuccessMsg(null); resetForgot(); }}
+                      disabled={loading}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      style={{
+                        flex: 1, height: 48, borderRadius: 10,
+                        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                        color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                      }}
+                    >
+                      Back to Login
+                    </motion.button>
+                    <motion.button
+                      type="submit"
+                      disabled={loading}
+                      whileHover={{ scale: 1.02, boxShadow: `0 8px 25px ${C.glowStr}` }}
+                      whileTap={{ scale: 0.98 }}
+                      style={{
+                        flex: 1, height: 48, borderRadius: 10,
+                        background: loading ? 'rgba(234,88,12,0.40)' : `linear-gradient(135deg, ${C.orange} 0%, ${C.orangeDeep} 100%)`,
+                        border: 'none', color: '#fff', fontWeight: 700, fontSize: 13, cursor: loading ? 'not-allowed' : 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                      }}
+                    >
+                      {loading ? <Loader2 className="animate-spin" size={15} /> : <>Send OTP <ArrowRight size={15} /></>}
+                    </motion.button>
+                  </div>
+                </motion.form>
+              )}
+
+              {view === 'reset' && (
+                <motion.form
+                  key="reset"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3 }}
+                  onSubmit={handleSubmitReset(onResetSubmit)}
+                >
+                  {/* OTP */}
+                  <div style={{ marginBottom: 11 }}>
+                    <label style={{ display: 'block', color: 'rgba(255,255,255,0.60)', fontSize: 11.5, fontWeight: 600, marginBottom: 5 }}>
+                      6-Digit OTP
+                    </label>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', background: C.inputBg, border: iBorder(otpFocused, !!errorsReset.otp),
+                      borderRadius: 10, padding: '0 12px', gap: 9, boxShadow: iShadow(otpFocused), transition: 'all 0.2s ease',
+                    }}>
+                      <Lock style={{ width: 14, height: 14, color: otpFocused ? C.orange : 'rgba(255,255,255,0.30)' }} />
+                      <input
+                        type="text"
+                        maxLength={6}
+                        {...registerReset('otp')}
+                        onFocus={() => setOtpFocused(true)}
+                        onBlur={() => setOtpFocused(false)}
+                        style={{ flex: 1, height: 42, background: 'transparent', border: 'none', outline: 'none', color: '#fff', fontSize: 13, caretColor: C.orange, letterSpacing: '0.2em' }}
+                      />
+                    </div>
+                    <AnimatePresence>
+                      {errorsReset.otp && (
+                        <motion.p initial={{ opacity: 0, y: -3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} style={{ color: '#f87171', fontSize: 11, fontWeight: 600, margin: '4px 0 0 2px' }}>
+                          {errorsReset.otp.message}
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* New Password */}
+                  <div style={{ marginBottom: 13 }}>
+                    <label style={{ display: 'block', color: 'rgba(255,255,255,0.60)', fontSize: 11.5, fontWeight: 600, marginBottom: 5 }}>
+                      New Password
+                    </label>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', background: C.inputBg, border: iBorder(passFocused, !!errorsReset.newPassword),
+                      borderRadius: 10, padding: '0 12px', gap: 9, boxShadow: iShadow(passFocused), transition: 'all 0.2s ease',
+                    }}>
+                      <Lock style={{ width: 14, height: 14, color: passFocused ? C.orange : 'rgba(255,255,255,0.30)' }} />
+                      <input
+                        type={showPass ? 'text' : 'password'}
+                        {...registerReset('newPassword')}
+                        onFocus={() => setPassFocused(true)}
+                        onBlur={() => setPassFocused(false)}
+                        style={{ flex: 1, height: 42, background: 'transparent', border: 'none', outline: 'none', color: '#fff', fontSize: 13, caretColor: C.orange }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPass((s) => !s)}
+                        tabIndex={-1}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.30)', padding: 2 }}
+                      >
+                        {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                    <AnimatePresence>
+                      {errorsReset.newPassword && (
+                        <motion.p initial={{ opacity: 0, y: -3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} style={{ color: '#f87171', fontSize: 11, fontWeight: 600, margin: '4px 0 0 2px' }}>
+                          {errorsReset.newPassword.message}
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+                    <motion.button
+                      type="button"
+                      onClick={() => { setView('login'); setErrorMsg(null); setSuccessMsg(null); resetReset(); }}
+                      disabled={loading}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      style={{
+                        flex: 1, height: 48, borderRadius: 10,
+                        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                        color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                      }}
+                    >
+                      Cancel
+                    </motion.button>
+                    <motion.button
+                      type="submit"
+                      disabled={loading}
+                      whileHover={{ scale: 1.02, boxShadow: `0 8px 25px ${C.glowStr}` }}
+                      whileTap={{ scale: 0.98 }}
+                      style={{
+                        flex: 1, height: 48, borderRadius: 10,
+                        background: loading ? 'rgba(234,88,12,0.40)' : `linear-gradient(135deg, ${C.orange} 0%, ${C.orangeDeep} 100%)`,
+                        border: 'none', color: '#fff', fontWeight: 700, fontSize: 13, cursor: loading ? 'not-allowed' : 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                      }}
+                    >
+                      {loading ? <Loader2 className="animate-spin" size={15} /> : <>Reset Password <ArrowRight size={15} /></>}
+                    </motion.button>
+                  </div>
+                </motion.form>
+              )}
+            </AnimatePresence>
+
 
 
 

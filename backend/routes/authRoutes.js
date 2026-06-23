@@ -8,6 +8,8 @@ const router = express.Router();
 // Public auth routes
 router.post('/login', validateBody(loginSchema), authController.login);
 router.post('/refresh', authController.refresh);
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword);
 
 // Protected auth routes
 router.post('/logout', authenticateJWT, authController.logout);
