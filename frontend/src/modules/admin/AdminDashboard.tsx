@@ -61,6 +61,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
   const [programRegModal, setProgramRegModal] = useState<{ open: boolean; program: any; regulations: any[] }>({ open: false, program: null, regulations: [] });
   const [regModal, setRegModal] = useState<{ open: boolean; mode: 'add' | 'edit'; data: any }>({ open: false, mode: 'add', data: { code: '', academicYear: new Date().getFullYear(), durationYears: 4, semesterCount: 8, programId: '', outcomes: [] } });
   const [userModal, setUserModal] = useState<{ open: boolean; mode: 'add' | 'edit'; data: any }>({ open: false, mode: 'add', data: { name: '', email: '', password: '', role: 'Faculty', departmentId: '', programId: '' } });
+  const [userBulkImportOpen, setUserBulkImportOpen] = useState(false);
+  const [userBulkFile, setUserBulkFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Outcomes manager context state
@@ -477,11 +479,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
     }
   };
 
-  const handleBulkUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleUserBulkImportSubmit = () => {
+    if (!userBulkFile) return;
 
-    Papa.parse(file, {
+    Papa.parse(userBulkFile, {
       header: true,
       skipEmptyLines: true,
       complete: async (results) => {
@@ -508,12 +509,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
           setLoading(true);
           const res = await (api.users as any).bulkCreate({ users: parsedUsers });
           alert(`Bulk upload completed:\n${res.message}\n${res.errors?.length ? 'Errors:\\n' + res.errors.join('\\n') : ''}`);
+          setUserBulkImportOpen(false);
+          setUserBulkFile(null);
           loadData();
         } catch (err: any) {
           alert(`Bulk upload failed: ${err.message}`);
         } finally {
           setLoading(false);
-          if (fileInputRef.current) fileInputRef.current.value = '';
         }
       },
       error: (error: any) => {
@@ -1716,9 +1718,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 onChange={(e) => setUserSearchQuery(e.target.value)}
                 className="border border-slate-300 rounded-lg pl-3 pr-8 py-2 text-xs outline-none bg-white focus:ring-1 focus:ring-blue-500 w-52"
               />
-              <input type="file" accept=".csv" ref={fileInputRef} hidden onChange={handleBulkUpload} />
               <button
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => setUserBulkImportOpen(true)}
                 className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm border border-slate-200 cursor-pointer"
               >
                 <FileText className="w-4 h-4" />
@@ -3240,6 +3241,80 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 >
                   <Trash2 className="w-4 h-4" />
                   Confirm Delete Regulation
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* USER BULK IMPORT DIALOGUE */}
+      {userBulkImportOpen && (
+        <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-fadeIn">
+          <div className="bg-white w-[650px] rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="p-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h3 className="text-base font-bold text-slate-800 flex items-center gap-1.5">
+                <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
+                <span>Bulk Import Users</span>
+              </h3>
+              <button onClick={() => { setUserBulkImportOpen(false); setUserBulkFile(null); }} className="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
+            </div>
+            <div className="p-6 space-y-4 text-xs font-bold text-slate-500 text-center">
+              <div className="text-left bg-blue-50 text-blue-800 p-3 rounded-lg border border-blue-100 font-normal text-[11px]">
+                <div className="flex justify-between items-center mb-2">
+                  <p className="font-bold">CSV Template Format:</p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left whitespace-nowrap">
+                    <thead>
+                      <tr className="border-b border-blue-200">
+                        <th className="pr-3 pb-1">name</th>
+                        <th className="pr-3 pb-1">email</th>
+                        <th className="pr-3 pb-1">role</th>
+                        <th className="pr-3 pb-1">departmentCode</th>
+                        <th className="pr-3 pb-1">programCode</th>
+                        <th className="pb-1">password</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="opacity-70 font-mono text-[10px]">
+                        <td className="pr-3 pt-1">John Doe</td>
+                        <td className="pr-3 pt-1">john@example.com</td>
+                        <td className="pr-3 pt-1">Faculty</td>
+                        <td className="pr-3 pt-1">CSE</td>
+                        <td className="pr-3 pt-1">BTECH</td>
+                        <td className="pt-1">temp123</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <p className="text-slate-400 font-semibold mb-2 mt-4">Upload user records via CSV matching the format above.</p>
+              <label className="border-2 border-dashed border-slate-300 rounded-xl p-8 hover:border-teal-700 transition-colors flex flex-col items-center gap-2 cursor-pointer bg-slate-50 relative">
+                <input
+                  type="file"
+                  accept=".csv"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  onChange={(e) => setUserBulkFile(e.target.files?.[0] || null)}
+                />
+                <FileSpreadsheet className="w-8 h-8 text-slate-400" />
+                <span className="text-slate-600 font-bold">{userBulkFile ? userBulkFile.name : 'Choose CSV file'}</span>
+                <span className="text-[10px] text-slate-400">File size limits up to 10MB</span>
+              </label>
+              <div className="flex gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => { setUserBulkImportOpen(false); setUserBulkFile(null); }}
+                  className="flex-1 py-2.5 border border-slate-300 text-slate-600 rounded-lg font-bold hover:bg-slate-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUserBulkImportSubmit}
+                  className="flex-1 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg font-bold shadow cursor-pointer transition-all disabled:opacity-50"
+                  disabled={!userBulkFile}
+                >
+                  Confirm Import
                 </button>
               </div>
             </div>

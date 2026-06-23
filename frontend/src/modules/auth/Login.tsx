@@ -65,14 +65,6 @@ const FEATURES = [
   { Icon: Zap, label: 'CO-PO Mapping', sub: 'Automated attainment' },
   { Icon: Award, label: 'NBA Accreditation', sub: 'Ready workflows' },
   { Icon: BookMarked, label: 'Curriculum Mgmt.', sub: 'Syllabus governance' },
-  { Icon: BarChart3, label: 'Attainment Analytics', sub: 'Real-time insights' },
-];
-
-/* ── Security badges ── */
-const BADGES = [
-  { Icon: Lock, text: 'Enterprise Secure Auth' },
-  { Icon: ShieldCheck, text: 'Role Based Access' },
-  { Icon: Award, text: 'NBA Accreditation Ready' },
 ];
 
 /* ═══════════════════════════════════════════════════
@@ -231,15 +223,23 @@ export const Login: React.FC = () => {
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
           {/* Logo */}
-          <div style={{ marginBottom: 20 }}>
-            <img
-              src={adityaLogo}
-              alt="Aditya University"
-              style={{
-                height: 72, width: 'auto',
-                filter: `drop-shadow(0 0 14px rgba(212,175,55,0.55))`,
-              }}
-            />
+          <div style={{ marginBottom: 28 }}>
+            <div style={{
+              display: 'inline-flex',
+              background: '#ffffff',
+              padding: '14px 28px',
+              borderRadius: 18,
+              boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(212,175,55,0.3)',
+            }}>
+              <img
+                src={adityaLogo}
+                alt="Aditya University"
+                style={{
+                  height: 64, width: 'auto',
+                  display: 'block',
+                }}
+              />
+            </div>
           </div>
 
           {/* NBA badge */}
@@ -274,7 +274,8 @@ export const Login: React.FC = () => {
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
               }}>
-                CURRICULUM PLANNING
+                CURRICULUM<br />
+                PLANNING
               </span>
               <br />
               &amp; MAPPING PORTAL
@@ -286,56 +287,12 @@ export const Login: React.FC = () => {
             color: 'rgba(255,255,255,0.68)', fontSize: 13, lineHeight: 1.65,
             margin: '0 0 24px', maxWidth: 480,
           }}>
-            A unified platform for Outcome Based Curriculum Design, CO-PO Mapping,
-            Syllabus Governance, NBA Accreditation, and Attainment Analysis.
+            A unified platform for Outcome Based Curriculum Design,<br />
+            CO-PO Mapping, Syllabus Governance,<br />
+            and NBA Accreditation.
           </p>
 
-          {/* 2×2 Feature cards */}
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr',
-            gap: 10, maxWidth: 430,
-          }}>
-            {FEATURES.map((f) => (
-              <motion.div
-                key={f.label}
-                whileHover={{
-                  background: 'rgba(249,115,22,0.12)',
-                  borderColor: `rgba(249,115,22,0.40)`,
-                  y: -2,
-                }}
-                transition={{ duration: 0.2 }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '11px 13px', borderRadius: 12,
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.10)',
-                  backdropFilter: 'blur(8px)',
-                  WebkitBackdropFilter: 'blur(8px)',
-                  cursor: 'default',
-                }}
-              >
-                <div style={{
-                  width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                  background: `rgba(249,115,22,0.14)`,
-                  border: `1px solid rgba(249,115,22,0.25)`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <f.Icon style={{ width: 15, height: 15, color: C.orange }} />
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <p style={{
-                    color: '#fff', fontSize: 12, fontWeight: 700,
-                    margin: 0, lineHeight: 1.2,
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>{f.label}</p>
-                  <p style={{
-                    color: C.muted, fontSize: 10.5, margin: '2px 0 0',
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>{f.sub}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+
         </motion.div>
 
         {/* ╔══════════════════════════════════════╗
@@ -678,32 +635,7 @@ export const Login: React.FC = () => {
               </motion.button>
             </form>
 
-            {/* ── Security badges ── */}
-            <div style={{
-              display: 'flex', alignItems: 'center',
-              justifyContent: 'space-between',
-              marginTop: 16, gap: 6,
-            }}>
-              {BADGES.map((b) => (
-                <div
-                  key={b.text}
-                  style={{
-                    flex: 1, display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', gap: 5,
-                    padding: '6px 8px', borderRadius: 8,
-                    background: 'rgba(249,115,22,0.07)',
-                    border: '1px solid rgba(249,115,22,0.15)',
-                  }}
-                >
-                  <b.Icon style={{ width: 11, height: 11, color: C.orange, flexShrink: 0 }} />
-                  <span style={{
-                    color: 'rgba(255,255,255,0.45)', fontSize: 9.5, fontWeight: 600,
-                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                    letterSpacing: '0.02em',
-                  }}>{b.text}</span>
-                </div>
-              ))}
-            </div>
+
 
           </div>{/* /glass card */}
         </motion.div>

@@ -98,8 +98,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
     L: 3, T: 0, P: 0, S: 0, C: 3, cieMarks: 40, seeMarks: 60,
     description: '', offeredFor: ['CSE'], objectives: [''], coordinatorId: '', prerequisites: ''
   });
-
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [editingSyllabusId, setEditingSyllabusId] = useState<string | null>(null);
+  const [peoPsoData, setPeoPsoData] = useState<any>({ peos: [], psos: [], pos: [] });
 
   // Course Categories State
   const [courseCategories, setCourseCategories] = useState<any[]>([]);
@@ -166,11 +167,18 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       const courseRes = await api.courses.listByDept(hodDept._id);
       setCourses(courseRes.courses || []);
 
-      // 6. Load regulation-specific course versions
+      // 6. Load regulation-specific course versions and PEO/PSO mapping
       if (selectedRegulation) {
         const verRes = await api.courses.listByReg(selectedRegulation._id);
         setVersions(verRes.versions || []);
         setBuilderRegulationId(selectedRegulation._id);
+
+        try {
+          const peoPsoRes = await api.peoPso.getByDept(hodDept._id, selectedRegulation._id);
+          if (peoPsoRes.peoPso) setPeoPsoData(peoPsoRes.peoPso);
+        } catch (err) {
+          console.error('[HOD Dashboard] Failed to load PEO/PSO:', err);
+        }
       }
 
       // 7. Load faculty for this department
@@ -543,21 +551,35 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
           let successCount = 0;
           for (const row of rows) {
             const code = row['Course Code'] || row['code'] || row['Code'];
-            const title = row['Course Title'] || row['title'] || row['Title'];
+            const title = row['Course Name'] || row['Course Title'] || row['title'] || row['Title'];
             if (!code || !title) continue;
 
-            const category = row['Category'] || row['category'] || 'PC';
+            const category = row['Course Type'] || row['Category'] || row['category'] || 'PC';
+            const courseLevel = row['Course Level'] || row['courseLevel'] || 'FC - Foundation';
+            const status = row['Status'] || row['status'] || 'Active';
+            
+            const regCode = row['Regulation'] || row['regulation'] || '';
+            let targetRegId = selectedRegulation._id;
+            if (regCode) {
+              const matchedReg = regulations.find((r: any) => r.code?.toLowerCase() === regCode.toLowerCase().trim() || r.name?.toLowerCase() === regCode.toLowerCase().trim());
+              if (matchedReg) targetRegId = matchedReg._id;
+            }
+
             const semester = Number(row['Semester'] || row['semester'] || 1);
             const L = Number(row['L'] || 3);
             const T = Number(row['T'] || 0);
             const P = Number(row['P'] || 0);
             const S = Number(row['S'] || 0);
-            const credits = Number(row['Total Credits'] || row['credits'] || 3);
+            const credits = Number(row['Credits (C)'] || row['C'] || row['Total Credits'] || row['credits'] || 3);
             const cieMarks = Number(row['CIE Marks'] || row['cieMarks'] || 40);
             const seeMarks = Number(row['SEE Marks'] || row['seeMarks'] || 60);
+            
+            const branchesStr = row['Course Offered for Branches'] || row['Branches'] || row['branches'] || selectedDepartment.code;
+            const offeredFor = branchesStr.split(',').map((b: string) => b.trim()).filter(Boolean);
+
             const description = row['Description'] || row['description'] || '';
             const prerequisites = row['Prerequisites'] || row['prerequisites'] || '';
-            const coordinatorQuery = row['Coordinator Email'] || row['coordinatorEmail'] || row['Coordinator'] || '';
+            const coordinatorQuery = row['Course Coordinator'] || row['Coordinator Email'] || row['coordinatorEmail'] || row['Coordinator'] || '';
 
             let coordinatorId = '';
             if (coordinatorQuery) {
@@ -578,7 +600,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
             const createdVerRes = await api.courses.create({
               ...coursePayload,
-              regulationId: selectedRegulation._id,
+              regulationId: targetRegId,
               semester,
               category
             });
@@ -590,7 +612,10 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                 credits: { L, T, P, S, C: credits },
                 cieSee: { cieMaxMarks: cieMarks, seeMaxMarks: seeMarks },
                 description,
-                prerequisites: prerequisites ? [prerequisites] : []
+                prerequisites: prerequisites ? [prerequisites] : [],
+                courseLevel,
+                status,
+                offeredFor
               });
 
               if (coordinatorId) {
@@ -1084,11 +1109,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
               onClick={async () => {
                 if (!(selectedDepartment as any)) return alert('No department selected.');
                 try {
-                  await api.programs.updateDept((selectedDepartment as any)._id, { outcomes: (selectedDepartment as any).outcomes });
-                  // Refresh the local department data to confirm save
-                  const refreshed = await api.auth.myDepartment();
-                  if (refreshed.department) setSelectedDepartment(refreshed.department);
-                  alert('PEOs and PSOs saved successfully!');
+                  await api.peoPso.updateByDept((selectedDepartment as any)._id, peoPsoData, selectedRegulation?._id);
+                  alert('PEOs and PSOs saved successfully for the selected regulation!');
                 } catch(err: any) { alert(err.message); }
               }}
               disabled={isRegulationLocked}
@@ -1117,24 +1139,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
                 <div className="space-y-3">
                   {(() => {
-                    const deptIndex = departments.findIndex(d => d._id === (selectedDepartment as any)._id);
-                    if (deptIndex === -1) return null;
-                    const dept = departments[deptIndex];
-                    let peoIndex = dept.outcomes ? dept.outcomes.findIndex((o: any) => o.name === 'PEO') : -1;
-                    
-                    // Auto-initialize PEO object if missing
-                    if (peoIndex === -1) {
-                       const newDepts = [...departments];
-                       newDepts[deptIndex] = {
-                         ...newDepts[deptIndex],
-                         outcomes: [...(newDepts[deptIndex].outcomes || []), { name: 'PEO', isGlobal: false, isLocal: true, isMapped: false, items: [] }]
-                       };
-                       // We delay setDepartments to avoid render loop, but React handles it. 
-                       // Actually, better to just render empty state and let "Add" create it.
-                    }
-
-                    peoIndex = dept.outcomes ? dept.outcomes.findIndex((o: any) => o.name === 'PEO') : -1;
-                    const items = (peoIndex > -1 && dept.outcomes) ? (dept.outcomes[peoIndex].items || []) : [];
+                    const items = peoPsoData.peos || [];
 
                     return (
                       <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
@@ -1153,14 +1158,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                                     placeholder="e.g. PEO1"
                                     value={item.code}
                                     onChange={(e) => {
-                                      const newDepts = [...departments];
-                                      const newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
-                                      if (peoIndex > -1) {
-                                        newOutcomes[peoIndex].items[iIdx].code = e.target.value;
-                                      }
-                                      newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
-                                      setDepartments(newDepts);
-                                      setSelectedDepartment(newDepts[deptIndex]);
+                                      const newPeos = [...items];
+                                      newPeos[iIdx].code = e.target.value;
+                                      setPeoPsoData({ ...peoPsoData, peos: newPeos });
                                     }}
                                     className="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-700 outline-none focus:ring-1 focus:ring-teal-500 bg-white shadow-sm"
                                   />
@@ -1172,14 +1172,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                                     rows={2}
                                     value={item.description}
                                     onChange={(e) => {
-                                      const newDepts = [...departments];
-                                      const newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
-                                      if (peoIndex > -1) {
-                                        newOutcomes[peoIndex].items[iIdx].description = e.target.value;
-                                      }
-                                      newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
-                                      setDepartments(newDepts);
-                                      setSelectedDepartment(newDepts[deptIndex]);
+                                      const newPeos = [...items];
+                                      newPeos[iIdx].description = e.target.value;
+                                      setPeoPsoData({ ...peoPsoData, peos: newPeos });
                                     }}
                                     className="w-full border border-slate-300 rounded-lg p-2 text-xs text-slate-700 outline-none focus:ring-1 focus:ring-teal-500 bg-white shadow-sm resize-y"
                                   />
@@ -1188,14 +1183,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                               <button
                                 type="button"
                                 onClick={() => {
-                                  const newDepts = [...departments];
-                                  const newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
-                                  if (peoIndex > -1) {
-                                    newOutcomes[peoIndex].items.splice(iIdx, 1);
-                                  }
-                                  newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
-                                  setDepartments(newDepts);
-                                  setSelectedDepartment(newDepts[deptIndex]);
+                                  const newPeos = [...items];
+                                  newPeos.splice(iIdx, 1);
+                                  setPeoPsoData({ ...peoPsoData, peos: newPeos });
                                 }}
                                 className="p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
                                 title="Remove PEO"
@@ -1209,18 +1199,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                         <button
                           type="button"
                           onClick={() => {
-                            const newDepts = [...departments];
-                            let newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
-                            let pIndex = newOutcomes.findIndex((o: any) => o.name === 'PEO');
-                            if (pIndex === -1) {
-                              newOutcomes.push({ name: 'PEO', isGlobal: false, isLocal: true, isMapped: false, items: [] });
-                              pIndex = newOutcomes.length - 1;
-                            }
-                            if (!newOutcomes[pIndex].items) newOutcomes[pIndex].items = [];
-                            newOutcomes[pIndex].items.push({ code: `PEO${newOutcomes[pIndex].items.length + 1}`, description: '' });
-                            newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
-                            setDepartments(newDepts);
-                            setSelectedDepartment(newDepts[deptIndex]);
+                            const newPeos = [...items];
+                            newPeos.push({ code: `PEO${newPeos.length + 1}`, description: '' });
+                            setPeoPsoData({ ...peoPsoData, peos: newPeos });
                           }}
                           className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors mt-4 cursor-pointer w-fit border border-teal-200/50"
                         >
@@ -1243,12 +1224,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
                 <div className="space-y-3">
                   {(() => {
-                    const deptIndex = departments.findIndex(d => d._id === (selectedDepartment as any)._id);
-                    if (deptIndex === -1) return null;
-                    const dept = departments[deptIndex];
-                    let psoIndex = dept.outcomes ? dept.outcomes.findIndex((o: any) => o.name === 'PSO') : -1;
-                    
-                    const items = (psoIndex > -1 && dept.outcomes) ? (dept.outcomes[psoIndex].items || []) : [];
+                    const items = peoPsoData.psos || [];
 
                     return (
                       <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
@@ -1267,14 +1243,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                                     placeholder="e.g. PSO1"
                                     value={item.code}
                                     onChange={(e) => {
-                                      const newDepts = [...departments];
-                                      const newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
-                                      if (psoIndex > -1) {
-                                        newOutcomes[psoIndex].items[iIdx].code = e.target.value;
-                                      }
-                                      newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
-                                      setDepartments(newDepts);
-                                      setSelectedDepartment(newDepts[deptIndex]);
+                                      const newPsos = [...items];
+                                      newPsos[iIdx].code = e.target.value;
+                                      setPeoPsoData({ ...peoPsoData, psos: newPsos });
                                     }}
                                     className="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-700 outline-none focus:ring-1 focus:ring-teal-500 bg-white shadow-sm"
                                   />
@@ -1286,14 +1257,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                                     rows={2}
                                     value={item.description}
                                     onChange={(e) => {
-                                      const newDepts = [...departments];
-                                      const newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
-                                      if (psoIndex > -1) {
-                                        newOutcomes[psoIndex].items[iIdx].description = e.target.value;
-                                      }
-                                      newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
-                                      setDepartments(newDepts);
-                                      setSelectedDepartment(newDepts[deptIndex]);
+                                      const newPsos = [...items];
+                                      newPsos[iIdx].description = e.target.value;
+                                      setPeoPsoData({ ...peoPsoData, psos: newPsos });
                                     }}
                                     className="w-full border border-slate-300 rounded-lg p-2 text-xs text-slate-700 outline-none focus:ring-1 focus:ring-teal-500 bg-white shadow-sm resize-y"
                                   />
@@ -1302,14 +1268,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                               <button
                                 type="button"
                                 onClick={() => {
-                                  const newDepts = [...departments];
-                                  const newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
-                                  if (psoIndex > -1) {
-                                    newOutcomes[psoIndex].items.splice(iIdx, 1);
-                                  }
-                                  newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
-                                  setDepartments(newDepts);
-                                  setSelectedDepartment(newDepts[deptIndex]);
+                                  const newPsos = [...items];
+                                  newPsos.splice(iIdx, 1);
+                                  setPeoPsoData({ ...peoPsoData, psos: newPsos });
                                 }}
                                 className="p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
                                 title="Remove PSO"
@@ -1323,18 +1284,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                         <button
                           type="button"
                           onClick={() => {
-                            const newDepts = [...departments];
-                            let newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
-                            let pIndex = newOutcomes.findIndex((o: any) => o.name === 'PSO');
-                            if (pIndex === -1) {
-                              newOutcomes.push({ name: 'PSO', isGlobal: false, isLocal: true, isMapped: false, items: [] });
-                              pIndex = newOutcomes.length - 1;
-                            }
-                            if (!newOutcomes[pIndex].items) newOutcomes[pIndex].items = [];
-                            newOutcomes[pIndex].items.push({ code: `PSO${newOutcomes[pIndex].items.length + 1}`, description: '' });
-                            newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
-                            setDepartments(newDepts);
-                            setSelectedDepartment(newDepts[deptIndex]);
+                            const newPsos = [...items];
+                            newPsos.push({ code: `PSO${newPsos.length + 1}`, description: '' });
+                            setPeoPsoData({ ...peoPsoData, psos: newPsos });
                           }}
                           className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors mt-4 cursor-pointer w-fit border border-teal-200/50"
                         >
@@ -3189,7 +3141,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       {/* BULK IMPORT DIALOGUE */}
       {bulkImportOpen && (
         <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-fadeIn">
-          <div className="bg-white w-[500px] rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+          <div className="bg-white w-[650px] rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
             <div className="p-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
               <h3 className="text-base font-bold text-slate-800 flex items-center gap-1.5">
                 <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
@@ -3198,7 +3150,64 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
               <button onClick={() => { setBulkImportOpen(false); setBulkFile(null); }} className="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
             </div>
             <div className="p-6 space-y-4 text-xs font-bold text-slate-500 text-center">
-              <p className="text-slate-400 font-semibold mb-2">Upload curriculum metadata via CSV. Headers should match: Course Code, Course Title, Category, Semester, etc.</p>
+              <div className="text-left bg-blue-50 text-blue-800 p-3 rounded-lg border border-blue-100 font-normal text-[11px]">
+                <div className="flex justify-between items-center mb-2">
+                  <p className="font-bold">CSV Template Format:</p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left whitespace-nowrap">
+                    <thead>
+                      <tr className="border-b border-blue-200">
+                        <th className="pr-3 pb-1">Course Name</th>
+                        <th className="pr-3 pb-1">Course Code</th>
+                        <th className="pr-3 pb-1">Program</th>
+                        <th className="pr-3 pb-1">Department</th>
+                        <th className="pr-3 pb-1">Regulation</th>
+                        <th className="pr-3 pb-1">Course Type</th>
+                        <th className="pr-3 pb-1">Course Level</th>
+                        <th className="pr-3 pb-1">Semester</th>
+                        <th className="pr-3 pb-1">Status</th>
+                        <th className="pr-2 pb-1">L</th>
+                        <th className="pr-2 pb-1">T</th>
+                        <th className="pr-2 pb-1">P</th>
+                        <th className="pr-2 pb-1">S</th>
+                        <th className="pr-3 pb-1">Credits (C)</th>
+                        <th className="pr-3 pb-1">Branches</th>
+                        <th className="pr-3 pb-1">CIE Marks</th>
+                        <th className="pr-3 pb-1">SEE Marks</th>
+                        <th className="pr-3 pb-1">Total Marks</th>
+                        <th className="pr-3 pb-1">Course Coordinator</th>
+                        <th className="pb-1">Prerequisites</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="opacity-70 font-mono text-[10px]">
+                        <td className="pr-3 pt-1">Programming</td>
+                        <td className="pr-3 pt-1">CS101</td>
+                        <td className="pr-3 pt-1">Engineering</td>
+                        <td className="pr-3 pt-1">CSE</td>
+                        <td className="pr-3 pt-1">AR27</td>
+                        <td className="pr-3 pt-1">PC</td>
+                        <td className="pr-3 pt-1">FC - Foundation</td>
+                        <td className="pr-3 pt-1">1</td>
+                        <td className="pr-3 pt-1">Active</td>
+                        <td className="pr-2 pt-1">3</td>
+                        <td className="pr-2 pt-1">0</td>
+                        <td className="pr-2 pt-1">0</td>
+                        <td className="pr-2 pt-1">0</td>
+                        <td className="pr-3 pt-1">3</td>
+                        <td className="pr-3 pt-1">CSE, IT</td>
+                        <td className="pr-3 pt-1">40</td>
+                        <td className="pr-3 pt-1">60</td>
+                        <td className="pr-3 pt-1">100</td>
+                        <td className="pr-3 pt-1">prof@au.edu</td>
+                        <td className="pt-1">CS100</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <p className="text-slate-400 font-semibold mb-2 mt-4">Upload curriculum metadata via CSV matching the format above.</p>
               <label className="border-2 border-dashed border-slate-300 rounded-xl p-8 hover:border-teal-700 transition-colors flex flex-col items-center gap-2 cursor-pointer bg-slate-50 relative">
                 <input
                   type="file"
