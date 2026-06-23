@@ -60,9 +60,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [bulkFile, setBulkFile] = useState<File | null>(null);
   const [newCourseData, setNewCourseData] = useState({
-    code: '', title: '', programId: '', regulationId: '', category: 'PC', semester: 1,
+    code: '', title: '', keyword: '', programId: '', regulationId: '', category: 'PC', semester: 1,
     L: 3, T: 0, P: 0, S: 0, credits: 3, cieMarks: 40, seeMarks: 60, coordinatorId: '',
-    courseLevel: 'FC - Foundation', suggestiveSemester: '1', status: 'Active', prerequisites: '',
+    courseLevel: 'Foundation Courses - FC', suggestiveSemester: '1', status: 'Active', prerequisites: '',
     description: '', offeredFor: ['CSE'], objectives: ['']
   });
   const branchOptions = ['CSE', 'CSE AI', 'AI/ML', 'IT', 'ECE', 'EEE', 'Mechanical', 'Civil'];
@@ -94,7 +94,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   const [approvalComments, setApprovalComments] = useState<Record<string, string>>({});
   const [approvalEditModal, setApprovalEditModal] = useState<{ open: boolean, version: any }>({ open: false, version: null });
   const [editCourseData, setEditCourseData] = useState({
-    title: '', code: '', programId: '', regulationId: '', category: 'PC', semester: 1, courseLevel: 'FC - Foundation', status: 'Active',
+    title: '', code: '', programId: '', regulationId: '', category: 'PC', semester: 1, courseLevel: 'Foundation Courses - FC', status: 'Active',
     L: 3, T: 0, P: 0, S: 0, C: 3, cieMarks: 40, seeMarks: 60,
     description: '', offeredFor: ['CSE'], objectives: [''], coordinatorId: '', prerequisites: ''
   });
@@ -206,7 +206,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
             regulationId: selectedRegulation._id,
             departmentId: hodDept._id
           });
-          setMinorStreams(streamsRes.minorStreams || []);
+          setMinorStreams(streamsRes.streams || []);
         } catch (e) {
           console.error('[HOD Dashboard] Failed to load minor streams:', e);
         }
@@ -215,7 +215,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
           const prereqsRes = await api.prerequisites.list({
             regulationId: selectedRegulation._id
           });
-          setPrereqs(prereqsRes.prerequisites || []);
+          setPrereqs(prereqsRes.links || []);
         } catch (e) {
           console.error('[HOD Dashboard] Failed to load prerequisites:', e);
         }
@@ -448,18 +448,26 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       alert('Prerequisite link created successfully!');
       setAddPrereqOpen(false);
       setNewPrereqData({ sourceCourseId: '', targetCourseId: '' });
-      loadData();
+      
+      // Refresh prerequisites list
+      const prereqsRes = await api.prerequisites.list({ regulationId: selectedRegulation._id });
+      setPrereqs(prereqsRes.links || []);
     } catch (err: any) {
       alert(`Failed to create prerequisite link: ${err.message}`);
     }
   };
 
-  const handleDeletePrereq = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this Prerequisite link?')) return;
+  const handleDeletePrereq = async (linkId: string) => {
+    if (!window.confirm('Are you sure you want to remove this prerequisite link?')) return;
     try {
-      await api.prerequisites.delete(id);
+      await api.prerequisites.delete(linkId);
       alert('Prerequisite link deleted successfully.');
-      loadData();
+      
+      // Refresh prerequisites list
+      if (selectedRegulation) {
+        const prereqsRes = await api.prerequisites.list({ regulationId: selectedRegulation._id });
+        setPrereqs(prereqsRes.links || []);
+      }
     } catch (err: any) {
       alert(`Failed to delete: ${err.message}`);
     }
@@ -474,6 +482,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       const coursePayload = {
         code: newCourseData.code,
         title: newCourseData.title,
+        keyword: newCourseData.keyword,
         departmentId: selectedDepartment?._id
       };
 
@@ -492,6 +501,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
         if (createdVersion) {
           await api.courses.saveDraft(createdVersion._id, {
             category: newCourseData.category,
+            courseLevel: newCourseData.courseLevel,
             credits: {
               L: Number(newCourseData.L),
               T: Number(newCourseData.T),
@@ -521,9 +531,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       alert('Course successfully registered in repository!');
       setAddCourseOpen(false);
       setNewCourseData({
-        code: '', title: '', programId: '', regulationId: '', category: 'PC', semester: 1,
+        code: '', title: '', keyword: '', programId: '', regulationId: '', category: 'PC', semester: 1,
         L: 3, T: 0, P: 0, S: 0, credits: 3, cieMarks: 40, seeMarks: 60, coordinatorId: '',
-        courseLevel: 'FC - Foundation', suggestiveSemester: '1', status: 'Active', prerequisites: '',
+        courseLevel: 'Foundation Courses - FC', suggestiveSemester: '1', status: 'Active', prerequisites: '',
         description: '', offeredFor: ['CSE'], objectives: ['']
       });
       loadData();
@@ -552,10 +562,11 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
           for (const row of rows) {
             const code = row['Course Code'] || row['code'] || row['Code'];
             const title = row['Course Name'] || row['Course Title'] || row['title'] || row['Title'];
+            const keyword = row['Keyword'] || row['keyword'] || row['Shortcut'] || row['shortcut'] || '';
             if (!code || !title) continue;
 
             const category = row['Course Type'] || row['Category'] || row['category'] || 'PC';
-            const courseLevel = row['Course Level'] || row['courseLevel'] || 'FC - Foundation';
+            const courseLevel = row['Course Level'] || row['courseLevel'] || 'Foundation Courses - FC';
             const status = row['Status'] || row['status'] || 'Active';
             
             const regCode = row['Regulation'] || row['regulation'] || '';
@@ -595,6 +606,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
             const coursePayload = {
               code,
               title,
+              keyword,
               departmentId: selectedDepartment._id
             };
 
@@ -1317,12 +1329,12 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
               <button
                 onClick={() => {
                   setNewCourseData({
-                    code: '', title: '',
+                    code: '', title: '', keyword: '',
                     programId: selectedProgram?._id || '',
                     regulationId: selectedRegulation?._id || '',
                     category: 'PC', semester: 1,
                     L: 3, T: 0, P: 0, S: 0, credits: 3, cieMarks: 40, seeMarks: 60, coordinatorId: '',
-                    courseLevel: 'FC - Foundation', suggestiveSemester: '1', status: 'Active', prerequisites: '',
+                    courseLevel: 'Foundation Courses - FC', suggestiveSemester: '1', status: 'Active', prerequisites: '',
                     description: '', offeredFor: [selectedDepartment?.code || 'CSE'], objectives: ['']
                   });
                   setAddCourseOpen(true);
@@ -1415,6 +1427,18 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                   .filter(c => {
                     const matchesSearch = c.code.toLowerCase().includes(courseSearch.toLowerCase()) || c.title.toLowerCase().includes(courseSearch.toLowerCase());
                     const v = versions.find((ver: any) => ver.courseId?._id === c._id || ver.courseId === c._id);
+                    
+                    // IF the course is not in the current regulation AND we are not searching globally, hide it
+                    // Let's assume if courseSearch is active, we show global, otherwise we hide unless mapped.
+                    // To be safe, if `v` is not found, we only show it if the user is explicitly searching or we add a toggle.
+                    // For now, let's just hide courses that are not in the current regulation unless they have NO regulation at all.
+                    if (!v && c.mappedRegulations?.length > 0) {
+                      // It is mapped to SOME regulation, but NOT the current one.
+                      // The user complained it shows up in Regulation B when added to Regulation A.
+                      // So we hide it from Regulation B's view!
+                      return false; 
+                    }
+
                     const category = v?.category || 'PC';
                     const matchesCat = courseCategoryFilter ? category === courseCategoryFilter : true;
                     const matchesStatus = courseStatusFilter ? (v?.status === courseStatusFilter) : true;
@@ -1424,11 +1448,11 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     const v = versions.find((ver: any) => ver.courseId?._id === c._id || ver.courseId === c._id);
                     const category = v?.category || 'PC';
                     const reg = regulations.find(r => r._id === (v?.regulationId?._id || v?.regulationId || selectedRegulation?._id));
+                    const regulationCode = c.mappedRegulations?.length > 0 ? c.mappedRegulations.join(', ') : 'Not Assigned';
                     const regProgId = reg?.programId && typeof reg.programId === 'object' ? (reg.programId as any)._id : reg?.programId;
                     const selProgId = selectedProgram?._id || '';
                     const prog = programs.find(p => p._id === (regProgId || selProgId));
                     const programName = prog?.name || 'B.Tech';
-                    const regulationCode = reg?.code || selectedRegulation?.code || 'R2025';
 
                     const formatCategory = (cat: string) => {
                       switch (cat) {
@@ -1472,7 +1496,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                                     regulationId: v.regulationId?._id || v.regulationId || '',
                                     category: v.category || 'PC',
                                     semester: v.semester || 1,
-                                    courseLevel: v.courseLevel || 'FC - Foundation',
+                                    courseLevel: v.courseLevel || 'Foundation Courses - FC',
                                     status: v.status || 'Active',
                                     L: v.credits?.L || 0,
                                     T: v.credits?.T || 0,
@@ -2078,7 +2102,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                             regulationId: v.regulationId?._id || v.regulationId || '',
                             category: v.category || 'PC',
                             semester: v.semester || 1,
-                            courseLevel: v.courseLevel || 'FC - Foundation',
+                            courseLevel: v.courseLevel || 'Foundation Courses - FC',
                             status: v.status || 'Active',
                             L: v.credits?.L || 0,
                             T: v.credits?.T || 0,
@@ -2728,7 +2752,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
               <button onClick={() => setAddCourseOpen(false)} className="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
             </div>
             <form onSubmit={handleAddRepositoryCourse} className="p-6 space-y-4 text-xs font-bold text-slate-500">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-1">
                   <span>Course Name *</span>
                   <input
@@ -2749,6 +2773,16 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     onChange={(e) => setNewCourseData({ ...newCourseData, code: e.target.value })}
                     className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none focus:ring-1 focus:ring-teal-700 bg-white"
                     required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <span>Keyword (Shortcut Name)</span>
+                  <input
+                    type="text"
+                    placeholder="e.g. LAC"
+                    value={newCourseData.keyword}
+                    onChange={(e) => setNewCourseData({ ...newCourseData, keyword: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none focus:ring-1 focus:ring-teal-700 bg-white"
                   />
                 </div>
               </div>
@@ -2840,9 +2874,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     onChange={(e) => setNewCourseData({ ...newCourseData, courseLevel: e.target.value })}
                     className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none bg-white"
                   >
-                    <option value="FC - Foundation">FC - Foundation</option>
-                    <option value="PC - Core">PC - Core</option>
-                    <option value="PE - Elective">PE - Elective</option>
+                    <option value="Foundation Courses - FC">Foundation Courses - FC</option>
+                    <option value="Intermediate-level Courses - IC">Intermediate-level Courses - IC</option>
+                    <option value="Advanced Courses - AC">Advanced Courses - AC</option>
                   </select>
                 </div>
                 <div className="space-y-1">
@@ -3160,6 +3194,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                       <tr className="border-b border-blue-200">
                         <th className="pr-3 pb-1">Course Name</th>
                         <th className="pr-3 pb-1">Course Code</th>
+                        <th className="pr-3 pb-1">Keyword</th>
                         <th className="pr-3 pb-1">Program</th>
                         <th className="pr-3 pb-1">Department</th>
                         <th className="pr-3 pb-1">Regulation</th>
@@ -3184,11 +3219,12 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                       <tr className="opacity-70 font-mono text-[10px]">
                         <td className="pr-3 pt-1">Programming</td>
                         <td className="pr-3 pt-1">CS101</td>
+                        <td className="pr-3 pt-1">PRG</td>
                         <td className="pr-3 pt-1">Engineering</td>
                         <td className="pr-3 pt-1">CSE</td>
                         <td className="pr-3 pt-1">AR27</td>
                         <td className="pr-3 pt-1">PC</td>
-                        <td className="pr-3 pt-1">FC - Foundation</td>
+                        <td className="pr-3 pt-1">Foundation Courses - FC</td>
                         <td className="pr-3 pt-1">1</td>
                         <td className="pr-3 pt-1">Active</td>
                         <td className="pr-2 pt-1">3</td>
@@ -3346,9 +3382,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     onChange={(e) => setEditCourseData({ ...editCourseData, courseLevel: e.target.value })}
                     className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none bg-white"
                   >
-                    <option value="FC - Foundation">FC - Foundation</option>
-                    <option value="PC - Core">PC - Core</option>
-                    <option value="PE - Elective">PE - Elective</option>
+                    <option value="Foundation Courses - FC">Foundation Courses - FC</option>
+                    <option value="Intermediate-level Courses - IC">Intermediate-level Courses - IC</option>
+                    <option value="Advanced Courses - AC">Advanced Courses - AC</option>
                   </select>
                 </div>
                 <div className="space-y-1">
@@ -3695,7 +3731,14 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
               <div className="space-y-2 pt-2">
                 <span className="text-[10px] text-teal-800 font-bold uppercase tracking-wide block">Map Department Courses to Stream *</span>
                 <div className="border border-slate-200 rounded-lg p-3 max-h-[200px] overflow-y-auto bg-slate-50 space-y-2">
-                  {courses.map((course) => {
+                  {courses
+                    .filter((c) => {
+                      // Only show courses that are assigned to this regulation under MSC/UEC category
+                      return versions.some(
+                        (v) => v.courseId?._id === c._id && ['MSC/UEC', 'MSC', 'UEC'].includes(v.category)
+                      );
+                    })
+                    .map((course) => {
                     const isChecked = newMinorStreamData.courses.includes(course._id);
                     return (
                       <label key={course._id} className="flex items-center gap-2.5 p-1.5 rounded hover:bg-slate-100 cursor-pointer font-medium text-slate-700">
@@ -3714,8 +3757,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                       </label>
                     );
                   })}
-                  {courses.length === 0 && (
-                    <p className="text-slate-400 italic text-center py-6 font-normal">No department courses available in repository</p>
+                  {courses.filter(c => versions.some(v => v.courseId?._id === c._id && ['MSC/UEC', 'MSC', 'UEC'].includes(v.category))).length === 0 && (
+                    <p className="text-slate-400 italic text-center py-6 font-normal">No courses categorized as MSC/UEC available in this regulation.</p>
                   )}
                 </div>
               </div>

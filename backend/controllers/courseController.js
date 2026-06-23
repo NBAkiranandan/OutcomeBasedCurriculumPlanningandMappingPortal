@@ -19,7 +19,21 @@ export const getCoursesByDept = async (req, res, next) => {
       return res.status(400).json({ message: 'Department context required.' });
     }
     const courses = await courseService.getCoursesByDept(deptId);
-    return res.status(200).json({ courses });
+    
+    // Attach mapped regulations
+    const CourseVersion = (await import('../models/CourseVersion.js')).default;
+    const versions = await CourseVersion.find({ isDeleted: { $ne: true } }).populate('regulationId');
+    
+    const coursesWithMapping = courses.map(course => {
+      const courseVersions = versions.filter(v => v.courseId.toString() === course._id.toString());
+      const mappedRegulations = courseVersions.map(v => v.regulationId?.code).filter(Boolean);
+      return {
+        ...course.toObject(),
+        mappedRegulations: [...new Set(mappedRegulations)], // distinct regulations
+      };
+    });
+
+    return res.status(200).json({ courses: coursesWithMapping });
   } catch (error) {
     return next(error);
   }
@@ -36,9 +50,9 @@ export const getAllCourses = async (req, res, next) => {
 
 export const createCourse = async (req, res, next) => {
   try {
-    const { code, title, departmentId, regulationId, semester } = req.body;
+    const { code, title, keyword, departmentId, regulationId, semester } = req.body;
     const version = await courseService.createNewCourse(
-      { code, title, departmentId },
+      { code, title, keyword, departmentId },
       regulationId,
       semester,
       req.user

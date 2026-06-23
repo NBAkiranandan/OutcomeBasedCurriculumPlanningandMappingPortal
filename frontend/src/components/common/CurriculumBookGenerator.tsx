@@ -9,6 +9,7 @@ import {
 // CODEx-added: Uses the existing university logo asset to match the reference PDF cover and page header style.
 import adityaLogo from '../../assets/aditya-logo.png';
 import { PdfCoursePage, PdfCoursePageStyles } from './PdfCoursePage';
+import Xarrow, { Xwrapper } from 'react-xarrows';
 
 export const CurriculumBookGenerator: React.FC = () => {
   const { selectedProgram, selectedDepartment, selectedRegulation } = useContextStore();
@@ -179,8 +180,29 @@ export const CurriculumBookGenerator: React.FC = () => {
     ugc: cat.ugc || '-'
   }));
 
+  // Append missing categories from actual courses so their credits are not hidden
+  uniqueCategories.forEach(cat => {
+    // Treat MSC and UEC as mapped if MSC/UEC is already present (which usually isn't in dbCategories as a combo, but handle just in case)
+    if (!dynamicCategoryRows.find(r => r.code === cat) && cat !== 'MSC/UEC' && cat !== 'MSC' && cat !== 'UEC') {
+      const nameMapping: Record<string, string> = {
+        'PC': 'Professional Core',
+        'PE': 'Professional Elective',
+        'OE': 'Open Elective',
+        'BS': 'Basic Sciences',
+        'ES': 'Engineering Sciences',
+        'HS': 'Humanities & Social Sciences',
+        'MC': 'Mandatory Course'
+      };
+      dynamicCategoryRows.push({
+        code: cat as string,
+        name: nameMapping[cat as string] || (cat as string),
+        ugc: '-'
+      });
+    }
+  });
+
   const getRowCredits = (code: string) => {
-    if (code === 'MSC/UEC') return (categoryCredits['MSC'] || 0) + (categoryCredits['UEC'] || 0);
+    if (code === 'MSC/UEC') return (categoryCredits['MSC'] || 0) + (categoryCredits['UEC'] || 0) + (categoryCredits['MSC/UEC'] || 0);
     return categoryCredits[code] || 0;
   };
 
@@ -441,7 +463,7 @@ export const CurriculumBookGenerator: React.FC = () => {
         {(['FC', 'IC', 'AC'] as const).map((levelKey) => {
           const levelLabel = levelKey === 'FC' ? 'Foundation Courses (FC)' : levelKey === 'IC' ? 'Intermediate-Level Courses (IC)' : 'Advanced Courses (AC)';
           const levelRows = courseVersions.filter((v: any) => {
-            const lvl = (v.level || v.knowledgeLevel || '');
+            const lvl = (v.courseLevel || v.level || v.knowledgeLevel || '');
             if (levelKey === 'FC') return lvl.includes('FC') || lvl.toLowerCase().includes('foundation') || (!lvl);
             if (levelKey === 'IC') return lvl.includes('IC') || lvl.toLowerCase().includes('intermediate');
             return lvl.includes('AC') || lvl.toLowerCase().includes('advanced');
@@ -486,11 +508,14 @@ export const CurriculumBookGenerator: React.FC = () => {
               <div>{programDetails?.degree || 'B.Tech'} ({selectedDepartment?.code || 'CSE'}) Program Curriculum</div>
               <div>Pre-requisite Flow Chart</div>
             </div>
-            {(['FC', 'IC', 'AC'] as const).map((levelKey) => {
-              const bgColor = levelKey === 'FC' ? '#d4edda' : levelKey === 'IC' ? '#f8d7da' : '#fff3cd';
-              const levelRows = courseVersions.filter((v: any) => {
-                const lvl = (v.level || v.knowledgeLevel || '');
-                if (levelKey === 'FC') return lvl.includes('FC') || lvl.toLowerCase().includes('foundation') || !lvl;
+            <Xwrapper>
+              <div style={{ position: 'relative' }}>
+                {(['FC', 'IC', 'AC'] as const).map((levelKey) => {
+                  const bgColor = levelKey === 'FC' ? '#d4edda' : levelKey === 'IC' ? '#f8d7da' : '#fff3cd';
+                  const levelRows = courseVersions.filter((v: any) => {
+                    if (['MSC', 'MSC/UEC', 'UEC'].includes(v.category)) return false;
+                    const lvl = (v.courseLevel || v.level || v.knowledgeLevel || '');
+                    if (levelKey === 'FC') return lvl.includes('FC') || lvl.toLowerCase().includes('foundation') || !lvl;
                 if (levelKey === 'IC') return lvl.includes('IC') || lvl.toLowerCase().includes('intermediate');
                 return lvl.includes('AC') || lvl.toLowerCase().includes('advanced');
               });
@@ -499,8 +524,8 @@ export const CurriculumBookGenerator: React.FC = () => {
                   <div className="pdf-prereq-level-label">{levelKey}</div>
                   <div className="pdf-prereq-courses-grid">
                     {levelRows.map((v: any) => (
-                      <div key={v._id} className="pdf-prereq-course-box">
-                        {v.courseId?.code || (v.courseId?.title || '').split(' ').map((w:string) => w[0]).join('').toUpperCase() || '-'}
+                      <div key={v._id} id={`course-${v.courseId?._id}`} className="pdf-prereq-course-box">
+                        {v.courseId?.keyword || v.courseId?.code || (v.courseId?.title || '').split(' ').map((w:string) => w[0]).join('').toUpperCase() || '-'}
                       </div>
                     ))}
                     {levelRows.length === 0 && <div className="pdf-prereq-course-box" style={{opacity:0.4}}>—</div>}
@@ -508,6 +533,26 @@ export const CurriculumBookGenerator: React.FC = () => {
                 </div>
               );
             })}
+                {prereqLinks.map(link => {
+                  const startId = `course-${link.sourceCourseId?._id || link.sourceCourseId}`;
+                  const endId = `course-${link.targetCourseId?._id || link.targetCourseId}`;
+                  return (
+                    <Xarrow
+                      key={link._id}
+                      start={startId}
+                      end={endId}
+                      color="#333"
+                      strokeWidth={1.5}
+                      path="grid"
+                      headSize={4}
+                      startAnchor="bottom"
+                      endAnchor="top"
+                      zIndex={10}
+                    />
+                  );
+                })}
+              </div>
+            </Xwrapper>
           </div>
         </PdfPage>
         <div className="page-break"></div>
@@ -521,7 +566,7 @@ export const CurriculumBookGenerator: React.FC = () => {
                 {courseVersions
                   .filter((v: any) => { const l=(v.level||v.knowledgeLevel||''); return l.includes('FC')||l.toLowerCase().includes('foundation')||!l; })
                   .map((v: any) => v.courseId?.code
-                    ? <p key={v._id} style={{margin:'2px 0',fontSize:'13px'}}><strong>{v.courseId.code}</strong> - {v.courseId.title}</p>
+                    ? <p key={v._id} style={{margin:'2px 0',fontSize:'13px'}}><strong>{v.courseId.keyword || v.courseId.code}</strong> - {v.courseId.title}</p>
                     : null)}
               </div>
               <div className="pdf-abbrev-col">
@@ -529,7 +574,7 @@ export const CurriculumBookGenerator: React.FC = () => {
                 {courseVersions
                   .filter((v: any) => { const l=(v.level||v.knowledgeLevel||''); return l.includes('IC')||l.toLowerCase().includes('intermediate'); })
                   .map((v: any) => v.courseId?.code
-                    ? <p key={v._id} style={{margin:'2px 0',fontSize:'13px'}}><strong>{v.courseId.code}</strong> - {v.courseId.title}</p>
+                    ? <p key={v._id} style={{margin:'2px 0',fontSize:'13px'}}><strong>{v.courseId.keyword || v.courseId.code}</strong> - {v.courseId.title}</p>
                     : null)}
               </div>
             </div>
@@ -539,7 +584,7 @@ export const CurriculumBookGenerator: React.FC = () => {
                 {courseVersions
                   .filter((v: any) => { const l=(v.level||v.knowledgeLevel||''); return l.includes('AC')||l.toLowerCase().includes('advanced'); })
                   .map((v: any) => v.courseId?.code
-                    ? <p key={v._id} style={{margin:'2px 0',fontSize:'13px'}}><strong>{v.courseId.code}</strong> - {v.courseId.title}</p>
+                    ? <p key={v._id} style={{margin:'2px 0',fontSize:'13px'}}><strong>{v.courseId.keyword || v.courseId.code}</strong> - {v.courseId.title}</p>
                     : null)}
               </div>
             </div>
@@ -552,22 +597,59 @@ export const CurriculumBookGenerator: React.FC = () => {
           <>
             {/* Page 24: Minor Stream Pre-requisite Flowchart */}
             <PdfPage>
-              <div className="pdf-prereq-flowchart-page">
-                <div className="pdf-prereq-title-box">
-                  <div>{programDetails?.degree || 'B.Tech'} ({selectedDepartment?.code || 'CSE'}) Minor Stream</div>
-                  <div>Pre-requisite Flowchart</div>
+              <div className="pdf-prereq-flowchart-page" style={{ padding: '20px', fontFamily: 'Times New Roman' }}>
+                <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+                  <div style={{ backgroundColor: '#e2c027', padding: '15px 30px', borderRadius: '10px', display: 'inline-block', fontWeight: 'bold', fontSize: '16px' }}>
+                    {programDetails?.name || 'B.Tech'} ({selectedDepartment?.code || 'CSE'}) Minor Stream<br/><br/>Pre-requisite flowchart
+                  </div>
                 </div>
+                
+                {/* Minor Stream Headers with Arrows */}
+                <div style={{ display: 'flex', marginLeft: '50px', marginBottom: '10px' }}>
+                  {minorStreams.map((stream: any) => (
+                    <div key={stream._id} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <div style={{ border: '1px solid #000', backgroundColor: '#fff', padding: '4px 8px', fontSize: '12px', fontWeight: 'bold', minWidth: '40px', textAlign: 'center' }}>
+                        {stream.keyword || stream.name.split(' ').map((w: string) => w[0]).join('')}
+                      </div>
+                      <div style={{ height: '20px', width: '1px', backgroundColor: '#000', position: 'relative' }}>
+                        <div style={{ position: 'absolute', bottom: '-4px', left: '-3px', width: '0', height: '0', borderLeft: '3px solid transparent', borderRight: '3px solid transparent', borderTop: '4px solid #000' }}></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Flowchart Levels */}
                 {(['FC', 'IC', 'AC'] as const).map((levelKey) => {
-                  const bgColor = levelKey === 'FC' ? '#fffde7' : levelKey === 'IC' ? '#fce4ec' : '#f3e5f5';
+                  const bgColor = levelKey === 'FC' ? '#fdeca6' : levelKey === 'IC' ? '#f4a5a5' : '#e6a8d7';
+                  const circleColor = levelKey === 'FC' ? '#e2c027' : levelKey === 'IC' ? '#d4df32' : '#e2c027';
+                  const courseBgColor = levelKey === 'FC' ? '#ffcc80' : levelKey === 'IC' ? '#ffcdd2' : '#f8bbd0';
+                  
                   return (
-                    <div key={levelKey} className="pdf-prereq-level-row" style={{background: bgColor}}>
-                      <div className="pdf-prereq-level-label">{levelKey}</div>
-                      <div className="pdf-prereq-courses-grid">
-                        {minorStreams.map((stream: any) => (
-                          <div key={stream._id} className="pdf-prereq-course-box" style={{fontSize:'9px', padding:'3px 5px'}}>
-                            {stream.name?.split(' ').map((w:string)=>w[0]).join('') || stream.name?.slice(0,4) || 'MS'}
-                          </div>
-                        ))}
+                    <div key={levelKey} style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: circleColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px', marginRight: '10px' }}>
+                        {levelKey}
+                      </div>
+                      <div style={{ flex: 1, backgroundColor: bgColor, borderRadius: '15px', padding: '15px 0', display: 'flex', minHeight: '100px' }}>
+                        {minorStreams.map((stream: any) => {
+                          const courses = stream.courses || [];
+                          const levelCourses = courses.filter((c:any) => {
+                            const v = courseVersions.find((ver:any) => ver.courseId === c._id || ver.courseId?._id === c._id);
+                            const lvl = (v?.courseLevel || c.level || c.courseLevel || '');
+                            if (levelKey === 'FC') return lvl.includes('FC') || lvl.toLowerCase().includes('foundation') || (!lvl);
+                            if (levelKey === 'IC') return lvl.includes('IC') || lvl.toLowerCase().includes('intermediate');
+                            return lvl.includes('AC') || lvl.toLowerCase().includes('advanced');
+                          });
+
+                          return (
+                            <div key={stream._id} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                              {levelCourses.map((c: any) => (
+                                <div key={c._id} style={{ backgroundColor: courseBgColor, padding: '4px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', border: '1px solid rgba(0,0,0,0.1)', textAlign: 'center', maxWidth: '90%' }}>
+                                  {c.keyword || c.code}
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   );
@@ -582,27 +664,48 @@ export const CurriculumBookGenerator: React.FC = () => {
               <table className="pdf-grid-table" style={{fontSize:'12px'}}>
                 <thead>
                   <tr>
-                    <th style={{minWidth:'120px', textAlign:'left'}}>Minor Stream</th>
-                    <th style={{textDecoration:'underline'}}>FC - Foundation Course</th>
-                    <th style={{textDecoration:'underline'}}>IC - Intermediate-Level Course</th>
-                    <th style={{textDecoration:'underline'}}>AC - Advanced Course</th>
+                    <th style={{width:'25%', textAlign:'left'}}>Minor Stream</th>
+                    <th style={{width:'25%', textDecoration:'underline', textAlign:'left'}}>FC - Foundation Course</th>
+                    <th style={{width:'25%', textDecoration:'underline', textAlign:'left'}}>IC - Intermediate-Level Course</th>
+                    <th style={{width:'25%', textDecoration:'underline', textAlign:'left'}}>AC - Advanced Course</th>
                   </tr>
                 </thead>
                 <tbody>
                   {minorStreams.map((stream: any) => {
                     const courses: any[] = stream.courses || [];
-                    const fc = courses.filter((c:any)=>(c.level||'').includes('FC')||(c.level||'').toLowerCase().includes('foundation'));
-                    const ic = courses.filter((c:any)=>(c.level||'').includes('IC')||(c.level||'').toLowerCase().includes('intermediate'));
-                    const ac = courses.filter((c:any)=>(c.level||'').includes('AC')||(c.level||'').toLowerCase().includes('advanced'));
-                    const maxRows = Math.max(1, fc.length, ic.length, ac.length);
-                    return Array.from({length: maxRows}).map((_: any, i: number) => (
-                      <tr key={`${stream._id}-${i}`}>
-                        {i === 0 && <td rowSpan={maxRows} style={{textAlign:'left', fontWeight:700, verticalAlign:'top', paddingTop:'6px'}}>{stream.name}</td>}
-                        <td style={{textAlign:'left', fontSize:'11px'}}>{fc[i] ? <><strong>{fc[i].code}:</strong> {fc[i].title}</> : ''}</td>
-                        <td style={{textAlign:'left', fontSize:'11px'}}>{ic[i] ? <><strong>{ic[i].code}:</strong> {ic[i].title}</> : ''}</td>
-                        <td style={{textAlign:'left', fontSize:'11px'}}>{ac[i] ? <><strong>{ac[i].code}:</strong> {ac[i].title}</> : ''}</td>
+                    const getLevel = (c: any) => {
+                      const v = courseVersions.find((ver:any) => ver.courseId === c._id || ver.courseId?._id === c._id);
+                      return (v?.courseLevel || c.level || c.courseLevel || '');
+                    };
+                    const fc = courses.filter((c:any) => {
+                      const lvl = getLevel(c);
+                      return lvl.includes('FC') || lvl.toLowerCase().includes('foundation') || (!lvl);
+                    });
+                    const ic = courses.filter((c:any) => {
+                      const lvl = getLevel(c);
+                      return lvl.includes('IC') || lvl.toLowerCase().includes('intermediate');
+                    });
+                    const ac = courses.filter((c:any) => {
+                      const lvl = getLevel(c);
+                      return lvl.includes('AC') || lvl.toLowerCase().includes('advanced');
+                    });
+                    
+                    return (
+                      <tr key={stream._id}>
+                        <td style={{textAlign:'left', fontWeight:700, verticalAlign:'top', paddingTop:'6px'}}>
+                          {stream.keyword ? `${stream.keyword}: ${stream.name}` : stream.name}
+                        </td>
+                        <td style={{textAlign:'left', fontSize:'11px', verticalAlign:'top'}}>
+                          {fc.map((c: any) => <div key={c._id} style={{marginBottom:'4px'}}><strong>{c.keyword || c.code}:</strong> {c.title}</div>)}
+                        </td>
+                        <td style={{textAlign:'left', fontSize:'11px', verticalAlign:'top'}}>
+                          {ic.map((c: any) => <div key={c._id} style={{marginBottom:'4px'}}><strong>{c.keyword || c.code}:</strong> {c.title}</div>)}
+                        </td>
+                        <td style={{textAlign:'left', fontSize:'11px', verticalAlign:'top'}}>
+                          {ac.map((c: any) => <div key={c._id} style={{marginBottom:'4px'}}><strong>{c.keyword || c.code}:</strong> {c.title}</div>)}
+                        </td>
                       </tr>
-                    ));
+                    );
                   })}
                 </tbody>
               </table>

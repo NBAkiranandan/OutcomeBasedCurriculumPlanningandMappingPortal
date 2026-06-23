@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const CourseSchema = new mongoose.Schema({
   code: { type: String, required: true, unique: true, index: true }, // e.g. "CS203"
+  keyword: { type: String, default: '' }, // e.g. "LAC" for "Linear algebra & Calculus"
   title: { type: String, required: true }, // e.g. "Database Management Systems"
   departmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Department', required: true },
   created_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

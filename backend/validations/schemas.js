@@ -58,6 +58,7 @@ export const regulationSchema = z.object({
 export const courseSchema = z.object({
   code: z.string().min(3, { message: 'Course code must be at least 3 characters' }),
   title: z.string().min(3, { message: 'Course title must be at least 3 characters' }),
+  keyword: z.string().optional(),
   departmentId: z.string().regex(/^[0-9a-fA-F]{24}$/, { message: 'Invalid department ID reference' }),
   regulationId: z.string().regex(/^[0-9a-fA-F]{24}$/, { message: 'Invalid regulation ID reference' }),
   semester: z.number().int().min(1).max(12, { message: 'Semester must be between 1 and 12' }),

@@ -58,6 +58,7 @@ const CourseVersionSchema = new mongoose.Schema({
     enum: ['Foundation', 'Intermediate', 'Advanced'], 
     default: 'Foundation' 
   },
+  courseLevel: { type: String, default: 'Foundation Courses - FC' },
   knowledgeLevel: { type: String, default: '' },
   objectives: [{ type: String }],
   prerequisites: [{ type: String }],
