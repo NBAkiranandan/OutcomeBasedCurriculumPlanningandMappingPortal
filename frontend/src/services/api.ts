@@ -215,7 +215,8 @@ export const api = {
       return apiRequest(`/api/notifications?${qs}`);
     },
     markRead: (id: string) => apiRequest(`/api/notifications/${id}/read`, { method: 'PUT' }),
-    markAllRead: () => apiRequest('/api/notifications/read-all', { method: 'PUT' })
+    markAllRead: () => apiRequest('/api/notifications/read-all', { method: 'PUT' }),
+    delete: (id: string) => apiRequest(`/api/notifications/${id}`, { method: 'DELETE' })
   },
   peos: {
     list: (params: any = {}) => {

@@ -125,3 +125,30 @@ export const markAllAsRead = async (req, res, next) => {
     return next(error);
   }
 };
+
+export const deleteNotification = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    const notification = await Notification.findById(id);
+    if (!notification) {
+      return res.status(404).json({ message: 'Notification not found.' });
+    }
+
+    // Check permissions
+    const isOwner = notification.recipientId && notification.recipientId.toString() === userId;
+    const hasRole = notification.recipientRole && notification.recipientRole === userRole;
+
+    if (!isOwner && !hasRole) {
+      return res.status(403).json({ message: 'Unauthorized to delete this notification.' });
+    }
+
+    await Notification.findByIdAndDelete(id);
+
+    return res.status(200).json({ message: 'Notification deleted successfully.' });
+  } catch (error) {
+    return next(error);
+  }
+};

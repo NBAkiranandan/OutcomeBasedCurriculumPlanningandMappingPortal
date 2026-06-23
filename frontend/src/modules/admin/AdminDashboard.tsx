@@ -2067,30 +2067,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 </button>
               </div>
 
-              {/* Two Factor Authentication */}
-              <div className="py-4 flex justify-between items-center">
-                <div className="space-y-0.5 text-left">
-                  <h4 className="font-bold text-slate-800">Two Factor Authentication (2FA)</h4>
-                  <p className="text-slate-500 font-medium font-sans">Add an extra layer of security to your ERP account</p>
-                </div>
-                <button className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded-lg font-bold shadow-sm cursor-pointer">
-                  Enable 2FA
-                </button>
-              </div>
 
-              {/* Logout from all devices */}
-              <div className="py-4 last:pb-0 flex justify-between items-center">
-                <div className="space-y-0.5 text-left">
-                  <h4 className="font-bold text-slate-800">Logout from All Devices</h4>
-                  <p className="text-slate-500 font-medium font-sans">Terminate all active admin sessions across all devices</p>
-                </div>
-                <button
-                  onClick={() => alert('All sessions have been terminated.')}
-                  className="px-4 py-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 rounded-lg font-bold shadow-sm cursor-pointer"
-                >
-                  Logout All
-                </button>
-              </div>
+
+
             </div>
           </div>
         </div>
