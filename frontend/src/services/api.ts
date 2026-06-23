@@ -205,6 +205,24 @@ export const api = {
     update: (id: string, body: any) => apiRequest(`/api/minor-streams/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
     delete: (id: string) => apiRequest(`/api/minor-streams/${id}`, { method: 'DELETE' })
   },
+  minorDegrees: {
+    list: (params: any = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      return apiRequest(`/api/minor-degrees?${qs}`);
+    },
+    getAllPublished: (params: any = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      return apiRequest(`/api/minor-degrees/all-published?${qs}`);
+    },
+    get: (id: string) => apiRequest(`/api/minor-degrees/${id}`),
+    create: (body: any) => apiRequest('/api/minor-degrees', { method: 'POST', body: JSON.stringify(body) }),
+    update: (id: string, body: any) => apiRequest(`/api/minor-degrees/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+    delete: (id: string) => apiRequest(`/api/minor-degrees/${id}`, { method: 'DELETE' }),
+    publish: (id: string) => apiRequest(`/api/minor-degrees/${id}/publish`, { method: 'POST' }),
+    addCourse: (minorDegreeId: string, body: any) => apiRequest(`/api/minor-degrees/${minorDegreeId}/courses`, { method: 'POST', body: JSON.stringify(body) }),
+    updateCourse: (courseId: string, body: any) => apiRequest(`/api/minor-degrees/courses/${courseId}`, { method: 'PUT', body: JSON.stringify(body) }),
+    deleteCourse: (courseId: string) => apiRequest(`/api/minor-degrees/courses/${courseId}`, { method: 'DELETE' })
+  },
   prerequisites: {
     list: (params: any = {}) => {
       const qs = new URLSearchParams(params).toString();
@@ -261,18 +279,7 @@ export const api = {
     delete: (id: string) => apiRequest(`/api/course-categories/${id}`, { method: 'DELETE' })
   },
   curriculumBooks: {
-    list: (params: any = {}) => {
-      const qs = new URLSearchParams(params).toString();
-      return apiRequest(`/api/curriculum-books/list?${qs}`);
-    },
-    get: (id: string) => apiRequest(`/api/curriculum-books/${id}`),
-    upload: (formData: FormData) => apiRequest('/api/curriculum-books/upload', { method: 'POST', body: formData }),
-    update: (id: string, body: any) => apiRequest(`/api/curriculum-books/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
-    updateStatus: (id: string, status: 'Draft' | 'Published' | 'Archived') => apiRequest(`/api/curriculum-books/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),
-    delete: (id: string) => apiRequest(`/api/curriculum-books/${id}`, { method: 'DELETE' }),
-    versionHistory: (bookId: string) => apiRequest(`/api/curriculum-books/version/history?curriculumBookId=${bookId}`),
-    createVersion: (body: any) => apiRequest('/api/curriculum-books/version/create', { method: 'POST', body: JSON.stringify(body) }),
-    restoreVersion: (bookId: string, versionId: string) => apiRequest(`/api/curriculum-books/${bookId}/versions/${versionId}/restore`, { method: 'POST' }),
+    // Removed unused PDF import endpoints
     exportPdf: async (body: any) => {
       const { accessToken } = useAuthStore.getState();
       const response = await fetch('/api/curriculum-books/export/pdf', {
@@ -318,10 +325,6 @@ export const api = {
       document.body.appendChild(a); a.click(); a.remove();
       window.URL.revokeObjectURL(url);
     },
-    livePreview: (curriculumBookId: string) => apiRequest(`/api/curriculum-books/live-preview?curriculumBookId=${curriculumBookId}`),
-    creditSummary: (params: any = {}) => {
-      const qs = new URLSearchParams(params).toString();
-      return apiRequest(`/api/curriculum-books/credit-summary?${qs}`);
-    },
+    // Removed unused livePreview and creditSummary
   }
 };

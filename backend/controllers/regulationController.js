@@ -3,9 +3,7 @@ import * as regulationRepository from '../repositories/regulationRepository.js';
 import Regulation from '../models/Regulation.js';
 import AuditLog from '../models/AuditLog.js';
 import CourseVersion from '../models/CourseVersion.js';
-import CurriculumBook from '../models/CurriculumBook.js';
-import CurriculumSection from '../models/CurriculumSection.js';
-import CurriculumVersion from '../models/CurriculumVersion.js';
+
 import MinorStream from '../models/MinorStream.js';
 import PrerequisiteLink from '../models/PrerequisiteLink.js';
 import CourseAssignment from '../models/CourseAssignment.js';
@@ -269,25 +267,7 @@ export const deleteRegulation = async (req, res, next) => {
       { isDeleted: true, deletedAt: deleteTime }
     );
 
-    // 2. Soft-delete CurriculumBook, and cascade to sections/versions
-    const books = await CurriculumBook.find({ regulation: reg.code });
-    const bookIds = books.map(b => b._id);
-
-    await CurriculumBook.updateMany(
-      { regulation: reg.code },
-      { isDeleted: true, deletedAt: deleteTime }
-    );
-
-    if (bookIds.length > 0) {
-      await CurriculumSection.updateMany(
-        { curriculumBookId: { $in: bookIds } },
-        { isDeleted: true, deletedAt: deleteTime }
-      );
-      await CurriculumVersion.updateMany(
-        { curriculumBookId: { $in: bookIds } },
-        { isDeleted: true, deletedAt: deleteTime }
-      );
-    }
+    // 2. Removed CurriculumBook cascading
 
     // 3. Soft-delete MinorStream
     await MinorStream.updateMany(
@@ -318,7 +298,7 @@ export const deleteRegulation = async (req, res, next) => {
       userName: req.user.name,
       userEmail: req.user.email,
       action: 'DELETE_REGULATION',
-      details: `Soft-deleted regulation code ${reg.code} and cascade-deactivated associated courses, curriculum books, minor streams, and assignments.`,
+      details: `Soft-deleted regulation code ${reg.code} and cascade-deactivated associated courses, minor streams, and assignments.`,
       category: 'Configuration'
     });
 
@@ -361,8 +341,8 @@ export const getRegulationDeletionStats = async (req, res, next) => {
       mappingsCount += (v.coPoMappings?.length || 0) + (v.coPsoMappings?.length || 0);
     });
 
-    // 4. Total Curriculum Records (CurriculumBooks + Sections + Versions)
-    const booksCount = await CurriculumBook.countDocuments({ regulation: reg.code, isDeleted: { $ne: true } });
+    // 4. Removed Curriculum Records Count
+    const booksCount = 0;
 
     return res.status(200).json({
       stats: {
@@ -400,25 +380,7 @@ export const restoreRegulation = async (req, res, next) => {
       { isDeleted: false, deletedAt: null }
     );
 
-    // 2. Restore CurriculumBook, and cascade to sections/versions
-    const books = await CurriculumBook.find({ regulation: reg.code, isDeleted: true });
-    const bookIds = books.map(b => b._id);
-
-    await CurriculumBook.updateMany(
-      { regulation: reg.code, isDeleted: true },
-      { isDeleted: false, deletedAt: null }
-    );
-
-    if (bookIds.length > 0) {
-      await CurriculumSection.updateMany(
-        { curriculumBookId: { $in: bookIds }, isDeleted: true },
-        { isDeleted: false, deletedAt: null }
-      );
-      await CurriculumVersion.updateMany(
-        { curriculumBookId: { $in: bookIds }, isDeleted: true },
-        { isDeleted: false, deletedAt: null }
-      );
-    }
+    // 2. Removed CurriculumBook restore logic
 
     // 3. Restore MinorStream
     await MinorStream.updateMany(
@@ -449,7 +411,7 @@ export const restoreRegulation = async (req, res, next) => {
       userName: req.user.name,
       userEmail: req.user.email,
       action: 'RESTORE_REGULATION',
-      details: `Restored regulation code ${reg.code} and cascade-reactivated associated courses, curriculum books, minor streams, and assignments.`,
+      details: `Restored regulation code ${reg.code} and cascade-reactivated associated courses, minor streams, and assignments.`,
       category: 'Configuration'
     });
 

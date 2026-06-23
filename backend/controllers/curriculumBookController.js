@@ -1,12 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import pdfParse from 'pdf-parse';
+
 import mongoose from 'mongoose';
 import puppeteer from 'puppeteer';
-import CurriculumBook from '../models/CurriculumBook.js';
-import CurriculumVersion from '../models/CurriculumVersion.js';
-import CurriculumSection from '../models/CurriculumSection.js';
-import CourseVersion from '../models/CourseVersion.js';
+import CourseVersion from '../models/CourseVersion.js'; // trigger nodemon
 import Regulation from '../models/Regulation.js';
 import MinorStream from '../models/MinorStream.js';
 import Course from '../models/Course.js';
@@ -176,7 +173,27 @@ const getDynamicCurriculumContext = async (book) => {
 
   const dbCategories = await CourseCategory.find().lean();
 
-  return { regulation, courses, minorStreams, dbCategories };
+  // Fetch ALL published Minor Degrees for this regulation
+  const MinorDegree = (await import('../models/MinorDegree.js')).default;
+  const MinorDegreeCourse = (await import('../models/MinorDegreeCourse.js')).default;
+  
+  const publishedMinors = await MinorDegree.find({ regulationId: regulation._id, status: 'Published', isDeleted: { $ne: true } })
+    .sort({ departmentName: 1, minorName: 1 })
+    .lean();
+
+  const publishedMinorDegrees = {};
+  for (let minor of publishedMinors) {
+    const courses = await MinorDegreeCourse.find({ minorDegreeId: minor._id, isDeleted: { $ne: true } })
+      .sort({ semester: 1 })
+      .lean();
+    minor.courses = courses;
+    
+    const dName = minor.departmentName || 'Unknown Department';
+    if (!publishedMinorDegrees[dName]) publishedMinorDegrees[dName] = [];
+    publishedMinorDegrees[dName].push(minor);
+  }
+
+  return { regulation, courses, minorStreams, dbCategories, publishedMinorDegrees };
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -687,10 +704,128 @@ const buildDynamicCurriculumHtml = (book, dynamicContext) => {
     </section>
   ` : '';
 
+  // ── Pages: Minor Degrees (All Departments) ──
+  const publishedMinors = dynamicContext?.publishedMinorDegrees || {};
+  const minorDegreePages = Object.keys(publishedMinors).length > 0 ? `
+    <section class="dyn-page page-break">
+<section class="dyn-page page-break">
+      <div class="dyn-header">
+        <h2 class="dyn-h2">Available Minor Degree Offerings</h2>
+        <p style="text-align:center; font-size:12px; margin-top:-5px; color:#555;">(Cross-Departmental)</p>
+      </div>
+      ${Object.keys(publishedMinors).map(deptName => `
+        <h3 class="dyn-h3" style="text-align:left; border-bottom:1px solid #ddd; padding-bottom:5px; margin-top:20px;">
+          ${escHtml(deptName)}
+        </h3>
+        ${publishedMinors[deptName].map(minor => {
+          let sumL = 0, sumT = 0, sumP = 0, sumC = 0;
+          const groupSizes = {};
+          (minor.courses || []).forEach(c => {
+            if (c.orGroupId) groupSizes[c.orGroupId] = (groupSizes[c.orGroupId] || 0) + 1;
+          });
+          const renderedGroups = new Set();
+          const groupCounters = {};
+
+          const rowsHtml = (minor.courses || []).map(c => {
+            const v = dynamicContext?.courseVersions?.find(ver => ver.courseId?.code === c.courseCode) || courses.find(ver => ver.courseId?.code === c.courseCode);
+            const level = v?.courseLevel || v?.level || c.level || 'IC';
+            const L = v?.credits?.L || 0;
+            const T = v?.credits?.T || 0;
+            const P = v?.credits?.P || 0;
+            const C = v?.credits?.C || c.credits;
+            const CIE = v?.cieSee?.cieMaxMarks || 50;
+            const SEE = v?.cieSee?.seeMaxMarks || 50;
+            const total = CIE + SEE;
+            
+            const isGrouped = !!c.orGroupId;
+            const isFirstInGroup = isGrouped && !renderedGroups.has(c.orGroupId);
+            const groupSize = isGrouped ? groupSizes[c.orGroupId] : 1;
+            if (isGrouped) {
+              renderedGroups.add(c.orGroupId);
+              groupCounters[c.orGroupId] = (groupCounters[c.orGroupId] || 0) + 1;
+            }
+            const isLastInGroup = isGrouped && groupCounters[c.orGroupId] === groupSize;
+            const appendOr = isGrouped && !isLastInGroup;
+            const skipMergedColumns = isGrouped && !isFirstInGroup;
+
+            if (!skipMergedColumns) {
+              sumL += L; sumT += T; sumP += P; sumC += C;
+            }
+
+            const prereqs = v && dynamicContext?.prereqLinks ? dynamicContext.prereqLinks.filter(l => String(l.targetCourseId?._id || l.targetCourseId) === String(v.courseId?._id)) : [];
+            const prereqStr = prereqs.length > 0 
+              ? prereqs.map(l => l.sourceCourseId?.keyword || l.sourceCourseId?.code || '').filter(Boolean).join(', ') 
+              : '-';
+
+            return `
+            <tr>
+              <td style="border:1px solid #000; padding:4px;">${escHtml(c.courseCode)}</td>
+              <td style="border:1px solid #000; padding:4px; text-align:left;">
+                ${escHtml(c.courseName)}${appendOr ? ' (or)' : ''}
+              </td>
+              ${!skipMergedColumns ? `<td rowspan="${groupSize}" style="border:1px solid #000; padding:4px;">${escHtml(level)}</td>` : ''}
+              <td style="border:1px solid #000; padding:4px;">${L || ''}</td>
+              <td style="border:1px solid #000; padding:4px;">${T || ''}</td>
+              <td style="border:1px solid #000; padding:4px;">${P || ''}</td>
+              ${!skipMergedColumns ? `<td rowspan="${groupSize}" style="border:1px solid #000; padding:4px; font-weight:bold;">${C}</td>` : ''}
+              ${!skipMergedColumns ? `<td rowspan="${groupSize}" style="border:1px solid #000; padding:4px;">${CIE}</td>` : ''}
+              ${!skipMergedColumns ? `<td rowspan="${groupSize}" style="border:1px solid #000; padding:4px;">${SEE}</td>` : ''}
+              ${!skipMergedColumns ? `<td rowspan="${groupSize}" style="border:1px solid #000; padding:4px;">${total}</td>` : ''}
+              ${!skipMergedColumns ? `<td rowspan="${groupSize}" style="border:1px solid #000; padding:4px;">${escHtml(prereqStr || '-')}</td>` : ''}
+            </tr>
+            `;
+          }).join('');
+
+          return `
+          <div style="margin-bottom:20px; border:1px solid #eee; border-radius:8px; padding:15px;">
+            <div style="text-align: center; margin-bottom: 15px;">
+              <h4 style="margin:0 0 5px 0; color:#000; font-weight:bold;">Minor Degree in ${escHtml(minor.minorName)}</h4>
+              <p style="margin:0; font-size:12px; color:#000;">(offered to other branches students)</p>
+              <p style="margin:5px 0 0 0; font-size:11px; color:#666;">
+                * To acquire a minor degree, a student has to earn ${minor.requiredCredits} credits in addition to the 160 credits.
+                ${minor.eligibility ? ` | Eligibility: ${escHtml(minor.eligibility)}` : ''}
+              </p>
+            </div>
+            
+            <table class="dyn-table" style="width:100%; font-size:11px; text-align:center; border:1px solid #000; border-collapse:collapse;">
+              <thead>
+                <tr>
+                  <th style="border:1px solid #000; padding:4px;">Course Code</th>
+                  <th style="border:1px solid #000; padding:4px; text-align:left;">Course Name</th>
+                  <th style="border:1px solid #000; padding:4px;">Level</th>
+                  <th style="border:1px solid #000; padding:4px;">L</th>
+                  <th style="border:1px solid #000; padding:4px;">T</th>
+                  <th style="border:1px solid #000; padding:4px;">P</th>
+                  <th style="border:1px solid #000; padding:4px;">C</th>
+                  <th style="border:1px solid #000; padding:4px;">CIE</th>
+                  <th style="border:1px solid #000; padding:4px;">SEE</th>
+                  <th style="border:1px solid #000; padding:4px;">Total</th>
+                  <th style="border:1px solid #000; padding:4px;">Pre-requisite</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+                <tr>
+                  <td style="border:1px solid #000; padding:4px; font-weight:bold;" colspan="3">Total</td>
+                  <td style="border:1px solid #000; padding:4px; font-weight:bold;">${sumL}</td>
+                  <td style="border:1px solid #000; padding:4px; font-weight:bold;">${sumT}</td>
+                  <td style="border:1px solid #000; padding:4px; font-weight:bold;">${sumP}</td>
+                  <td style="border:1px solid #000; padding:4px; font-weight:bold;">${sumC}</td>
+                  <td style="border:1px solid #000; padding:4px;" colspan="4"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          `;
+        }).join('')}
+      `).join('')}
+    </section>
+  ` : '';
+
   // ── Pages: Individual Course Pages ──
   const coursePages = courses.map(v => renderCoursePageHtml(v, departmentName)).join('');
 
-  return creditDivisionPage + categoryTablesPage + semesterPages + minorStreamPages + coursePages;
+  return creditDivisionPage + categoryTablesPage + semesterPages + minorStreamPages + minorDegreePages + coursePages;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -16,7 +16,7 @@ import Papa from 'papaparse';
 import CurriculumBuilder from './CurriculumBuilder';
 import { HodSyllabusEditor } from './HodSyllabusEditor';
 import { CurriculumBookGenerator } from '../../components/common/CurriculumBookGenerator';
-import { CurriculumBookManager } from './CurriculumBookManager/CurriculumBookManager';
+
 
 
 export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: string) => void }> = ({ activeTab, setActiveTab }) => {
@@ -42,6 +42,18 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
   const [addPrereqOpen, setAddPrereqOpen] = useState(false);
   const [newPrereqData, setNewPrereqData] = useState({ sourceCourseId: '', targetCourseId: '' });
+
+  // Minor Degrees states
+  const [minorDegrees, setMinorDegrees] = useState<any[]>([]);
+  const [minorDegreeModalOpen, setMinorDegreeModalOpen] = useState(false);
+  const [editingMinorDegree, setEditingMinorDegree] = useState<any | null>(null);
+  const defaultMinorDegreeData = { minorName: '', description: '', requiredCredits: 18, eligibility: '' };
+  const [newMinorDegreeData, setNewMinorDegreeData] = useState(defaultMinorDegreeData);
+  const [minorDegreeCoursesModalOpen, setMinorDegreeCoursesModalOpen] = useState(false);
+  const [activeMinorDegree, setActiveMinorDegree] = useState<any | null>(null);
+  const defaultMinorDegreeCourseData = { courseCode: '', courseName: '', credits: 3, semester: 'Semester 4', courseType: 'PC', description: '', orGroupId: '' };
+  const [newMinorDegreeCourseData, setNewMinorDegreeCourseData] = useState(defaultMinorDegreeCourseData);
+  const [editingMinorDegreeCourse, setEditingMinorDegreeCourse] = useState<any | null>(null);
 
   // Regulation Manager states
   const [createRegOpen, setCreateRegOpen] = useState(false);
@@ -209,6 +221,16 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
           setMinorStreams(streamsRes.streams || []);
         } catch (e) {
           console.error('[HOD Dashboard] Failed to load minor streams:', e);
+        }
+
+        try {
+          const mdRes = await api.minorDegrees.list({
+            regulationId: selectedRegulation._id,
+            departmentId: hodDept._id
+          });
+          setMinorDegrees(mdRes.minorDegrees || []);
+        } catch (e) {
+          console.error('[HOD Dashboard] Failed to load minor degrees:', e);
         }
 
         try {
@@ -383,6 +405,97 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       alert('Statement updated successfully!');
     } catch (err: any) {
       alert(`Failed to save: ${err.message}`);
+    }
+  };
+
+  // --- Minor Degrees Handlers ---
+  const handleSaveMinorDegree = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedRegulation || !selectedDepartment) return;
+    try {
+      const payload = {
+        minorName: newMinorDegreeData.minorName,
+        description: newMinorDegreeData.description,
+        requiredCredits: newMinorDegreeData.requiredCredits,
+        eligibility: newMinorDegreeData.eligibility,
+        regulationId: selectedRegulation._id,
+        departmentId: selectedDepartment._id
+      };
+      if (editingMinorDegree) {
+        await api.minorDegrees.update(editingMinorDegree._id, payload);
+        alert('Minor Degree updated successfully!');
+      } else {
+        await api.minorDegrees.create(payload);
+        alert('Minor Degree created successfully!');
+      }
+      setMinorDegreeModalOpen(false);
+      setEditingMinorDegree(null);
+      setNewMinorDegreeData(defaultMinorDegreeData);
+      loadData();
+    } catch (err: any) {
+      alert(`Failed to save Minor Degree: ${err.message}`);
+    }
+  };
+
+  const handleDeleteMinorDegree = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this Minor Degree?')) return;
+    try {
+      await api.minorDegrees.delete(id);
+      alert('Minor Degree deleted successfully.');
+      loadData();
+    } catch (err: any) {
+      alert(`Failed to delete: ${err.message}`);
+    }
+  };
+
+  const handlePublishMinorDegree = async (id: string) => {
+    if (!confirm('Are you sure you want to publish this Minor Degree? Once published, it will be visible in the Curriculum Book.')) return;
+    try {
+      await api.minorDegrees.publish(id);
+      alert('Minor Degree published successfully!');
+      loadData();
+    } catch (err: any) {
+      alert(`Failed to publish: ${err.message}`);
+    }
+  };
+
+  const handleSaveMinorDegreeCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeMinorDegree) return;
+    try {
+      const payload = {
+        courseCode: newMinorDegreeCourseData.courseCode,
+        courseName: newMinorDegreeCourseData.courseName,
+        credits: newMinorDegreeCourseData.credits,
+        semester: newMinorDegreeCourseData.semester,
+        courseType: newMinorDegreeCourseData.courseType,
+        description: newMinorDegreeCourseData.description,
+        orGroupId: newMinorDegreeCourseData.orGroupId
+      };
+
+      if (editingMinorDegreeCourse) {
+        await api.minorDegrees.updateCourse(editingMinorDegreeCourse._id, payload);
+        alert('Course updated successfully!');
+      } else {
+        await api.minorDegrees.addCourse(activeMinorDegree._id, payload);
+        alert('Course added successfully!');
+      }
+      setEditingMinorDegreeCourse(null);
+      setNewMinorDegreeCourseData(defaultMinorDegreeCourseData);
+      loadData();
+    } catch (err: any) {
+      alert(`Failed to save course: ${err.message}`);
+    }
+  };
+
+  const handleDeleteMinorDegreeCourse = async (courseId: string) => {
+    if (!confirm('Are you sure you want to remove this course?')) return;
+    try {
+      await api.minorDegrees.deleteCourse(courseId);
+      alert('Course removed successfully.');
+      loadData();
+    } catch (err: any) {
+      alert(`Failed to delete course: ${err.message}`);
     }
   };
 
@@ -919,13 +1032,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
             </select>
           </div>
 
-          <button
-            onClick={() => setActiveTab('curriculum-book')}
-            className={`flex items-center gap-1.5 px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 text-xs font-semibold cursor-pointer border border-slate-800 transition-colors shadow-sm`}
-          >
-            <BookOpen className="w-4 h-4" />
-            <span>Curriculum Book</span>
-          </button>
+
         </div>
       </div>
 
@@ -2160,6 +2267,121 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
 
 
+
+      {/* ============================================================== */}
+      {/* MINOR DEGREES TAB */}
+      {/* ============================================================== */}
+      {activeTab === 'minor-degrees' && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-extrabold text-slate-800">Minor Degrees Management</h1>
+              <p className="text-xs text-slate-500 mt-1 font-semibold">Manage formal Minor Degrees for your department and their course sequences.</p>
+            </div>
+            <button
+              onClick={() => {
+                setEditingMinorDegree(null);
+                setNewMinorDegreeData(defaultMinorDegreeData);
+                setMinorDegreeModalOpen(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Create Minor Degree
+            </button>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-xs font-extrabold text-slate-500 uppercase tracking-wider">
+                  <th className="py-3 px-4">Minor Degree</th>
+                  <th className="py-3 px-4">Credits</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-[13px] font-medium text-slate-700">
+                {minorDegrees.map((minor: any) => (
+                  <tr key={minor._id} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-3 px-4">
+                      <div className="font-bold text-slate-800">{minor.minorName}</div>
+                      <div className="text-[11px] text-slate-500 line-clamp-1 max-w-[250px]">{minor.description}</div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full ${minor.currentCredits >= minor.requiredCredits ? 'bg-success-500' : 'bg-primary-500'}`} 
+                            style={{ width: `${Math.min(100, (minor.currentCredits / minor.requiredCredits) * 100)}%` }} 
+                          />
+                        </div>
+                        <span className="text-xs font-bold">{minor.currentCredits}/{minor.requiredCredits}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-1 rounded text-[10px] font-bold tracking-wide uppercase ${minor.status === 'Published' ? 'bg-success-100 text-success-700' : 'bg-amber-100 text-amber-700'}`}>
+                        {minor.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => {
+                          setActiveMinorDegree(minor);
+                          setMinorDegreeCoursesModalOpen(true);
+                        }}
+                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        title="Manage Courses"
+                      >
+                        <Layers className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingMinorDegree(minor);
+                          setNewMinorDegreeData({
+                            minorName: minor.minorName,
+                            description: minor.description,
+                            requiredCredits: minor.requiredCredits,
+                            eligibility: minor.eligibility
+                          });
+                          setMinorDegreeModalOpen(true);
+                        }}
+                        className="p-1.5 text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                        title="Edit Minor Degree"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                      {minor.status === 'Draft' && minor.currentCredits >= minor.requiredCredits && (
+                        <button
+                          onClick={() => handlePublishMinorDegree(minor._id)}
+                          className="p-1.5 text-success-600 hover:bg-success-50 rounded transition-colors"
+                          title="Publish"
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteMinorDegree(minor._id)}
+                        className="p-1.5 text-danger-600 hover:bg-danger-50 rounded transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {minorDegrees.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-slate-500 text-xs font-medium">
+                      No Minor Degrees created yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* ============================================================== */}
       {/* MINOR STREAMS TAB */}
@@ -3850,11 +4072,245 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
         </div>
       )}
 
-      {/* ============================================================== */}
-      {/* CURRICULUM BOOK MANAGER SUBPAGE */}
-      {/* ============================================================== */}
-      {activeTab === 'curriculum-book' && (
-        <CurriculumBookManager />
+
+
+      {/* MINOR DEGREE MODAL */}
+      {minorDegreeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h3 className="font-extrabold text-slate-800 text-lg">
+                {editingMinorDegree ? 'Edit Minor Degree' : 'Create Minor Degree'}
+              </h3>
+              <button onClick={() => setMinorDegreeModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveMinorDegree} className="p-6 overflow-y-auto">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Minor Name</label>
+                  <input
+                    required
+                    value={newMinorDegreeData.minorName}
+                    onChange={e => setNewMinorDegreeData({ ...newMinorDegreeData, minorName: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+                    placeholder="e.g. Data Science Minor"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Required Credits</label>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    value={newMinorDegreeData.requiredCredits}
+                    onChange={e => setNewMinorDegreeData({ ...newMinorDegreeData, requiredCredits: Number(e.target.value) })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Description</label>
+                  <textarea
+                    rows={3}
+                    value={newMinorDegreeData.description}
+                    onChange={e => setNewMinorDegreeData({ ...newMinorDegreeData, description: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+                    placeholder="Interdisciplinary specialization in..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Eligibility Criteria</label>
+                  <textarea
+                    rows={2}
+                    value={newMinorDegreeData.eligibility}
+                    onChange={e => setNewMinorDegreeData({ ...newMinorDegreeData, eligibility: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+                    placeholder="e.g. Minimum CGPA of 7.5"
+                  />
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setMinorDegreeModalOpen(false)}
+                  className="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm font-bold bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                >
+                  Save Minor Degree
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MINOR DEGREE COURSES MODAL */}
+      {minorDegreeCoursesModalOpen && activeMinorDegree && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-4xl rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h3 className="font-extrabold text-slate-800 text-lg">
+                Manage Courses: {activeMinorDegree.minorName}
+              </h3>
+              <button onClick={() => {
+                setMinorDegreeCoursesModalOpen(false);
+                setActiveMinorDegree(null);
+                setEditingMinorDegreeCourse(null);
+                setNewMinorDegreeCourseData(defaultMinorDegreeCourseData);
+              }} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto flex gap-6">
+              <div className="w-1/3">
+                <h4 className="font-bold text-slate-800 mb-4">{editingMinorDegreeCourse ? 'Edit Course' : 'Add New Course'}</h4>
+                <form onSubmit={handleSaveMinorDegreeCourse} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Select Course from Repository</label>
+                    <select
+                      required
+                      value={newMinorDegreeCourseData.courseCode}
+                      onChange={e => {
+                        const code = e.target.value;
+                        const selectedCourse = courses.find((c: any) => c.code === code);
+                        if (selectedCourse) {
+                          setNewMinorDegreeCourseData({
+                            ...newMinorDegreeCourseData,
+                            courseCode: selectedCourse.code,
+                            courseName: selectedCourse.title,
+                            credits: selectedCourse.credits?.C || 3
+                          });
+                        } else {
+                          setNewMinorDegreeCourseData({ ...newMinorDegreeCourseData, courseCode: code });
+                        }
+                      }}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                    >
+                      <option value="" disabled>-- Choose a Course --</option>
+                      {courses.map((c: any) => (
+                        <option key={c._id} value={c.code}>
+                          {c.code} - {c.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {newMinorDegreeCourseData.courseName && (
+                    <div className="text-xs text-slate-500 font-medium">
+                      Selected: <span className="text-slate-800">{newMinorDegreeCourseData.courseName}</span>
+                    </div>
+                  )}
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Semester</label>
+                      <input
+                        required
+                        value={newMinorDegreeCourseData.semester}
+                        onChange={e => setNewMinorDegreeCourseData({ ...newMinorDegreeCourseData, semester: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                        placeholder="Semester 4"
+                      />
+                    </div>
+                    <div className="w-24">
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Credits</label>
+                      <input
+                        type="number"
+                        required min={1} max={10}
+                        value={newMinorDegreeCourseData.credits}
+                        onChange={e => setNewMinorDegreeCourseData({ ...newMinorDegreeCourseData, credits: Number(e.target.value) })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">OR Group ID (Optional)</label>
+                    <input
+                      value={newMinorDegreeCourseData.orGroupId}
+                      onChange={e => setNewMinorDegreeCourseData({ ...newMinorDegreeCourseData, orGroupId: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                      placeholder="e.g. group1 (to group elective courses)"
+                    />
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    {editingMinorDegreeCourse && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingMinorDegreeCourse(null);
+                          setNewMinorDegreeCourseData(defaultMinorDegreeCourseData);
+                        }}
+                        className="flex-1 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-lg"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                    <button
+                      type="submit"
+                      className="flex-1 py-2 text-sm font-bold bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                    >
+                      {editingMinorDegreeCourse ? 'Update Course' : 'Add Course'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+              <div className="w-2/3 border-l border-slate-100 pl-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-bold text-slate-800">Course List</h4>
+                  <div className="text-xs font-bold text-slate-500">
+                    Total Credits: <span className={activeMinorDegree.currentCredits >= activeMinorDegree.requiredCredits ? 'text-success-600' : 'text-primary-600'}>{activeMinorDegree.currentCredits}</span> / {activeMinorDegree.requiredCredits}
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {activeMinorDegree.courses && activeMinorDegree.courses.length > 0 ? activeMinorDegree.courses.map((course: any) => (
+                    <div key={course._id} className="flex items-center justify-between p-3 border border-slate-200 rounded-xl hover:shadow-sm">
+                      <div>
+                        <div className="text-sm font-bold text-slate-800">{course.courseCode}: {course.courseName}</div>
+                        <div className="text-xs text-slate-500">
+                          {course.semester} &bull; {course.credits} Credits
+                          {course.orGroupId && <span className="ml-2 px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded font-medium">OR Group: {course.orGroupId}</span>}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingMinorDegreeCourse(course);
+                            setNewMinorDegreeCourseData({
+                              courseCode: course.courseCode,
+                              courseName: course.courseName,
+                              credits: course.credits,
+                              semester: course.semester,
+                              courseType: course.courseType,
+                              description: course.description,
+                              orGroupId: course.orGroupId
+                            });
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMinorDegreeCourse(course._id)}
+                          className="p-1.5 text-slate-400 hover:text-danger-600 hover:bg-danger-50 rounded"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="text-center py-8 text-sm text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                      No courses added yet.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

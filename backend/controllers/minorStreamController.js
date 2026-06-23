@@ -107,6 +107,9 @@ export const deleteMinorStream = async (req, res, next) => {
       return res.status(403).json({ message: 'Forbidden: You can only delete minor streams of your own department.' });
     }
 
+    const timestamp = Date.now();
+    stream.streamCode = `${stream.streamCode}_del_${timestamp}`;
+    stream.name = `${stream.name}_del_${timestamp}`;
     stream.isDeleted = true;
     stream.deletedAt = new Date();
     await stream.save();

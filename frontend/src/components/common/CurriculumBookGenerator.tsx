@@ -18,6 +18,7 @@ export const CurriculumBookGenerator: React.FC = () => {
   const [courseVersions, setCourseVersions] = useState<any[]>([]);
   const [prereqLinks, setPrereqLinks] = useState<any[]>([]);
   const [minorStreams, setMinorStreams] = useState<any[]>([]);
+  const [publishedMinorDegrees, setPublishedMinorDegrees] = useState<any>({});
   const [dbCategories, setDbCategories] = useState<any[]>([]);
   // Export state
   const [pdfExporting, setPdfExporting] = useState(false);
@@ -74,6 +75,10 @@ export const CurriculumBookGenerator: React.FC = () => {
         setPrereqLinks(prereqRes.links || []);
         const minorRes = await api.minorStreams.list({ departmentId: selectedDepartment._id, regulationId: selectedRegulation._id });
         setMinorStreams(minorRes.streams || []);
+        try {
+          const pbRes = await api.minorDegrees.getAllPublished({ regulationId: selectedRegulation._id });
+          setPublishedMinorDegrees(pbRes.publishedMinorDegrees || {});
+        } catch (e) { console.error('Failed to load published minor degrees', e); }
         try {
           const catRes = await api.courseCategories.list();
           setDbCategories(catRes.categories || []);
@@ -713,6 +718,187 @@ export const CurriculumBookGenerator: React.FC = () => {
             <div className="page-break"></div>
           </>
         )}
+
+        {/* MINOR DEGREE FLOWCHART */}
+        {Object.keys(publishedMinorDegrees).length > 0 && (
+          <PdfPage>
+            <div className="pdf-prereq-flowchart-page" style={{ padding: '20px', fontFamily: 'Times New Roman' }}>
+              <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+                <div style={{ backgroundColor: '#95b3d7', padding: '15px 30px', display: 'inline-block', fontWeight: 'bold', fontSize: '16px', border: '1px solid #000' }}>
+                  Minor Degree<br/>Pre-requisite Flow Chart
+                </div>
+              </div>
+              
+              <div style={{ position: 'relative' }}>
+                <div style={{ display: 'flex', marginLeft: '50px', marginBottom: '10px' }}>
+                  {Object.values(publishedMinorDegrees).flat().map((minor: any, idx) => {
+                    const colors = ['#f47c36', '#4a7ebb', '#7ab5e1', '#77ab59', '#e36c09', '#fcd5b4', '#a6a6a6', '#c4d79b', '#ffc000', '#f79646', '#9bbb59'];
+                    const color = colors[idx % colors.length];
+                    const shortName = minor.departmentName ? minor.departmentName.split(' ').map((w: string) => w[0]).join('') : minor.minorName.split(' ').map((w: string) => w[0]).join('');
+                    return (
+                      <div key={minor._id} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div style={{ backgroundColor: color, color: '#fff', border: '1px solid #000', padding: '4px 8px', fontSize: '12px', fontWeight: 'bold', minWidth: '40px', textAlign: 'center', marginBottom: '10px' }}>
+                          {shortName}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {(['FC', 'IC', 'AC'] as const).map((levelKey) => {
+                  const bgColor = levelKey === 'FC' ? '#eaeff7' : levelKey === 'IC' ? '#b8cce4' : '#fef2cb';
+                  const labelColor = levelKey === 'FC' ? '#4a7ebb' : levelKey === 'IC' ? '#95b3d7' : '#e36c09';
+                  
+                  return (
+                    <div key={levelKey} style={{ display: 'flex', alignItems: 'center', marginBottom: '15px' }}>
+                      <div style={{ width: '40px', height: '30px', borderRadius: '4px', backgroundColor: labelColor, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px', marginRight: '10px', border: '1px solid #000' }}>
+                        {levelKey}
+                      </div>
+                      <div style={{ flex: 1, backgroundColor: bgColor, borderRadius: '20px', border: '1px solid #000', padding: '15px 0', minHeight: '80px', display: 'flex' }}>
+                        {Object.values(publishedMinorDegrees).flat().map((minor: any, mIdx) => {
+                          const courses = minor.courses || [];
+                          const levelCourses = courses.filter((c: any) => {
+                            const v = courseVersions.find((ver: any) => ver.courseId?.code === c.courseCode);
+                            const cLvl = (v?.courseLevel || v?.level || c.level || 'IC').toUpperCase();
+                            return cLvl.includes(levelKey) || (levelKey === 'FC' && cLvl.includes('FOUNDATION')) || (levelKey === 'IC' && cLvl.includes('INTERMEDIATE')) || (levelKey === 'AC' && cLvl.includes('ADVANCED'));
+                          });
+                          
+                          const colors = ['#f47c36', '#4a7ebb', '#7ab5e1', '#77ab59', '#e36c09', '#fcd5b4', '#a6a6a6', '#c4d79b', '#ffc000', '#f79646', '#9bbb59'];
+                          const color = colors[mIdx % colors.length];
+
+                          return (
+                            <div key={minor._id} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                              {levelCourses.map((c: any) => (
+                                <div key={c._id} style={{ backgroundColor: color, color: '#fff', border: '1px solid #000', padding: '4px', fontSize: '10px', fontWeight: 'bold', width: '80%', textAlign: 'center', borderRadius: '2px', wordWrap: 'break-word' }}>
+                                  {c.courseCode}
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </PdfPage>
+        )}
+        {Object.keys(publishedMinorDegrees).length > 0 && <div className="page-break"></div>}
+
+        {/* MINOR DEGREES TAB */}
+        {Object.keys(publishedMinorDegrees).length > 0 && (
+          <PdfPage>
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <h2 style={{ color: '#0f172a', margin: 0, fontSize: '20px' }}>Available Minor Degree Offerings</h2>
+              <p style={{ color: '#64748b', fontSize: '12px', marginTop: '4px' }}>(Cross-Departmental)</p>
+            </div>
+            {Object.keys(publishedMinorDegrees).map(deptName => (
+              <div key={deptName} style={{ marginBottom: '30px' }}>
+                <h3 style={{ borderBottom: '1px solid #cbd5e1', paddingBottom: '8px', color: '#334155', fontSize: '16px', marginBottom: '16px' }}>{deptName}</h3>
+                {publishedMinorDegrees[deptName].map((minor: any) => {
+                  let sumL = 0, sumT = 0, sumP = 0, sumC = 0;
+                  const groupSizes: Record<string, number> = {};
+                  (minor.courses || []).forEach((c: any) => {
+                    if (c.orGroupId) groupSizes[c.orGroupId] = (groupSizes[c.orGroupId] || 0) + 1;
+                  });
+                  const renderedGroups = new Set<string>();
+                  const groupCounters: Record<string, number> = {};
+
+                  return (
+                  <div key={minor._id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '20px' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '15px' }}>
+                      <h4 style={{ color: '#000', fontSize: '14px', margin: '0 0 5px 0', fontWeight: 'bold' }}>Minor Degree in {minor.minorName}</h4>
+                      <p style={{ color: '#000', fontSize: '12px', margin: 0 }}>(offered to other branches students)</p>
+                      <p style={{ fontSize: '11px', color: '#666', marginTop: '5px' }}>
+                        * To acquire a minor degree, a student has to earn {minor.requiredCredits} credits in addition to the 160 credits.
+                        {minor.eligibility && ` | Eligibility: ${minor.eligibility}`}
+                      </p>
+                    </div>
+                    
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'center', border: '1px solid #000' }}>
+                      <thead>
+                        <tr>
+                          <th style={{ border: '1px solid #000', padding: '4px' }}>Course Code</th>
+                          <th style={{ border: '1px solid #000', padding: '4px', textAlign: 'left' }}>Course Name</th>
+                          <th style={{ border: '1px solid #000', padding: '4px' }}>Level</th>
+                          <th style={{ border: '1px solid #000', padding: '4px' }}>L</th>
+                          <th style={{ border: '1px solid #000', padding: '4px' }}>T</th>
+                          <th style={{ border: '1px solid #000', padding: '4px' }}>P</th>
+                          <th style={{ border: '1px solid #000', padding: '4px' }}>C</th>
+                          <th style={{ border: '1px solid #000', padding: '4px' }}>CIE</th>
+                          <th style={{ border: '1px solid #000', padding: '4px' }}>SEE</th>
+                          <th style={{ border: '1px solid #000', padding: '4px' }}>Total</th>
+                          <th style={{ border: '1px solid #000', padding: '4px' }}>Pre-requisite</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(minor.courses || []).map((c: any) => {
+                          const v = courseVersions.find(ver => ver.courseId?.code === c.courseCode);
+                          const level = v?.courseLevel || v?.level || c.level || 'IC';
+                          const L = v?.credits?.L || 0;
+                          const T = v?.credits?.T || 0;
+                          const P = v?.credits?.P || 0;
+                          const C = v?.credits?.C || c.credits;
+                          const CIE = v?.cieSee?.cieMaxMarks || 50;
+                          const SEE = v?.cieSee?.seeMaxMarks || 50;
+                          const total = CIE + SEE;
+                          
+                          const isGrouped = !!c.orGroupId;
+                          const isFirstInGroup = isGrouped && !renderedGroups.has(c.orGroupId);
+                          const groupSize = isGrouped ? groupSizes[c.orGroupId] : 1;
+                          if (isGrouped) {
+                            renderedGroups.add(c.orGroupId);
+                            groupCounters[c.orGroupId] = (groupCounters[c.orGroupId] || 0) + 1;
+                          }
+                          const isLastInGroup = isGrouped && groupCounters[c.orGroupId] === groupSize;
+                          const appendOr = isGrouped && !isLastInGroup;
+                          const skipMergedColumns = isGrouped && !isFirstInGroup;
+
+                          if (!skipMergedColumns) {
+                            sumL += L; sumT += T; sumP += P; sumC += C;
+                          }
+
+                          const prereqs = v ? prereqLinks.filter(l => String(l.targetCourseId?._id || l.targetCourseId) === String(v.courseId?._id)) : [];
+                          const prereqStr = prereqs.length > 0 
+                            ? prereqs.map(l => l.sourceCourseId?.keyword || l.sourceCourseId?.code || '').filter(Boolean).join(', ') 
+                            : '-';
+
+                          return (
+                            <tr key={c._id}>
+                              <td style={{ border: '1px solid #000', padding: '4px' }}>{c.courseCode}</td>
+                              <td style={{ border: '1px solid #000', padding: '4px', textAlign: 'left' }}>
+                                {c.courseName}{appendOr && <> (or)</>}
+                              </td>
+                              {!skipMergedColumns && <td rowSpan={groupSize} style={{ border: '1px solid #000', padding: '4px' }}>{level}</td>}
+                              <td style={{ border: '1px solid #000', padding: '4px' }}>{L || ''}</td>
+                              <td style={{ border: '1px solid #000', padding: '4px' }}>{T || ''}</td>
+                              <td style={{ border: '1px solid #000', padding: '4px' }}>{P || ''}</td>
+                              {!skipMergedColumns && <td rowSpan={groupSize} style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold' }}>{C}</td>}
+                              {!skipMergedColumns && <td rowSpan={groupSize} style={{ border: '1px solid #000', padding: '4px' }}>{CIE}</td>}
+                              {!skipMergedColumns && <td rowSpan={groupSize} style={{ border: '1px solid #000', padding: '4px' }}>{SEE}</td>}
+                              {!skipMergedColumns && <td rowSpan={groupSize} style={{ border: '1px solid #000', padding: '4px' }}>{total}</td>}
+                              {!skipMergedColumns && <td rowSpan={groupSize} style={{ border: '1px solid #000', padding: '4px' }}>{prereqStr}</td>}
+                            </tr>
+                          );
+                        })}
+                        <tr>
+                          <td style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold' }} colSpan={3}>Total</td>
+                          <td style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold' }}>{sumL}</td>
+                          <td style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold' }}>{sumT}</td>
+                          <td style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold' }}>{sumP}</td>
+                          <td style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold' }}>{sumC}</td>
+                          <td style={{ border: '1px solid #000', padding: '4px' }} colSpan={4}></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )})}
+              </div>
+            ))}
+          </PdfPage>
+        )}
+        {Object.keys(publishedMinorDegrees).length > 0 && <div className="page-break"></div>}
 
         {/* ── Category-wise Course Tables ── */}
         <PdfPage>

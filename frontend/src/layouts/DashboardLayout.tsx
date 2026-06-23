@@ -134,6 +134,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
           { id: 'faculty-management', name: 'Faculty Assignment', icon: Users },
           { id: 'approvals', name: 'Course Approvals', icon: CheckSquare },
           { id: 'minor-streams', name: 'Minor Streams', icon: Layers },
+          { id: 'minor-degrees', name: 'Minor Degrees', icon: GraduationCap },
           { id: 'prerequisites', name: 'Prerequisites Links', icon: ArrowRightLeft },
           { id: 'profile', name: 'Profile', icon: User },
         ];
