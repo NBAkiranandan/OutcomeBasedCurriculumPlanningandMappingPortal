@@ -29,13 +29,21 @@ export const getPeoPsoByDept = async (departmentId, regulationId) => {
     // Attempt to find any existing PeoPso for this department to use as template
     const templateRecord = await PeoPso.findOne({ departmentId, isDeleted: false }).sort({ createdAt: -1 });
 
-    record = await PeoPso.create({
-      departmentId,
-      regulationId: regulationId && regulationId !== 'undefined' ? regulationId : undefined,
-      peos: templateRecord ? templateRecord.peos : [],
-      psos: templateRecord ? templateRecord.psos : [],
-      pos: templateRecord ? templateRecord.pos : defaultPOs
-    });
+    try {
+      record = await PeoPso.create({
+        departmentId,
+        regulationId: query.regulationId,
+        peos: templateRecord ? templateRecord.peos : [],
+        psos: templateRecord ? templateRecord.psos : [],
+        pos: templateRecord ? templateRecord.pos : defaultPOs
+      });
+    } catch (err) {
+      if (err.code === 11000) {
+        record = await PeoPso.findOne(query);
+      } else {
+        throw err;
+      }
+    }
   }
   return record;
 };

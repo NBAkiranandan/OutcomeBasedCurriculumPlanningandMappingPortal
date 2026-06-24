@@ -87,6 +87,10 @@ export const apiRequest = async (url: string, options: RequestInit = {}): Promis
     }
     
     if (!response.ok) {
+      if (data.errors && Array.isArray(data.errors)) {
+        const errorDetails = data.errors.map((e: any) => `${e.field}: ${e.message}`).join(', ');
+        throw new Error(`${data.message}: ${errorDetails}`);
+      }
       throw new Error(data.message || `Request failed with status ${response.status}`);
     }
 
@@ -276,10 +280,10 @@ export const api = {
     delete: (id: string) => apiRequest(`/api/course-assignments/${id}`, { method: 'DELETE' })
   },
   courseCategories: {
-    list: () => apiRequest('/api/course-categories'),
-    create: (body: any) => apiRequest('/api/course-categories', { method: 'POST', body: JSON.stringify(body) }),
-    update: (id: string, body: any) => apiRequest(`/api/course-categories/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
-    delete: (id: string) => apiRequest(`/api/course-categories/${id}`, { method: 'DELETE' })
+    list: () => apiRequest('/api/course-types'),
+    create: (body: any) => apiRequest('/api/course-types', { method: 'POST', body: JSON.stringify(body) }),
+    update: (id: string, body: any) => apiRequest(`/api/course-types/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+    delete: (id: string) => apiRequest(`/api/course-types/${id}`, { method: 'DELETE' })
   },
   curriculumBooks: {
     reviews: (params: any = {}) => {

@@ -117,7 +117,7 @@ app.use('/api/curriculum-books', curriculumBookRoutes);
 app.use('/api/minor-streams', minorStreamRoutes);
 app.use('/api/minor-degrees', minorDegreeRoutes);
 app.use('/api/prerequisites', prerequisiteRoutes);
-app.use('/api/course-categories', courseCategoryRoutes);
+app.use('/api/course-types', courseCategoryRoutes);
 app.use('/api/course-assignments', courseAssignmentRoutes);
 
 // Static uploads folder

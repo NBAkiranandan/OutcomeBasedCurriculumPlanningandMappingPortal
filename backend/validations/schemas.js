@@ -77,11 +77,11 @@ export const updateCourseVersionSchema = z.object({
   code: z.string().optional(),
   regulationId: z.string().regex(/^[0-9a-fA-F]{24}$/).optional(),
   credits: z.object({
-    L: z.number().int().min(0).max(10),
-    T: z.number().int().min(0).max(10),
-    P: z.number().int().min(0).max(10),
-    S: z.number().int().min(0).max(10),
-    C: z.number().int().min(0).max(15)
+    L: z.number().min(0).max(10),
+    T: z.number().min(0).max(10),
+    P: z.number().min(0).max(10),
+    S: z.number().min(0).max(10),
+    C: z.number().min(0).max(15)
   }).optional(),
   category: z.string().optional(),
   level: z.enum(['Foundation', 'Intermediate', 'Advanced']).optional(),

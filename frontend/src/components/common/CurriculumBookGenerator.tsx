@@ -71,7 +71,7 @@ export const CurriculumBookGenerator: React.FC = () => {
       } catch (err) { console.error('Failed to load program', err); }
 
       try {
-        const peoRes = await api.peoPso.getByDept(selectedDepartment._id);
+        const peoRes = await api.peoPso.getByDept(selectedDepartment._id, selectedRegulation._id);
         if (peoRes.peoPso) setPeoPso(peoRes.peoPso);
       } catch (err) { console.error('Failed to load peoPso', err); }
 

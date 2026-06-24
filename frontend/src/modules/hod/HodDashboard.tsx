@@ -745,7 +745,11 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
             if (!code || !title) continue;
 
             const category = row['Course Type'] || row['Category'] || row['category'] || 'PC';
-            const courseLevel = row['Course Level'] || row['courseLevel'] || 'Foundation Courses - FC';
+            const rawLevel = row['Course Level'] || row['courseLevel'] || row['Level'] || '';
+            let level = 'Foundation';
+            if (rawLevel.toUpperCase().includes('IC') || rawLevel.toLowerCase().includes('intermediate')) level = 'Intermediate';
+            else if (rawLevel.toUpperCase().includes('AC') || rawLevel.toLowerCase().includes('advanced')) level = 'Advanced';
+            
             const status = row['Status'] || row['status'] || 'Active';
 
             const regCode = row['Regulation'] || row['regulation'] || '';
@@ -755,14 +759,41 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
               if (matchedReg) targetRegId = matchedReg._id;
             }
 
-            const semester = Number(row['Semester'] || row['semester'] || 1);
-            const L = Number(row['L'] || 3);
-            const T = Number(row['T'] || 0);
-            const P = Number(row['P'] || 0);
-            const S = Number(row['S'] || 0);
-            const credits = Number(row['Credits (C)'] || row['C'] || row['Total Credits'] || row['credits'] || 3);
-            const cieMarks = Number(row['CIE Marks'] || row['cieMarks'] || 40);
-            const seeMarks = Number(row['SEE Marks'] || row['seeMarks'] || 60);
+            let semString = String(row['Semester'] || row['semester'] || '1');
+            const semester = parseInt(semString.replace(/\D/g, '')) || 1;
+
+            let L = Number(row['L'] || 3);
+            let T = Number(row['T'] || 0);
+            let P = Number(row['P'] || 0);
+            let S = Number(row['S'] || 0);
+            let credits = Number(row['Credits (C)'] || row['C'] || row['Total Credits'] || row['credits'] || 3);
+
+            const compositeCredits = row['L-T-P-S-Cr'] || row['L-T-P-C'] || row['L-T-P-S-C'];
+            if (compositeCredits) {
+              const parts = compositeCredits.split('-').map((n: string) => {
+                const parsed = Number(n.trim());
+                return isNaN(parsed) ? 0 : parsed;
+              });
+              if (parts.length >= 4) {
+                 L = parts[0] || 0;
+                 T = parts[1] || 0;
+                 P = parts[2] || 0;
+                 if (parts.length >= 5) {
+                   S = parts[3] || 0;
+                   credits = parts[4] || 0;
+                 } else {
+                   credits = parts[3] || 0;
+                 }
+              }
+            }
+            
+            let rawCie = row['CIE Marks'] || row['cieMarks'];
+            let cieMarks = rawCie !== undefined && rawCie !== '' ? Number(rawCie) : 40;
+            if (isNaN(cieMarks)) cieMarks = 40;
+
+            let rawSee = row['SEE Marks'] || row['seeMarks'];
+            let seeMarks = rawSee !== undefined && rawSee !== '' ? Number(rawSee) : 60;
+            if (isNaN(seeMarks)) seeMarks = 60;
 
             const branchesStr = row['Course Offered for Branches'] || row['Branches'] || row['branches'] || selectedDepartment.code;
             const offeredFor = branchesStr.split(',').map((b: string) => b.trim()).filter(Boolean);
@@ -789,29 +820,46 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
               departmentId: selectedDepartment._id
             };
 
-            const createdVerRes = await api.courses.create({
-              ...coursePayload,
-              regulationId: targetRegId,
-              semester,
-              category
-            });
+            let targetVersionId = '';
+            try {
+              const createdVerRes = await api.courses.create({
+                ...coursePayload,
+                regulationId: targetRegId,
+                semester,
+                category
+              });
+              targetVersionId = createdVerRes.version?._id;
+            } catch (createErr: any) {
+              if (createErr.message.includes('already registered')) {
+                const existingV = versions.find(v => 
+                  v.courseId?.code === code && 
+                  (v.regulationId?._id === targetRegId || v.regulationId === targetRegId)
+                );
+                if (existingV) {
+                  targetVersionId = existingV._id;
+                } else {
+                  throw createErr;
+                }
+              } else {
+                throw createErr;
+              }
+            }
 
-            const createdVersion = createdVerRes.version;
-            if (createdVersion) {
-              await api.courses.saveDraft(createdVersion._id, {
+            if (targetVersionId) {
+              await api.courses.saveDraft(targetVersionId, {
                 category,
                 credits: { L, T, P, S, C: credits },
                 cieSee: { cieMaxMarks: cieMarks, seeMaxMarks: seeMarks },
                 description,
                 prerequisites: prerequisites ? [prerequisites] : [],
-                courseLevel,
+                level,
                 status,
                 offeredFor
               });
 
               if (coordinatorId) {
                 await api.courses.assign({
-                  courseVersionId: createdVersion._id,
+                  courseVersionId: targetVersionId,
                   coordinatorId: coordinatorId
                 });
               }
@@ -1046,7 +1094,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
         regulationId: editCourseData.regulationId,
         semester: editCourseData.semester,
         category: editCourseData.category,
-        courseLevel: editCourseData.courseLevel,
+        level: editCourseData.courseLevel.includes('IC') ? 'Intermediate' : editCourseData.courseLevel.includes('AC') ? 'Advanced' : 'Foundation',
         status: editCourseData.status,
         credits: { L: editCourseData.L, T: editCourseData.T, P: editCourseData.P, S: editCourseData.S, C: editCourseData.C },
         cieSee: { cieMaxMarks: editCourseData.cieMarks, seeMaxMarks: editCourseData.seeMarks },
@@ -1794,7 +1842,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                                     regulationId: v.regulationId?._id || v.regulationId || '',
                                     category: v.category || 'PC',
                                     semester: v.semester || 1,
-                                    courseLevel: v.courseLevel || 'Foundation Courses - FC',
+                                    courseLevel: v.level === 'Intermediate' ? 'Intermediate-level Courses - IC' : v.level === 'Advanced' ? 'Advanced Courses - AC' : 'Foundation Courses - FC',
                                     status: v.status || 'Active',
                                     L: v.credits?.L || 0,
                                     T: v.credits?.T || 0,
@@ -2658,7 +2706,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                             regulationId: v.regulationId?._id || v.regulationId || '',
                             category: v.category || 'PC',
                             semester: v.semester || 1,
-                            courseLevel: v.courseLevel || 'Foundation Courses - FC',
+                            courseLevel: v.level === 'Intermediate' ? 'Intermediate-level Courses - IC' : v.level === 'Advanced' ? 'Advanced Courses - AC' : 'Foundation Courses - FC',
                             status: v.status || 'Active',
                             L: v.credits?.L || 0,
                             T: v.credits?.T || 0,
