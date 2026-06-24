@@ -13,7 +13,9 @@ const UserSchema = new mongoose.Schema({
   departmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Department', default: null },
   programId: { type: mongoose.Schema.Types.ObjectId, ref: 'Program', default: null },
   isActive: { type: Boolean, default: true },
-  refreshToken: { type: String, default: null }
+  refreshToken: { type: String, default: null },
+  resetPasswordToken: { type: String, default: null },
+  resetPasswordExpires: { type: Date, default: null }
 }, { timestamps: true });
 
 // Hash password before saving

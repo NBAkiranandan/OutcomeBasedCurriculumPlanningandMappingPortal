@@ -10,6 +10,7 @@ import {
   Filter, Eye
 } from 'lucide-react';
 import { CurriculumBookGenerator } from '../../components/common/CurriculumBookGenerator';
+import { PdfCoursePage, PdfCoursePageStyles } from '../../components/common/PdfCoursePage';
 
 interface FacultyDashboardProps {
   activeTab: string;
@@ -43,6 +44,11 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ activeTab, s
 
   const [selectedCourseCode, setSelectedCourseCode] = useState('');
   const [showAllCourses, setShowAllCourses] = useState(false);
+  
+  const [dbPeos, setDbPeos] = useState<any[]>([]);
+  const [dbPsos, setDbPsos] = useState<any[]>([]);
+  const [dbPos, setDbPos] = useState<any[]>([]);
+  const [publishedBookReviews, setPublishedBookReviews] = useState<any[]>([]);
 
   // Profile update success state
   const [showProfileSuccess, setShowProfileSuccess] = useState(false);
@@ -53,40 +59,79 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ activeTab, s
   const [erpUpdates, setErpUpdates] = useState(true);
   const [announcementAlerts, setAnnouncementAlerts] = useState(false);
 
-  // Selected Unit state for Syllabus Viewer
-  const [selectedUnit, setSelectedUnit] = useState(1);
+  // Selected Course for View Courses tab
+  const [selectedCourseId, setSelectedCourseId] = useState('');
   const [bookViewMode, setBookViewMode] = useState<'directory' | 'view'>('directory');
+  const [previewCourse, setPreviewCourse] = useState<any>(null);
 
   // Dynamic finalized curriculum count
   const [finalizedCount, setFinalizedCount] = useState(0);
-  const { departments, regulations, selectedDepartment, selectedRegulation, setSelectedRegulation } = useContextStore();
+  const { departments, regulations, selectedDepartment, selectedRegulation, setSelectedRegulation, setSelectedDepartment } = useContextStore();
 
   useEffect(() => {
-    const fetchCourses = async () => {
+    if (user?.department && !selectedDepartment) {
+      setSelectedDepartment(user.department as any);
+    }
+  }, [user, selectedDepartment, setSelectedDepartment]);
+
+  useEffect(() => {
+    const fetchCoursesAndOutcomes = async () => {
       if (!selectedRegulation?._id) return;
       setIsLoading(true);
       try {
-        const res = await api.courses.listByReg(selectedRegulation._id);
-        const versions = res.versions || [];
+        // Fetch faculty-specific assigned courses
+        const res = await api.courseAssignments.listMyCourses();
+        const allAssignedVersions = res.versions || [];
         
-        // Faculty should see all Approved courses
-        const approved = versions.filter((v: any) => v.status === 'Approved');
+        // Filter by the currently selected regulation
+        const regVersions = allAssignedVersions.filter((v: any) => 
+          v.regulationId?._id === selectedRegulation._id || v.regulationId === selectedRegulation._id
+        );
+        
+        // Faculty should see only assigned, approved courses
+        const approved = regVersions.filter((v: any) => v.status === 'Approved');
         setApprovedCourses(approved);
         setFinalizedCount(approved.length);
         
-        if (approved.length > 0 && !selectedCourseCode) {
+        if (approved.length > 0 && (!selectedCourseId || !approved.some((v: any) => v._id === selectedCourseId))) {
+          setSelectedCourseId(approved[0]._id);
           setSelectedCourseCode(approved[0].courseId?.code);
         }
+
+        // Fetch regulation-scoped PEOs, PSOs and POs from the same source HOD edits.
+        if (selectedDepartment?._id) {
+          const peoPsoRes = await api.peoPso.getByDept(selectedDepartment._id, selectedRegulation._id);
+          setDbPeos(peoPsoRes.peoPso?.peos || []);
+          setDbPsos(peoPsoRes.peoPso?.psos || []);
+          setDbPos(peoPsoRes.peoPso?.pos || []);
+        }
       } catch (err) {
-        console.error('[Faculty] Failed to fetch courses:', err);
+        console.error('[Faculty] Failed to fetch data:', err);
         setApprovedCourses([]);
         setFinalizedCount(0);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchCourses();
-  }, [selectedRegulation, selectedCourseCode]);
+    fetchCoursesAndOutcomes();
+  }, [selectedRegulation, selectedDepartment]);
+
+  // Load published books from backend directly for proper db connectivity
+  useEffect(() => {
+    const loadPublishedBooks = async () => {
+      if (!selectedDepartment?._id) return;
+      try {
+        console.log('[DEBUG] Fetching published books for departmentId:', selectedDepartment._id);
+        const res = await api.curriculumBooks.reviews({ departmentId: selectedDepartment._id, status: 'Published' });
+        console.log('[DEBUG] Fetched published books response:', res);
+        setPublishedBookReviews(res.reviews || []);
+      } catch (err) {
+        console.error('[Faculty] Failed to load published curriculum books:', err);
+        setPublishedBookReviews([]);
+      }
+    };
+    loadPublishedBooks();
+  }, [selectedDepartment]);
 
   // Dropdown states for filters
   const [deptFilter, setDeptFilter] = useState('All');
@@ -119,14 +164,6 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ activeTab, s
     { code: 'PO12', title: 'Life-long Learning', desc: 'Recognize the need for, and have the preparation and ability to engage in independent and life-long learning in the broadest context of technological change.' }
   ];
 
-  const programSpecificOutcomes = [
-    { code: 'PSO1', title: 'Core Software Competence', desc: 'Design and develop efficient software solutions utilizing algorithms, data structures, and object-oriented paradigms.' },
-    { code: 'PSO2', title: 'Infrastructure & Cloud Config', desc: 'Deploy, secure, and monitor applications across web, mobile, database and cloud architectural pipelines.' },
-    { code: 'PSO3', title: 'Modern Systems Design', desc: 'Apply software engineering tools and agile methodologies to construct scalable enterprise platforms.' }
-  ];
-
-
-
   // explorer courses state handled dynamically
 
   // Notifications feed list
@@ -136,6 +173,44 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ activeTab, s
     { id: 3, title: 'Annual Academic Audit Schedule', desc: 'The internal curriculum audit for NBA accreditation readiness will commence from June 15th.', time: '3 days ago', cat: 'Announcements', type: 'warning' },
     { id: 4, title: 'System Maintenance: Backup successfully run', desc: 'Global curriculum metadata tables successfully backed up onto secondary university storage node.', time: '5 days ago', cat: 'System', type: 'system' }
   ];
+
+  const poCodes = dbPos.length > 0
+    ? dbPos.map((po, idx) => po.code || po.poCode || `PO${idx + 1}`)
+    : Array.from({ length: 12 }, (_, i) => `PO${i + 1}`);
+  const psoCodes = dbPsos.length > 0
+    ? dbPsos.map((pso, idx) => pso.code || pso.psoCode || `PSO${idx + 1}`)
+    : ['PSO1', 'PSO2', 'PSO3'];
+  const poReferenceOutcomes = dbPos.length > 0
+    ? dbPos.map((po, idx) => ({ code: po.code || po.poCode || `PO${idx + 1}`, title: '', desc: po.description || '' }))
+    : programOutcomes;
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    if (tabId === 'builder') {
+      setBookViewMode('directory');
+    }
+  };
+  const publishedRegulations = regulations.filter((reg: any) => {
+    // Match against API result safely with string coercion
+    const isInApi = publishedBookReviews.some((review: any) => String(review.regulationId) === String(reg._id));
+    
+    // Also match against embedded reviews to guarantee DB connectivity
+    const isInReg = reg.curriculumBookReviews && Array.isArray(reg.curriculumBookReviews) && reg.curriculumBookReviews.some((review: any) => {
+      const revDeptId = review.departmentId?._id || review.departmentId;
+      return String(revDeptId) === String(selectedDepartment?._id) && review.status === 'Published';
+    });
+    
+    return isInApi || isInReg;
+  });
+
+  useEffect(() => {
+    console.log('[DEBUG FacultyDashboard]', {
+      regulationsCount: regulations.length,
+      publishedBookReviewsCount: publishedBookReviews.length,
+      publishedRegulationsCount: publishedRegulations.length,
+      publishedBookReviews,
+      regulations: regulations.map(r => ({ _id: r._id, code: r.code }))
+    });
+  }, [regulations, publishedBookReviews, publishedRegulations]);
 
   return (
     <div className="space-y-6 font-sans w-full max-w-none">
@@ -226,26 +301,13 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ activeTab, s
                         <p className="text-[10px] text-slate-455 font-bold mt-1.5">Credits: {v.credits?.C || 3}</p>
                       </div>
 
-                      <div className="flex gap-2 pt-2.5 border-t border-slate-200/60 text-[11px] font-bold">
+                      <div className="pt-2.5 border-t border-slate-200/60 text-[11px] font-bold">
                         <button
-                          onClick={() => {
-                            setSelectedCourseCode(course.code);
-                            setActiveTab('course-file');
-                          }}
-                          className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-750 text-white rounded-lg transition-all text-center flex items-center justify-center gap-1 cursor-pointer shadow-sm"
+                          onClick={() => setPreviewCourse(v)}
+                          className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-800 cursor-pointer"
                         >
-                          <BookOpen className="w-3.5 h-3.5" />
-                          <span>Open Course Files</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedCourseCode(course.code);
-                            setActiveTab('syllabus-view');
-                          }}
-                          className="flex-1 py-2 bg-white hover:bg-slate-105 border border-slate-300 text-slate-700 rounded-lg transition-all text-center flex items-center justify-center gap-1 cursor-pointer"
-                        >
-                          <FileText className="w-3.5 h-3.5 text-slate-550" />
-                          <span>View Syllabus</span>
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>View Course Syllabus</span>
                         </button>
                       </div>
                     </div>
@@ -266,409 +328,36 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ activeTab, s
             )}
           </div>
 
-          {/* ── Recent Activity ───────────────────────────── */}
-          <div className="bg-white rounded-2xl border border-border shadow-card p-6 space-y-6 w-full">
-            <div className="flex justify-between items-center border-b border-border pb-3">
-              <h3 className="text-xs font-semibold uppercase tracking-widest text-text-subtle">Recent Activity</h3>
-              <button onClick={() => setActiveTab('notifications')} className="text-[11px] text-primary-600 font-semibold hover:underline">View All</button>
+          {previewCourse && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-fadeIn">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto relative">
+                <div className="sticky top-0 right-0 p-4 flex justify-between items-center bg-white border-b border-slate-200 z-10">
+                  <h3 className="font-bold text-slate-800">Course Syllabus Preview</h3>
+                  <button onClick={() => setPreviewCourse(null)} className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold cursor-pointer transition-colors">
+                    <X className="w-4 h-4" />
+                    Close
+                  </button>
+                </div>
+                <div className="p-8 pb-12 bg-slate-50">
+                  <div className="bg-white shadow-sm border border-slate-200 mx-auto" style={{ width: '210mm', minHeight: '297mm' }}>
+                    <PdfCoursePageStyles />
+                    <PdfCoursePage 
+                      courseVersion={previewCourse} 
+                      departmentName={getDepartmentName()} 
+                      departmentCode={getDepartmentCode()} 
+                      regulationYear={selectedRegulation?.academicYear || '2024'} 
+                      showLogo={true}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
+          )}
 
-            <div className="space-y-3">
-              {recentActivities && recentActivities.length > 0 ? (
-                <div className="space-y-3">
-                  {recentActivities.map((act, idx) => (
-                    <div key={idx} className="flex items-start gap-3 text-xs border-b border-border-light pb-3 last:border-b-0 last:pb-0">
-                      <div className="w-2 h-2 rounded-full bg-warning-500 mt-1.5 flex-shrink-0"></div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-baseline gap-2">
-                          <h4 className="font-semibold text-text-primary">{act.action}</h4>
-                          <span className="text-[10px] text-text-subtle font-medium flex-shrink-0">{act.time}</span>
-                        </div>
-                        <p className="text-[11px] text-text-muted mt-0.5">Course Code: <span className="font-semibold text-text-secondary">{act.course}</span> - Data Structures</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-text-subtle font-medium text-xs flex flex-col items-center justify-center gap-2">
-                  <span className="text-2xl">📌</span>
-                  <span>You have not accessed any course files recently.</span>
-                </div>
-              )}
-            </div>
-          </div>
+      {/* ============================================================== */}
         </div>
       )}
 
-      {/* ============================================================== */}
-      {/* 2. COURSE FILE VIEWER PAGE */}
-      {/* ============================================================== */}
-      {activeTab === 'course-file' && (
-        <div className="space-y-6 animate-fadeIn">
-          <div>
-            <h1 className="text-xl font-extrabold text-slate-800 font-sans">Course File Viewer</h1>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
-            
-            {/* Left Filter Card */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-              <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2">FILTERS</h3>
-              
-              <div className="space-y-3.5 text-xs font-bold text-slate-500">
-                <div className="space-y-1">
-                  <span>Department</span>
-                  <select 
-                    value={deptFilter} 
-                    onChange={(e) => setDeptFilter(e.target.value)} 
-                    className="w-full border border-slate-300 rounded-lg p-2 text-slate-700 bg-white font-semibold outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="All">All</option>
-                    <option value="All">All Departments</option>
-                    <option value="CSE">Computer Science</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <span>Semester</span>
-                  <select 
-                    value={semFilter} 
-                    onChange={(e) => setSemFilter(e.target.value)} 
-                    className="w-full border border-slate-300 rounded-lg p-2 text-slate-700 bg-white font-semibold outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="All">All</option>
-                    <option value="3">Semester 3</option>
-                    <option value="4">Semester 4</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <span>Regulation</span>
-                  <select 
-                    value={regFilter} 
-                    onChange={(e) => setRegFilter(e.target.value)} 
-                    className="w-full border border-slate-300 rounded-lg p-2 text-slate-700 bg-white font-semibold outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="All">All</option>
-                    <option value="R2023">R2023</option>
-                    <option value="R2025">R2025</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <span>Course Type</span>
-                  <select 
-                    value={typeFilter} 
-                    onChange={(e) => setTypeFilter(e.target.value)} 
-                    className="w-full border border-slate-300 rounded-lg p-2 text-slate-700 bg-white font-semibold outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="All">All</option>
-                    <option value="Theory">Theory</option>
-                    <option value="Lab">Practical Lab</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Informational banner */}
-              <div className="bg-blue-50/50 border border-blue-200/60 p-3.5 rounded-xl text-[10px] text-blue-600 font-semibold leading-relaxed">
-                Faculty access is read-only. Edit, delete, approval, and upload actions are restricted by RBAC.
-              </div>
-            </div>
-
-            {/* Right Course Panel */}
-            <div className="md:col-span-3 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-              
-              {/* Header block */}
-              <div className="flex justify-between items-start border-b border-slate-100 pb-4">
-                {(() => {
-                  const c = approvedCourses.find(item => item.courseId?.code === selectedCourseCode) || approvedCourses[0];
-                  
-                  if (!c) return <div>No course selected</div>;
-
-                  const fmt = (v: number | undefined) => (v === 0 || !v) ? '-' : v;
-                  const creditsC = fmt(c.credits?.C);
-                  const l = fmt(c.credits?.L);
-                  const t = fmt(c.credits?.T);
-                  const p = fmt(c.credits?.P);
-                  const s = fmt(c.credits?.S);
-                  
-                  return (
-                    <>
-                      <div>
-                        <h2 className="text-base font-extrabold text-slate-800">{c.courseId?.code} - {c.courseId?.title}</h2>
-                        <p className="text-[11px] text-slate-400 font-semibold mt-0.5">{selectedDepartment?.code || 'Dept'} / Semester {c.semester} / {selectedRegulation?.code || 'Reg'}</p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="px-2 py-0.5 bg-emerald-50 border border-emerald-200 rounded text-[9px] font-bold text-emerald-700 uppercase tracking-wider">
-                          Finalized
-                        </span>
-                        <div className="text-right font-sans">
-                          <span className="block text-[8px] font-bold text-slate-400 leading-none">L  T  P  S  C</span>
-                          <strong className="block text-xs text-slate-700 leading-none mt-1.5 font-mono">{l}  {t}  {p}  {s}  {creditsC}</strong>
-                        </div>
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-
-              <div className="text-xs font-bold text-slate-700 space-y-1">
-                <span>Course Code: {selectedCourseCode}</span>
-              </div>
-
-              {/* Course outcomes definitions list */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Course Outcomes:</h4>
-                <p className="text-[11px] text-slate-500 font-medium">At the end of the course, student will be able to:</p>
-                <div className="space-y-2 pt-1 font-medium text-slate-600 text-xs">
-                  {(() => {
-                    const c = approvedCourses.find(item => item.courseId?.code === selectedCourseCode) || approvedCourses[0];
-                    const outcomes = c?.courseOutcomes || [];
-                    if (outcomes.length === 0) return <p className="text-slate-400 italic">No Course Outcomes defined.</p>;
-                    return outcomes.map((co: any) => (
-                      <div key={co.coCode} className="flex gap-2 leading-relaxed">
-                        <strong className="text-blue-900 font-bold flex-shrink-0 w-8">{co.coCode}:</strong>
-                        <span>{co.description}</span>
-                      </div>
-                    ));
-                  })()}
-                </div>
-              </div>
-
-              {/* Mappings Matrix Readonly Table */}
-              <div className="space-y-3 pt-2">
-                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-                  Mapping of Course Outcomes with Program Outcomes (PO) and Program Specific Outcomes (PSO):
-                </h4>
-                
-                <div className="overflow-x-auto border border-slate-200 rounded-xl">
-                  <table className="w-full text-center border-collapse text-[10px]">
-                    <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50 text-slate-400 uppercase font-bold font-sans">
-                        <th className="p-2.5 border-r border-slate-200 text-left pl-3 font-extrabold w-16">CO/PO</th>
-                        {Array.from({ length: 12 }, (_, i) => `PO ${i + 1}`).map(po => (
-                          <th key={po} className="p-2 border-r border-slate-200 font-semibold">{po}</th>
-                        ))}
-                        {Array.from({ length: 3 }, (_, i) => `PSO ${i + 1}`).map(pso => (
-                          <th key={pso} className="p-2 border-r border-slate-200 text-blue-900 font-bold bg-blue-50/20">{pso}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(() => {
-                        const c = approvedCourses.find(item => item.courseId?.code === selectedCourseCode) || approvedCourses[0];
-                        if (!c) return null;
-                        
-                        const coMap = c.coPoMappings || [];
-                        const psoMap = c.coPsoMappings || [];
-                        const coCodes = c.courseOutcomes?.map((co: any) => co.coCode) || ['CO1', 'CO2', 'CO3', 'CO4', 'CO5'];
-
-                        return coCodes.map((coCode: string) => {
-                          const poData = coMap.find((m: any) => m.coCode === coCode)?.po || {};
-                          const psoData = psoMap.find((m: any) => m.coCode === coCode)?.pso || {};
-                          
-                          return (
-                            <tr key={coCode} className="border-b border-slate-100 hover:bg-slate-50/20 font-bold text-slate-700 font-mono">
-                              <td className="p-2.5 border-r border-slate-200 text-left pl-3 font-sans text-xs text-blue-900 font-black">
-                                {coCode}
-                              </td>
-                              {Array.from({ length: 12 }, (_, i) => `PO${i + 1}`).map(po => {
-                                const val = poData[po] || 0;
-                                const bg = val === 3 ? 'bg-emerald-50 text-emerald-700' :
-                                           val === 2 ? 'bg-blue-50/50 text-blue-700' :
-                                           val === 1 ? 'bg-slate-50 text-slate-500' : 'text-slate-300';
-                                return (
-                                  <td key={po} className={`p-2 border-r border-slate-150 ${bg}`}>
-                                    {val > 0 ? val : '—'}
-                                  </td>
-                                );
-                              })}
-                              {Array.from({ length: 3 }, (_, i) => `PSO${i + 1}`).map(pso => {
-                                const val = psoData[pso] || 0;
-                                const bg = val === 3 ? 'bg-emerald-50 text-emerald-700' :
-                                           val === 2 ? 'bg-blue-50/50 text-blue-700' :
-                                           val === 1 ? 'bg-slate-50 text-slate-500' : 'text-slate-300';
-                                return (
-                                  <td key={pso} className={`p-2 border-r border-slate-150 bg-blue-50/10 ${bg}`}>
-                                    {val > 0 ? val : '—'}
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          );
-                        });
-                      })()}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Descriptions Reference panel */}
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4">
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-blue-900 flex items-center gap-1.5 border-b border-slate-200 pb-2">
-                  <Award className="w-4 h-4 text-blue-800" />
-                  <span>Program Outcomes (PO) & PSO Reference Descriptions</span>
-                </h4>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-[10px]">
-                  
-                  {/* Left Column POs */}
-                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
-                    <span className="font-bold text-slate-400 uppercase tracking-wider block">Core Program Outcomes (POs)</span>
-                    {programOutcomes.map((po) => (
-                      <div key={po.code} className="space-y-0.5 leading-normal">
-                        <strong className="text-slate-800 font-bold block">{po.code}: {po.title}</strong>
-                        <p className="text-slate-500 font-medium">{po.desc}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Right Column PSOs */}
-                  <div className="space-y-3">
-                    <span className="font-bold text-slate-400 uppercase tracking-wider block">Program Specific Outcomes (PSOs)</span>
-                    {programSpecificOutcomes.map((pso) => (
-                      <div key={pso.code} className="space-y-0.5 leading-normal">
-                        <strong className="text-blue-900 font-bold block">{pso.code}: {pso.title}</strong>
-                        <p className="text-slate-500 font-medium">{pso.desc}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================== */}
-      {/* 3. SYLLABUS VIEWER PAGE */}
-      {/* ============================================================== */}
-      {activeTab === 'syllabus-view' && (
-        <div className="space-y-6 animate-fadeIn">
-          <div>
-            <h1 className="text-xl font-extrabold text-slate-800 font-sans">Syllabus Viewer</h1>
-            <p className="text-xs text-slate-500 mt-1 font-semibold">Browse approved unit-wise syllabi, references, practicals, and course outcomes.</p>
-          </div>
-
-          {/* Top Filters bar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-bold text-slate-500">
-            <div className="space-y-1">
-              <span>Department</span>
-              <select className="w-full border border-slate-300 rounded-lg p-2 text-slate-700 bg-white font-semibold outline-none">
-                <option>CSE</option>
-              </select>
-            </div>
-            <div className="space-y-1">
-              <span>Course</span>
-              <select 
-                value={selectedCourseCode}
-                onChange={(e) => setSelectedCourseCode(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg p-2 text-slate-700 bg-white font-semibold outline-none cursor-pointer focus:ring-1 focus:ring-blue-500"
-              >
-                {approvedCourses.map(item => (
-                  <option key={item._id} value={item.courseId?.code}>{item.courseId?.code} - {item.courseId?.title}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <span>Regulation</span>
-              <select className="w-full border border-slate-300 rounded-lg p-2 text-slate-700 bg-white font-semibold outline-none">
-                <option>R2023</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Split grid layout */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
-            
-            {/* Left Units list */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2">UNITS</h4>
-              
-              <div className="space-y-2">
-                {(() => {
-                  const c = approvedCourses.find(item => item.courseId?.code === selectedCourseCode) || approvedCourses[0];
-                  const units = c?.syllabusUnits || [];
-                  if (units.length === 0) return <p className="text-slate-400 italic">No units defined.</p>;
-                  return units.map((u: any, idx: number) => (
-                    <div 
-                      key={u._id || idx}
-                      onClick={() => setSelectedUnit(u.unitNumber)}
-                      className={`p-3 rounded-xl border transition-all cursor-pointer text-left space-y-1 ${
-                        selectedUnit === u.unitNumber 
-                          ? 'border-blue-600 bg-blue-50/10' 
-                          : 'border-slate-200 hover:bg-slate-50'
-                      }`}
-                    >
-                      <span className={`text-[11px] font-bold block ${selectedUnit === u.unitNumber ? 'text-blue-900' : 'text-slate-700'}`}>
-                        Unit {u.unitNumber}: {u.title}
-                      </span>
-                      <span className="text-[9px] text-slate-400 font-semibold block font-mono">{u.hours || 10} contact hours</span>
-                    </div>
-                  ));
-                })()}
-              </div>
-            </div>
-
-            {/* Right details card */}
-            <div className="md:col-span-3 space-y-6">
-              
-              {/* Unit Content card */}
-              {(() => {
-                const c = approvedCourses.find(item => item.courseId?.code === selectedCourseCode) || approvedCourses[0];
-                const units = c?.syllabusUnits || [];
-                const unit = units.find((u: any) => u.unitNumber === selectedUnit) || units[0];
-                
-                if (!unit) return <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-500 font-semibold">Select a unit to view details.</div>;
-
-                return (
-                  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5 relative">
-                    <span className="absolute top-4 right-4 px-2 py-0.5 bg-slate-100 text-slate-455 border border-slate-250 rounded text-[9px] font-bold font-mono">
-                      Unit {unit.unitNumber}
-                    </span>
-
-                    <div className="space-y-1 border-b border-slate-100 pb-3">
-                      <h3 className="text-base font-extrabold text-slate-800">{unit.title}</h3>
-                      <p className="text-[10px] text-slate-455 font-semibold uppercase tracking-wide">
-                        {`${c?.courseId?.code} / ${c?.courseId?.title}`}
-                      </p>
-                    </div>
-
-                    <div className="text-xs font-semibold text-slate-600 leading-relaxed space-y-4">
-                      <p className="pl-3 border-l-2 border-blue-600">{unit.description}</p>
-                      <p>{unit.topics?.join(', ')}</p>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Textbooks list card */}
-              <div className="bg-emerald-50/20 border border-emerald-250 rounded-2xl p-6 space-y-3.5">
-                <h4 className="text-xs font-bold text-emerald-800 uppercase tracking-wide flex items-center gap-1.5 border-b border-emerald-100 pb-2">
-                  <BookOpen className="w-4 h-4 text-emerald-700" />
-                  <span>Textbooks</span>
-                </h4>
-                
-                <div className="space-y-2 text-xs font-bold text-emerald-900 leading-relaxed">
-                  {(() => {
-                    const c = approvedCourses.find(item => item.courseId?.code === selectedCourseCode) || approvedCourses[0];
-                    const textbooks = c?.textbooks || [];
-                    if (textbooks.length === 0) return <p className="text-emerald-700 italic font-semibold">No textbooks defined.</p>;
-                    return textbooks.map((bk: any, idx: number) => (
-                      <p key={idx} className="font-semibold">{`${idx + 1}. ${bk.title || bk}${bk.author ? `, ${bk.author}` : ''}${bk.publisher ? `, ${bk.publisher}` : ''}`}</p>
-                    ));
-                  })()}
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================== */}
       {/* 4.5 CURRICULUM BOOK */}
       {/* ============================================================== */}
       {activeTab === 'builder' && (
@@ -697,7 +386,7 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ activeTab, s
                     {selectedDepartment?.name || 'Your Department'} Regulations
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {regulations.map((reg: any) => (
+                    {publishedRegulations.map((reg: any) => (
                       <div key={reg._id} className="border border-slate-200 rounded-xl p-5 hover:border-blue-300 transition-colors bg-slate-50 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-16 h-16 bg-blue-100/50 rounded-bl-full -z-0 group-hover:scale-110 transition-transform"></div>
                         <h4 className="font-extrabold text-slate-800 text-lg relative z-10">{reg.code}</h4>
@@ -708,6 +397,7 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ activeTab, s
                             onClick={() => {
                               setSelectedRegulation(reg);
                               setBookViewMode('view');
+                              setActiveTab('builder');
                             }}
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors cursor-pointer"
                           >
@@ -717,6 +407,11 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ activeTab, s
                         </div>
                       </div>
                     ))}
+                    {publishedRegulations.length === 0 && (
+                      <div className="col-span-full py-10 text-center text-slate-500 text-sm font-semibold">
+                        No published curriculum books are available for your department yet.
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

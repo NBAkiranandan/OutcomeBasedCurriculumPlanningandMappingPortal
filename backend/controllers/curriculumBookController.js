@@ -1,21 +1,21 @@
 import fs from 'fs';
 import path from 'path';
-import pdfParse from 'pdf-parse';
+
 import mongoose from 'mongoose';
 import puppeteer from 'puppeteer';
-import CurriculumBook from '../models/CurriculumBook.js';
-import CurriculumVersion from '../models/CurriculumVersion.js';
-import CurriculumSection from '../models/CurriculumSection.js';
-import CourseVersion from '../models/CourseVersion.js';
+import CourseVersion from '../models/CourseVersion.js'; // trigger nodemon
 import Regulation from '../models/Regulation.js';
 import MinorStream from '../models/MinorStream.js';
 import Course from '../models/Course.js';
 import CourseCategory from '../models/CourseCategory.js';
 import Department from '../models/Department.js';
 import Program from '../models/Program.js';
+import PrerequisiteLink from '../models/PrerequisiteLink.js';
+import AuditLog from '../models/AuditLog.js';
 import { generateCurriculumDocx } from '../services/curriculumDocxService.js';
 
 const STATUS_VALUES = ['Draft', 'Published', 'Archived'];
+const CURRICULUM_REVIEW_STATUSES = ['Draft', 'Submitted', 'Published', 'Archived', 'Unlocked'];
 const GENERATED_DIR = path.resolve('uploads', 'generated');
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -53,6 +53,54 @@ const getFileType = (file) => {
   if (file.mimetype === 'application/pdf' || ext === '.pdf') return 'PDF';
   if (file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || ext === '.docx') return 'DOCX';
   return null;
+};
+
+const idsEqual = (left, right) => String(left || '') === String(right || '');
+
+const normalizeReviewEntry = (entry, regulationId) => ({
+  regulationId: String(regulationId || ''),
+  departmentId: String(entry?.departmentId?._id || entry?.departmentId || ''),
+  status: entry?.status || 'Draft',
+  remarks: entry?.remarks || '',
+  submittedBy: entry?.submittedBy || null,
+  submittedAt: entry?.submittedAt || null,
+  reviewedBy: entry?.reviewedBy || null,
+  publishedBy: entry?.publishedBy || null,
+  publishedAt: entry?.publishedAt || null,
+  returnedBy: entry?.returnedBy || null,
+  returnedAt: entry?.returnedAt || null,
+  updatedBy: entry?.updatedBy || null,
+  updatedAt: entry?.updatedAt || null,
+});
+
+const getReviewForDepartment = (regulation, departmentId) => {
+  const review = (regulation?.curriculumBookReviews || []).find(item =>
+    idsEqual(item.departmentId?._id || item.departmentId, departmentId)
+  );
+  return review
+    ? normalizeReviewEntry(review, regulation._id)
+    : normalizeReviewEntry({ departmentId, status: 'Draft' }, regulation?._id);
+};
+
+const isCurriculumBookPublished = async (regulationId, departmentId) => {
+  if (!mongoose.Types.ObjectId.isValid(regulationId) || !mongoose.Types.ObjectId.isValid(departmentId)) {
+    return false;
+  }
+  const regulation = await Regulation.findOne({ _id: regulationId, isDeleted: { $ne: true } }).lean();
+  if (!regulation) return false;
+  return getReviewForDepartment(regulation, departmentId).status === 'Published';
+};
+
+const ensureFacultyPublishedAccess = async (req, regulationId, departmentId) => {
+  if (req.user.role !== 'Faculty') return null;
+  if (!regulationId || !departmentId) {
+    return 'Faculty can export only a published curriculum book with regulation and department context.';
+  }
+  if (req.user.departmentId && !idsEqual(req.user.departmentId, departmentId)) {
+    return 'Faculty can access curriculum books only for their assigned department.';
+  }
+  const published = await isCurriculumBookPublished(regulationId, departmentId);
+  return published ? null : 'This curriculum book is not published by Admin yet.';
 };
 
 const getLogoBase64 = () => {
@@ -175,8 +223,32 @@ const getDynamicCurriculumContext = async (book) => {
     : [];
 
   const dbCategories = await CourseCategory.find().lean();
+  const prereqLinks = await PrerequisiteLink.find({ regulationId: regulation._id, isDeleted: { $ne: true } })
+    .populate('sourceCourseId')
+    .populate('targetCourseId')
+    .lean();
 
-  return { regulation, courses, minorStreams, dbCategories };
+  // Fetch ALL published Minor Degrees for this regulation
+  const MinorDegree = (await import('../models/MinorDegree.js')).default;
+  const MinorDegreeCourse = (await import('../models/MinorDegreeCourse.js')).default;
+  
+  const publishedMinors = await MinorDegree.find({ regulationId: regulation._id, status: 'Published', isDeleted: { $ne: true } })
+    .sort({ departmentName: 1, minorName: 1 })
+    .lean();
+
+  const publishedMinorDegrees = {};
+  for (let minor of publishedMinors) {
+    const courses = await MinorDegreeCourse.find({ minorDegreeId: minor._id, isDeleted: { $ne: true } })
+      .sort({ semester: 1 })
+      .lean();
+    minor.courses = courses;
+    
+    const dName = minor.departmentName || 'Unknown Department';
+    if (!publishedMinorDegrees[dName]) publishedMinorDegrees[dName] = [];
+    publishedMinorDegrees[dName].push(minor);
+  }
+
+  return { regulation, courses, courseVersions: versions, minorStreams, dbCategories, publishedMinorDegrees, prereqLinks };
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -687,10 +759,127 @@ const buildDynamicCurriculumHtml = (book, dynamicContext) => {
     </section>
   ` : '';
 
+  // ── Pages: Minor Degrees (All Departments) ──
+  const publishedMinors = dynamicContext?.publishedMinorDegrees || {};
+  const minorDegreePages = Object.keys(publishedMinors).length > 0 ? `
+    <section class="dyn-page page-break">
+      <div class="dyn-header">
+        <h2 class="dyn-h2">Available Minor Degree Offerings</h2>
+        <p style="text-align:center; font-size:12px; margin-top:-5px; color:#555;">(Cross-Departmental)</p>
+      </div>
+      ${Object.keys(publishedMinors).map(deptName => `
+        <h3 class="dyn-h3" style="text-align:left; border-bottom:1px solid #ddd; padding-bottom:5px; margin-top:20px;">
+          ${escHtml(deptName)}
+        </h3>
+        ${publishedMinors[deptName].map(minor => {
+          let sumL = 0, sumT = 0, sumP = 0, sumC = 0;
+          const groupSizes = {};
+          (minor.courses || []).forEach(c => {
+            if (c.orGroupId) groupSizes[c.orGroupId] = (groupSizes[c.orGroupId] || 0) + 1;
+          });
+          const renderedGroups = new Set();
+          const groupCounters = {};
+
+          const rowsHtml = (minor.courses || []).map(c => {
+            const v = dynamicContext?.courseVersions?.find(ver => ver.courseId?.code === c.courseCode) || courses.find(ver => ver.courseId?.code === c.courseCode);
+            const level = v?.courseLevel || v?.level || c.level || 'IC';
+            const L = v?.credits?.L || 0;
+            const T = v?.credits?.T || 0;
+            const P = v?.credits?.P || 0;
+            const C = v?.credits?.C || c.credits;
+            const CIE = v?.cieSee?.cieMaxMarks || 50;
+            const SEE = v?.cieSee?.seeMaxMarks || 50;
+            const total = CIE + SEE;
+            
+            const isGrouped = !!c.orGroupId;
+            const isFirstInGroup = isGrouped && !renderedGroups.has(c.orGroupId);
+            const groupSize = isGrouped ? groupSizes[c.orGroupId] : 1;
+            if (isGrouped) {
+              renderedGroups.add(c.orGroupId);
+              groupCounters[c.orGroupId] = (groupCounters[c.orGroupId] || 0) + 1;
+            }
+            const isLastInGroup = isGrouped && groupCounters[c.orGroupId] === groupSize;
+            const appendOr = isGrouped && !isLastInGroup;
+            const skipMergedColumns = isGrouped && !isFirstInGroup;
+
+            if (!skipMergedColumns) {
+              sumL += L; sumT += T; sumP += P; sumC += C;
+            }
+
+            const prereqs = v && dynamicContext?.prereqLinks ? dynamicContext.prereqLinks.filter(l => String(l.targetCourseId?._id || l.targetCourseId) === String(v.courseId?._id)) : [];
+            const prereqStr = prereqs.length > 0 
+              ? prereqs.map(l => l.sourceCourseId?.keyword || l.sourceCourseId?.code || '').filter(Boolean).join(', ') 
+              : '-';
+
+            return `
+            <tr>
+              <td style="border:1px solid #000; padding:4px;">${escHtml(c.courseCode)}</td>
+              <td style="border:1px solid #000; padding:4px; text-align:left;">
+                ${escHtml(c.courseName)}${appendOr ? ' (or)' : ''}
+              </td>
+              ${!skipMergedColumns ? `<td rowspan="${groupSize}" style="border:1px solid #000; padding:4px;">${escHtml(level)}</td>` : ''}
+              <td style="border:1px solid #000; padding:4px;">${L || ''}</td>
+              <td style="border:1px solid #000; padding:4px;">${T || ''}</td>
+              <td style="border:1px solid #000; padding:4px;">${P || ''}</td>
+              ${!skipMergedColumns ? `<td rowspan="${groupSize}" style="border:1px solid #000; padding:4px; font-weight:bold;">${C}</td>` : ''}
+              ${!skipMergedColumns ? `<td rowspan="${groupSize}" style="border:1px solid #000; padding:4px;">${CIE}</td>` : ''}
+              ${!skipMergedColumns ? `<td rowspan="${groupSize}" style="border:1px solid #000; padding:4px;">${SEE}</td>` : ''}
+              ${!skipMergedColumns ? `<td rowspan="${groupSize}" style="border:1px solid #000; padding:4px;">${total}</td>` : ''}
+              ${!skipMergedColumns ? `<td rowspan="${groupSize}" style="border:1px solid #000; padding:4px;">${escHtml(prereqStr || '-')}</td>` : ''}
+            </tr>
+            `;
+          }).join('');
+
+          return `
+          <div style="margin-bottom:20px; border:1px solid #eee; border-radius:8px; padding:15px;">
+            <div style="text-align: center; margin-bottom: 15px;">
+              <h4 style="margin:0 0 5px 0; color:#000; font-weight:bold;">Minor Degree in ${escHtml(minor.minorName)}</h4>
+              <p style="margin:0; font-size:12px; color:#000;">(offered to other branches students)</p>
+              <p style="margin:5px 0 0 0; font-size:11px; color:#666;">
+                * To acquire a minor degree, a student has to earn ${minor.requiredCredits} credits in addition to the 160 credits.
+                ${minor.eligibility ? ` | Eligibility: ${escHtml(minor.eligibility)}` : ''}
+              </p>
+            </div>
+            
+            <table class="dyn-table" style="width:100%; font-size:11px; text-align:center; border:1px solid #000; border-collapse:collapse;">
+              <thead>
+                <tr>
+                  <th style="border:1px solid #000; padding:4px;">Course Code</th>
+                  <th style="border:1px solid #000; padding:4px; text-align:left;">Course Name</th>
+                  <th style="border:1px solid #000; padding:4px;">Level</th>
+                  <th style="border:1px solid #000; padding:4px;">L</th>
+                  <th style="border:1px solid #000; padding:4px;">T</th>
+                  <th style="border:1px solid #000; padding:4px;">P</th>
+                  <th style="border:1px solid #000; padding:4px;">C</th>
+                  <th style="border:1px solid #000; padding:4px;">CIE</th>
+                  <th style="border:1px solid #000; padding:4px;">SEE</th>
+                  <th style="border:1px solid #000; padding:4px;">Total</th>
+                  <th style="border:1px solid #000; padding:4px;">Pre-requisite</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+                <tr>
+                  <td style="border:1px solid #000; padding:4px; font-weight:bold;" colspan="3">Total</td>
+                  <td style="border:1px solid #000; padding:4px; font-weight:bold;">${sumL}</td>
+                  <td style="border:1px solid #000; padding:4px; font-weight:bold;">${sumT}</td>
+                  <td style="border:1px solid #000; padding:4px; font-weight:bold;">${sumP}</td>
+                  <td style="border:1px solid #000; padding:4px; font-weight:bold;">${sumC}</td>
+                  <td style="border:1px solid #000; padding:4px;" colspan="4"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          `;
+        }).join('')}
+      `).join('')}
+    </section>
+  ` : '';
+
   // ── Pages: Individual Course Pages ──
   const coursePages = courses.map(v => renderCoursePageHtml(v, departmentName)).join('');
 
-  return creditDivisionPage + categoryTablesPage + semesterPages + minorStreamPages + coursePages;
+  return creditDivisionPage + categoryTablesPage + semesterPages + minorStreamPages + minorDegreePages + coursePages;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -954,6 +1143,140 @@ const buildPdfReadyHtml = (book, sections, dynamicContext = {}) => {
 // ─────────────────────────────────────────────────────────────────────────────
 //  CONTROLLERS
 // ─────────────────────────────────────────────────────────────────────────────
+export const listReviewStatuses = async (req, res, next) => {
+  try {
+    const { regulationId, departmentId, status } = req.query;
+    const filter = { isDeleted: { $ne: true } };
+    if (regulationId) {
+      if (!mongoose.Types.ObjectId.isValid(regulationId)) {
+        return res.status(400).json({ message: 'Invalid regulation ID' });
+      }
+      filter._id = regulationId;
+    }
+
+    const regulations = await Regulation.find(filter).select('code academicYear programId curriculumBookReviews').lean();
+    const reviews = [];
+
+    for (const regulation of regulations) {
+      const entries = Array.isArray(regulation.curriculumBookReviews) ? regulation.curriculumBookReviews : [];
+      for (const entry of entries) {
+        if (departmentId && !idsEqual(entry.departmentId, departmentId)) continue;
+        if (status && entry.status !== status) continue;
+        reviews.push({
+          ...normalizeReviewEntry(entry, regulation._id),
+          regulationCode: regulation.code,
+          academicYear: regulation.academicYear,
+          programId: regulation.programId,
+        });
+      }
+
+      if (departmentId && !entries.some(entry => idsEqual(entry.departmentId, departmentId)) && (!status || status === 'Draft')) {
+        reviews.push({
+          ...normalizeReviewEntry({ departmentId, status: 'Draft' }, regulation._id),
+          regulationCode: regulation.code,
+          academicYear: regulation.academicYear,
+          programId: regulation.programId,
+        });
+      }
+    }
+
+    return res.status(200).json({ reviews });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const updateReviewStatus = async (req, res, next) => {
+  try {
+    const { regulationId, departmentId, status, remarks = '' } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(regulationId) || !mongoose.Types.ObjectId.isValid(departmentId)) {
+      return res.status(400).json({ message: 'Valid regulationId and departmentId are required.' });
+    }
+    if (!CURRICULUM_REVIEW_STATUSES.includes(status)) {
+      return res.status(400).json({ message: `Invalid status. Use one of: ${CURRICULUM_REVIEW_STATUSES.join(', ')}` });
+    }
+    if (req.user.role === 'HOD') {
+      if (status !== 'Submitted') {
+        return res.status(403).json({ message: 'HOD can only submit curriculum books for Admin review.' });
+      }
+      if (req.user.departmentId && !idsEqual(req.user.departmentId, departmentId)) {
+        return res.status(403).json({ message: 'HOD can submit only their assigned department curriculum book.' });
+      }
+    }
+
+    const regulation = await Regulation.findOne({ _id: regulationId, isDeleted: { $ne: true } });
+    if (!regulation) return res.status(404).json({ message: 'Regulation not found.' });
+
+    const department = await Department.findById(departmentId).lean();
+    if (!department) return res.status(404).json({ message: 'Department not found.' });
+
+    const now = new Date();
+    const existingReviews = Array.isArray(regulation.curriculumBookReviews)
+      ? regulation.curriculumBookReviews.map(entry => entry.toObject ? entry.toObject() : entry)
+      : [];
+    const existingIndex = existingReviews.findIndex(entry => idsEqual(entry.departmentId, departmentId));
+    const previous = existingIndex >= 0 ? existingReviews[existingIndex] : { departmentId, status: 'Draft' };
+
+    const nextEntry = {
+      ...previous,
+      departmentId,
+      status,
+      remarks,
+      reviewedBy: req.user.id,
+      updatedBy: req.user.id,
+      updatedAt: now,
+    };
+
+    if (status === 'Submitted') {
+      nextEntry.submittedBy = req.user.id;
+      nextEntry.submittedAt = now;
+    }
+    if (status === 'Published') {
+      nextEntry.publishedBy = req.user.id;
+      nextEntry.publishedAt = now;
+    }
+    if (status === 'Archived') {
+      nextEntry.archivedBy = req.user.id;
+      nextEntry.archivedAt = now;
+    }
+    if (status === 'Unlocked') {
+      nextEntry.unlockedBy = req.user.id;
+      nextEntry.unlockedAt = now;
+    }
+
+    if (existingIndex >= 0) {
+      existingReviews[existingIndex] = nextEntry;
+    } else {
+      existingReviews.push(nextEntry);
+    }
+
+    regulation.curriculumBookReviews = existingReviews;
+    await regulation.save();
+
+    await AuditLog.create({
+      userId: req.user.id,
+      userName: req.user.name,
+      userEmail: req.user.email,
+      action: `CURRICULUM_BOOK_${status.toUpperCase().replace(/\s+/g, '_')}`,
+      details: `Curriculum book for ${department.code} / ${regulation.code} marked as ${status}.${remarks ? ` Remarks: ${remarks}` : ''}`,
+      category: 'Academic'
+    });
+
+    return res.status(200).json({
+      message: `Curriculum book marked as ${status}.`,
+      review: {
+        ...normalizeReviewEntry(nextEntry, regulation._id),
+        regulationCode: regulation.code,
+        departmentName: department.name,
+        departmentCode: department.code,
+      }
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const uploadCurriculum = async (req, res, next) => {
   try {
     const { departmentId, title, regulation, academicYear } = req.body;
@@ -999,7 +1322,7 @@ export const uploadCurriculum = async (req, res, next) => {
 export const listCurriculums = async (req, res, next) => {
   try {
     const { departmentId, status } = req.query;
-    const query = {};
+    const query = { isDeleted: { $ne: true } };
     if (departmentId) query.departmentId = departmentId;
     if (status) query.status = status;
 
@@ -1020,13 +1343,13 @@ export const getCurriculum = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: 'Invalid curriculum book ID' });
     }
-    const book = await CurriculumBook.findById(req.params.id)
+    const book = await CurriculumBook.findOne({ _id: req.params.id, isDeleted: { $ne: true } })
       .populate('departmentId', 'name code')
       .populate('createdBy', 'name email')
       .populate('updatedBy', 'name email');
     if (!book) return res.status(404).json({ message: 'Curriculum book not found' });
 
-    const sections = await CurriculumSection.find({ curriculumBookId: book._id }).sort({ orderNumber: 1 });
+    const sections = await CurriculumSection.find({ curriculumBookId: book._id, isDeleted: { $ne: true } }).sort({ orderNumber: 1 });
     return res.status(200).json({ curriculumBook: book, sections });
   } catch (error) {
     return next(error);
@@ -1039,7 +1362,7 @@ export const updateCurriculum = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid curriculum book ID' });
     }
     const { sections, ...body } = req.body;
-    const book = await CurriculumBook.findById(req.params.id);
+    const book = await CurriculumBook.findOne({ _id: req.params.id, isDeleted: { $ne: true } });
     if (!book) return res.status(404).json({ message: 'Curriculum book not found' });
 
     ['title', 'regulation', 'academicYear', 'status'].forEach(field => {
@@ -1081,11 +1404,21 @@ export const deleteCurriculum = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: 'Invalid curriculum book ID' });
     }
-    const book = await CurriculumBook.findByIdAndDelete(req.params.id);
+    const book = await CurriculumBook.findByIdAndUpdate(
+      req.params.id,
+      { isDeleted: true, deletedAt: new Date() },
+      { new: true }
+    );
     if (!book) return res.status(404).json({ message: 'Curriculum book not found' });
 
-    await CurriculumSection.deleteMany({ curriculumBookId: req.params.id });
-    await CurriculumVersion.deleteMany({ curriculumBookId: req.params.id });
+    await CurriculumSection.updateMany(
+      { curriculumBookId: req.params.id },
+      { isDeleted: true, deletedAt: new Date() }
+    );
+    await CurriculumVersion.updateMany(
+      { curriculumBookId: req.params.id },
+      { isDeleted: true, deletedAt: new Date() }
+    );
     return res.status(200).json({ message: 'Curriculum book deleted successfully' });
   } catch (error) {
     return next(error);
@@ -1098,7 +1431,7 @@ export const createVersion = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(curriculumBookId)) {
       return res.status(400).json({ message: 'Invalid curriculum book ID' });
     }
-    const book = await CurriculumBook.findById(curriculumBookId);
+    const book = await CurriculumBook.findOne({ _id: curriculumBookId, isDeleted: { $ne: true } });
     if (!book) return res.status(404).json({ message: 'Curriculum book not found' });
 
     const newVersionNumber = book.currentVersion + 1;
@@ -1125,7 +1458,7 @@ export const getVersionHistory = async (req, res, next) => {
     if (!curriculumBookId || !mongoose.Types.ObjectId.isValid(curriculumBookId)) {
       return res.status(400).json({ message: 'Invalid curriculum book ID' });
     }
-    const versions = await CurriculumVersion.find({ curriculumBookId })
+    const versions = await CurriculumVersion.find({ curriculumBookId, isDeleted: { $ne: true } })
       .populate('editedBy', 'name email')
       .populate('modifiedBy', 'name email')
       .sort({ versionNumber: -1 });
@@ -1141,8 +1474,8 @@ export const restoreVersion = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(versionId)) {
       return res.status(400).json({ message: 'Invalid ID parameters' });
     }
-    const version = await CurriculumVersion.findOne({ _id: versionId, curriculumBookId: id });
-    const book = await CurriculumBook.findById(id);
+    const version = await CurriculumVersion.findOne({ _id: versionId, curriculumBookId: id, isDeleted: { $ne: true } });
+    const book = await CurriculumBook.findOne({ _id: id, isDeleted: { $ne: true } });
     if (!book || !version) return res.status(404).json({ message: 'Curriculum book or version not found' });
 
     const snapshot = version.content || version.editedContent || {};
@@ -1225,6 +1558,11 @@ export const exportPdf = async (req, res, next) => {
     let html = '';
     let pdfFilename = 'curriculum_book.pdf';
 
+    const facultyAccessError = await ensureFacultyPublishedAccess(req, regulationId, departmentId);
+    if (facultyAccessError) {
+      return res.status(403).json({ message: facultyAccessError });
+    }
+
     if (htmlContent) {
       const reg = regulationId ? await Regulation.findById(regulationId).lean() : null;
       const dept = departmentId ? await Department.findById(departmentId).lean() : null;
@@ -1251,7 +1589,7 @@ export const exportPdf = async (req, res, next) => {
         return res.status(400).json({ message: 'Invalid regulation ID' });
       }
 
-      const regulation  = await Regulation.findById(regulationId).lean();
+      const regulation  = await Regulation.findOne({ _id: regulationId, isDeleted: { $ne: true } }).lean();
       if (!regulation) return res.status(404).json({ message: 'Regulation not found' });
 
       let dept = null;
@@ -1281,10 +1619,10 @@ export const exportPdf = async (req, res, next) => {
       if (!mongoose.Types.ObjectId.isValid(curriculumBookId)) {
         return res.status(400).json({ message: 'Invalid curriculum book ID' });
       }
-      const book = await CurriculumBook.findById(curriculumBookId).populate('departmentId', 'name code');
+      const book = await CurriculumBook.findOne({ _id: curriculumBookId, isDeleted: { $ne: true } }).populate('departmentId', 'name code');
       if (!book) return res.status(404).json({ message: 'Curriculum book not found' });
 
-      const sections = await CurriculumSection.find({ curriculumBookId }).sort({ orderNumber: 1 }).lean();
+      const sections = await CurriculumSection.find({ curriculumBookId, isDeleted: { $ne: true } }).sort({ orderNumber: 1 }).lean();
       const dynamicContext = await getDynamicCurriculumContext(book);
       html = buildPdfReadyHtml(book, sections, dynamicContext);
       pdfFilename = `${book.title.replace(/[^\w.-]+/g, '_')}_v${book.currentVersion}.pdf`;
@@ -1369,12 +1707,17 @@ export const exportDocx = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid or missing regulationId query param.' });
     }
 
+    const facultyAccessError = await ensureFacultyPublishedAccess(req, regulationId, departmentId);
+    if (facultyAccessError) {
+      return res.status(403).json({ message: facultyAccessError });
+    }
+
     let dept = null;
     if (departmentId && mongoose.Types.ObjectId.isValid(departmentId)) {
       dept = await Department.findById(departmentId).lean();
     }
 
-    const regulation = await Regulation.findById(regulationId).lean();
+    const regulation = await Regulation.findOne({ _id: regulationId, isDeleted: { $ne: true } }).lean();
     if (!regulation) return res.status(404).json({ message: 'Regulation not found.' });
 
     // Resolve program info
@@ -1425,10 +1768,10 @@ export const livePreview = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid curriculum book ID' });
     }
 
-    const book = await CurriculumBook.findById(curriculumBookId).populate('departmentId', 'name code');
+    const book = await CurriculumBook.findOne({ _id: curriculumBookId, isDeleted: { $ne: true } }).populate('departmentId', 'name code');
     if (!book) return res.status(404).json({ message: 'Curriculum book not found' });
 
-    const sections = await CurriculumSection.find({ curriculumBookId }).sort({ orderNumber: 1 }).lean();
+    const sections = await CurriculumSection.find({ curriculumBookId, isDeleted: { $ne: true } }).sort({ orderNumber: 1 }).lean();
     const dynamicContext = await getDynamicCurriculumContext(book);
     const html = buildPdfReadyHtml(book, sections, dynamicContext);
 
@@ -1464,8 +1807,15 @@ export const creditSummary = async (req, res, next) => {
     let fcCount = 0, icCount = 0, acCount = 0;
     let fcCredits = 0, icCredits = 0, acCredits = 0;
 
+    const broadCategoryMapping = {
+      'PC': 'MCC', 'PE': 'MCC', 'BSC': 'MCC', 'BS': 'MCC',
+      'ESC': 'MCC', 'ES': 'MCC', 'HSMC': 'MCC', 'HS': 'MCC',
+      'OE': 'MSC/UEC', 'MSC': 'MSC/UEC', 'UEC': 'MSC/UEC'
+    };
+
     for (const v of filtered) {
-      const cat = v.category || 'MCC';
+      const rawCat = (v.category || 'MCC').toUpperCase();
+      const cat = broadCategoryMapping[rawCat] || rawCat;
       const c = v.credits?.C || 0;
       categoryTotals[cat] = (categoryTotals[cat] || 0) + c;
 

@@ -84,8 +84,8 @@ export const useCurriculumBuilderStore = create<CurriculumBuilderState>((set) =>
   totalCredits: 160,
   vision: 'To be a center of excellence in computer science education...',
   mission: 'M1: Provide quality education.\nM2: Foster research and innovation.',
-  peos: ['PEO1: Graduates will have successful careers.', 'PEO2: Graduates will exhibit professionalism.'],
-  psos: ['PSO1: Apply software engineering principles.', 'PSO2: Design efficient algorithms.'],
+  peos: [],
+  psos: [],
   semesters: Array.from({ length: 8 }, (_, i) => ({ semester: i + 1, courses: [] })),
 
   activeSectionId: 'cover',
@@ -118,6 +118,23 @@ export const useCurriculumBuilderStore = create<CurriculumBuilderState>((set) =>
         }))
       }));
 
+      // Fetch PEOs and PSOs from the Department's dynamically configured outcomes
+      const { selectedDepartment } = useContextStore.getState();
+      let peoStrings: string[] = [];
+      let psoStrings: string[] = [];
+      
+      if (selectedDepartment && selectedDepartment.outcomes) {
+        const peoGroup = selectedDepartment.outcomes.find((o: any) => o.name === 'PEO');
+        if (peoGroup && peoGroup.items) {
+          peoStrings = peoGroup.items.map((i: any) => `${i.code}: ${i.description}`);
+        }
+        
+        const psoGroup = selectedDepartment.outcomes.find((o: any) => o.name === 'PSO');
+        if (psoGroup && psoGroup.items) {
+          psoStrings = psoGroup.items.map((i: any) => `${i.code}: ${i.description}`);
+        }
+      }
+
       set({
         department: data.department?.name || 'Computer Science & Engineering',
         program: data.program?.name || 'B.Tech',
@@ -125,6 +142,8 @@ export const useCurriculumBuilderStore = create<CurriculumBuilderState>((set) =>
         academicYear: data.regulation ? `${data.regulation.academicYear}-${data.regulation.academicYear + 1}` : '2024-2025',
         totalCredits: data.totalCredits || 160,
         semesters,
+        peos: peoStrings,
+        psos: psoStrings,
         isLoading: false,
         error: null,
         lastSaved: new Date()
@@ -243,7 +262,7 @@ export const useCurriculumBuilderStore = create<CurriculumBuilderState>((set) =>
 
   savePeoPso: async () => {
     const { peos, psos } = useCurriculumBuilderStore.getState();
-    const { selectedDepartment } = useContextStore.getState();
+    const { selectedDepartment, selectedRegulation } = useContextStore.getState();
     if (!selectedDepartment) return;
 
     set({ isSaving: true });
@@ -262,14 +281,21 @@ export const useCurriculumBuilderStore = create<CurriculumBuilderState>((set) =>
         return { code, description };
       }).filter(p => p.code && p.description);
 
-      const res = await api.peoPso.getByDept(selectedDepartment._id);
-      const existing = res.peoPso || { pos: [] };
+      // Sync with the central Department outcomes model
+      const outcomes = selectedDepartment.outcomes || [];
+      const peoIndex = outcomes.findIndex((o: any) => o.name === 'PEO');
+      const psoIndex = outcomes.findIndex((o: any) => o.name === 'PSO');
 
-      await api.peoPso.updateByDept(selectedDepartment._id, {
-        peos: parsedPeos,
-        psos: parsedPsos,
-        pos: existing.pos
-      });
+      if (peoIndex > -1) outcomes[peoIndex].items = parsedPeos;
+      else outcomes.push({ name: 'PEO', isGlobal: false, isLocal: true, isMapped: false, items: parsedPeos });
+
+      if (psoIndex > -1) outcomes[psoIndex].items = parsedPsos;
+      else outcomes.push({ name: 'PSO', isGlobal: false, isLocal: true, isMapped: false, items: parsedPsos });
+
+      await api.programs.updateDept(selectedDepartment._id, { outcomes });
+      
+      // Also update the local context store so it reflects immediately
+      useContextStore.getState().setSelectedDepartment({ ...selectedDepartment, outcomes });
 
       set({ isSaving: false, lastSaved: new Date() });
     } catch (err) {

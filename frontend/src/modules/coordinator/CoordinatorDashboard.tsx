@@ -575,8 +575,8 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
   const reportReady = Boolean(activeVersion && reportValidation.overallPassed);
   const reportWarning = reportMissingRequirements.length > 0;
 
-  const dynamicPOs = activeVersion?.regulationId?.outcomes?.find((o: any) => o.name === 'PO')?.items || [];
-  const dynamicPSOs = activeVersion?.courseId?.departmentId?.outcomes?.find((o: any) => o.name === 'PSO')?.items || [];
+  const dynamicPOs = activeVersion?.peoPsoData?.pos || activeVersion?.regulationId?.outcomes?.find((o: any) => o.name === 'PO')?.items || [];
+  const dynamicPSOs = activeVersion?.peoPsoData?.psos || activeVersion?.courseId?.departmentId?.outcomes?.find((o: any) => o.name === 'PSO')?.items || [];
   const poList = dynamicPOs.length > 0 ? dynamicPOs.map((p: any) => p.code) : Array.from({ length: 12 }, (_, i) => `PO${i + 1}`);
   const psoList = dynamicPSOs.length > 0 ? dynamicPSOs.map((p: any) => p.code) : Array.from({ length: 3 }, (_, i) => `PSO${i + 1}`);
 
@@ -1039,6 +1039,16 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
     try {
       const res = await api.courses.getVersion(id);
       if (res.version) {
+        const deptId = res.version.courseId?.departmentId?._id || res.version.courseId?.departmentId;
+        const regId = res.version.regulationId?._id || res.version.regulationId;
+        if (deptId) {
+          try {
+            const peoPsoRes = await api.peoPso.getByDept(deptId, regId);
+            res.version.peoPsoData = peoPsoRes.peoPso;
+          } catch (err) {
+            console.error('Failed to load peoPso data:', err);
+          }
+        }
         setActiveVersion(res.version);
       }
     } catch (err) {

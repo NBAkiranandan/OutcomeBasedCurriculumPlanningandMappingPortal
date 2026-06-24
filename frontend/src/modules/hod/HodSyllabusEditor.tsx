@@ -635,7 +635,10 @@ export const HodSyllabusEditor: React.FC<HodSyllabusEditorProps> = ({ courseVers
               new Paragraph({ children: [new TextRun({ text: 'CO-PSO Mapping Matrix', bold: true })] }),
               ...(activeVersion.courseOutcomes || []).map((co: any) => {
                 const mapping = activeVersion.coPsoMappings?.find((m: any) => m.coCode === co.coCode) || { pso: {} };
-                const values = ['PSO1', 'PSO2', 'PSO3'].map((pso) => `${pso}:${mapping.pso?.[pso] || 0}`).join(', ');
+                const departmentOutcomes = activeVersion.courseId?.departmentId?.outcomes || user?.department?.outcomes || [];
+                const psoGroup = departmentOutcomes.find((o: any) => o.name === 'PSO');
+                const psoCodes = psoGroup?.items?.length > 0 ? psoGroup.items.map((i: any) => i.code) : ['PSO1', 'PSO2', 'PSO3'];
+                const values = psoCodes.map((pso: string) => `${pso}:${mapping.pso?.[pso] || 0}`).join(', ');
                 return new Paragraph({ children: [new TextRun({ text: `${co.coCode}: [${values}]` })] });
               }),
               new Paragraph({ children: [] }),
@@ -853,9 +856,14 @@ export const HodSyllabusEditor: React.FC<HodSyllabusEditorProps> = ({ courseVers
               <thead>
                 <tr>
                   <th style={{ border: '1px solid #000', padding: '2px 6px', fontWeight: 700, background: '#e8e8e8', textAlign: 'center' }}>CO/PSO</th>
-                  {['PSO1','PSO2','PSO3'].map(pso => (
-                    <th key={pso} style={{ border: '1px solid #000', padding: '2px 10px', fontWeight: 700, background: '#e8e8e8', textAlign: 'center' }}>{pso}</th>
-                  ))}
+                  {(() => {
+                    const departmentOutcomes = activeVersion.courseId?.departmentId?.outcomes || user?.department?.outcomes || [];
+                    const psoGroup = departmentOutcomes.find((o: any) => o.name === 'PSO');
+                    const psoCodes = psoGroup?.items?.length > 0 ? psoGroup.items.map((i: any) => i.code) : ['PSO1', 'PSO2', 'PSO3'];
+                    return psoCodes.map((pso: string) => (
+                      <th key={pso} style={{ border: '1px solid #000', padding: '2px 10px', fontWeight: 700, background: '#e8e8e8', textAlign: 'center' }}>{pso}</th>
+                    ));
+                  })()}
                 </tr>
               </thead>
               <tbody>
@@ -866,14 +874,19 @@ export const HodSyllabusEditor: React.FC<HodSyllabusEditorProps> = ({ courseVers
                       <td style={{ border: '1px solid #000', padding: '2px 6px', fontWeight: 700, textAlign: 'center', background: '#f4f4f4' }}>
                         {co.coCode}
                       </td>
-                      {['PSO1','PSO2','PSO3'].map(pso => {
-                        const val = coPso?.pso?.[pso] || 0;
-                        return (
-                          <td key={pso} style={{ border: '1px solid #000', padding: '2px 10px', textAlign: 'center', fontWeight: val > 0 ? 700 : 400 }}>
-                            {val > 0 ? val : ''}
-                          </td>
-                        );
-                      })}
+                      {(() => {
+                        const departmentOutcomes = activeVersion.courseId?.departmentId?.outcomes || user?.department?.outcomes || [];
+                        const psoGroup = departmentOutcomes.find((o: any) => o.name === 'PSO');
+                        const psoCodes = psoGroup?.items?.length > 0 ? psoGroup.items.map((i: any) => i.code) : ['PSO1', 'PSO2', 'PSO3'];
+                        return psoCodes.map((pso: string) => {
+                          const val = coPso?.pso?.[pso] || 0;
+                          return (
+                            <td key={pso} style={{ border: '1px solid #000', padding: '2px 10px', textAlign: 'center', fontWeight: val > 0 ? 700 : 400 }}>
+                              {val > 0 ? val : ''}
+                            </td>
+                          );
+                        });
+                      })()}
                     </tr>
                   );
                 })}
@@ -2017,9 +2030,14 @@ export const HodSyllabusEditor: React.FC<HodSyllabusEditorProps> = ({ courseVers
                   <thead>
                     <tr className="bg-slate-100 border-b-2 border-slate-200">
                       <th className="sticky left-0 z-10 bg-slate-100 text-[10px] font-extrabold text-slate-600 uppercase tracking-wider px-4 py-2 border-r border-slate-200" style={{ width: '80px', minWidth: '80px' }}>CO / PSO</th>
-                      {Array.from({ length: 3 }, (_, i) => `PSO${i + 1}`).map(pso => (
-                        <th key={pso} className="text-[10px] font-extrabold text-slate-500 uppercase text-center py-2 border-r border-slate-200 last:border-r-0" style={{ width: '90px', minWidth: '90px' }}>{pso}</th>
-                      ))}
+                      {(() => {
+                        const departmentOutcomes = activeVersion?.courseId?.departmentId?.outcomes || user?.department?.outcomes || [];
+                        const psoGroup = departmentOutcomes.find((o: any) => o.name === 'PSO');
+                        const psoCodes = psoGroup?.items?.length > 0 ? psoGroup.items.map((i: any) => i.code) : ['PSO1', 'PSO2', 'PSO3'];
+                        return psoCodes.map((pso: string) => (
+                          <th key={pso} className="text-[10px] font-extrabold text-slate-500 uppercase text-center py-2 border-r border-slate-200 last:border-r-0" style={{ width: '90px', minWidth: '90px' }}>{pso}</th>
+                        ));
+                      })()}
                     </tr>
                   </thead>
                   <tbody>
@@ -2033,19 +2051,24 @@ export const HodSyllabusEditor: React.FC<HodSyllabusEditorProps> = ({ courseVers
                               {co.coCode}
                             </span>
                           </td>
-                          {Array.from({ length: 3 }, (_, i) => `PSO${i + 1}`).map(pso => {
-                            const val = coPso?.pso?.[pso] || 0;
-                            return (
-                              <td
-                                key={pso}
-                                onClick={() => handleMatrixCellClick(co.coCode, 'pso', pso)}
-                                className={`matrix-cell border-r border-slate-100 last:border-r-0 mapping-${val}`}
-                                title={`${co.coCode} × ${pso}: Click to change (current: ${val === 0 ? 'None' : val === 1 ? 'Low' : val === 2 ? 'Medium' : 'High'})`}
-                              >
-                                {val > 0 ? val : '–'}
-                              </td>
-                            );
-                          })}
+                          {(() => {
+                            const departmentOutcomes = activeVersion?.courseId?.departmentId?.outcomes || user?.department?.outcomes || [];
+                            const psoGroup = departmentOutcomes.find((o: any) => o.name === 'PSO');
+                            const psoCodes = psoGroup?.items?.length > 0 ? psoGroup.items.map((i: any) => i.code) : ['PSO1', 'PSO2', 'PSO3'];
+                            return psoCodes.map((pso: string) => {
+                              const val = coPso?.pso?.[pso] || 0;
+                              return (
+                                <td
+                                  key={pso}
+                                  onClick={() => handleMatrixCellClick(co.coCode, 'pso', pso)}
+                                  className={`matrix-cell border-r border-slate-100 last:border-r-0 mapping-${val}`}
+                                  title={`${co.coCode} × ${pso}: Click to change (current: ${val === 0 ? 'None' : val === 1 ? 'Low' : val === 2 ? 'Medium' : 'High'})`}
+                                >
+                                  {val > 0 ? val : '–'}
+                                </td>
+                              );
+                            });
+                          })()}
                         </tr>
                       );
                     })}
@@ -2053,21 +2076,26 @@ export const HodSyllabusEditor: React.FC<HodSyllabusEditorProps> = ({ courseVers
                     {/* Averages Row */}
                     <tr className="border-t-2 border-slate-200 bg-slate-100">
                       <td className="sticky left-0 z-10 px-4 text-[10px] font-extrabold text-slate-600 uppercase tracking-wide border-r border-slate-200 bg-slate-100" style={{ height: '36px' }}>Avg.</td>
-                      {Array.from({ length: 3 }, (_, i) => `PSO${i + 1}`).map(pso => {
-                        let total = 0, count = 0;
-                        activeVersion.coPsoMappings?.forEach((m: any) => {
-                          const v = m.pso?.[pso] || 0;
-                          if (v > 0) { total += v; count++; }
+                      {(() => {
+                        const departmentOutcomes = activeVersion?.courseId?.departmentId?.outcomes || user?.department?.outcomes || [];
+                        const psoGroup = departmentOutcomes.find((o: any) => o.name === 'PSO');
+                        const psoCodes = psoGroup?.items?.length > 0 ? psoGroup.items.map((i: any) => i.code) : ['PSO1', 'PSO2', 'PSO3'];
+                        return psoCodes.map((pso: string) => {
+                          let total = 0, count = 0;
+                          activeVersion.coPsoMappings?.forEach((m: any) => {
+                            const v = m.pso?.[pso] || 0;
+                            if (v > 0) { total += v; count++; }
+                          });
+                          const avg = count > 0 ? (total / count).toFixed(1) : '–';
+                          const numAvg = count > 0 ? total / count : 0;
+                          const avgColor = numAvg === 0 ? 'text-slate-400' : numAvg >= 2.5 ? 'text-emerald-700 font-extrabold' : numAvg >= 1.5 ? 'text-amber-700 font-extrabold' : 'text-blue-600 font-extrabold';
+                          return (
+                            <td key={pso} className={`text-center text-[10px] border-r border-slate-200 last:border-r-0 ${avgColor}`} style={{ height: '36px' }}>
+                              {avg}
+                            </td>
+                          );
                         });
-                        const avg = count > 0 ? (total / count).toFixed(1) : '–';
-                        const numAvg = count > 0 ? total / count : 0;
-                        const avgColor = numAvg === 0 ? 'text-slate-400' : numAvg >= 2.5 ? 'text-emerald-700 font-extrabold' : numAvg >= 1.5 ? 'text-amber-700 font-extrabold' : 'text-blue-600 font-extrabold';
-                        return (
-                          <td key={pso} className={`text-center text-[10px] border-r border-slate-200 last:border-r-0 ${avgColor}`} style={{ height: '36px' }}>
-                            {avg}
-                          </td>
-                        );
-                      })}
+                      })()}
                     </tr>
                   </tbody>
                 </table>

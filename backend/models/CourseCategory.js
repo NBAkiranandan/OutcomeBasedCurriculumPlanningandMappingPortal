@@ -4,6 +4,7 @@ const CourseCategorySchema = new mongoose.Schema({
   code: { type: String, required: true, unique: true }, // e.g., 'MCC'
   name: { type: String, required: true },               // e.g., 'Major Core Courses (MCC)'
   ugc: { type: String, default: '-' },                  // e.g., '80'
+  order: { type: Number, default: 0 },                  // For custom sorting
 }, { timestamps: true });
 
 export default mongoose.model('CourseCategory', CourseCategorySchema);

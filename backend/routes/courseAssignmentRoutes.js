@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.use(authenticateJWT);
 
+router.get('/my-courses', authorizeRoles('Faculty'), courseAssignmentController.getMyAssignedCourseVersions);
 router.get('/', courseAssignmentController.getAssignments);
 router.post('/', authorizeRoles('Admin', 'HOD'), courseAssignmentController.createAssignment);
 router.put('/:id', authorizeRoles('Admin', 'HOD'), courseAssignmentController.updateAssignment);

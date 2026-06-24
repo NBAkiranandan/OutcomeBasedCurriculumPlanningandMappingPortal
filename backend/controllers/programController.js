@@ -1,4 +1,4 @@
-import * as programRepository from '../repositories/programRepository.js';
+import * as programRepository from '../repositories/programRepository.js'; // Trigger nodemon restart 2
 import User from '../models/User.js';
 
 export const getPrograms = async (req, res, next) => {
@@ -63,9 +63,9 @@ export const deleteProgram = async (req, res, next) => {
     const { id } = req.params;
     const program = await programRepository.deleteProgram(id);
     if (!program) return res.status(404).json({ message: 'Program not found' });
-    return res.status(200).json({ 
-      program, 
-      message: `Program accounts successfully ${program.isActive ? 'activated' : 'deactivated'}.` 
+    return res.status(200).json({
+      program,
+      message: `Program accounts successfully ${program.isActive ? 'activated' : 'deactivated'}.`
     });
   } catch (error) {
     return next(error);
@@ -75,6 +75,9 @@ export const deleteProgram = async (req, res, next) => {
 export const updateDepartment = async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (req.user.role === 'HOD' && req.user.departmentId !== id) {
+      return res.status(403).json({ message: 'Forbidden: You can only update your own department.' });
+    }
     const department = await programRepository.updateDepartment(id, req.body);
     if (!department) return res.status(404).json({ message: 'Department not found' });
     return res.status(200).json({ department, message: 'Department updated successfully.' });
@@ -88,9 +91,9 @@ export const deleteDepartment = async (req, res, next) => {
     const { id } = req.params;
     const department = await programRepository.deleteDepartment(id);
     if (!department) return res.status(404).json({ message: 'Department not found' });
-    return res.status(200).json({ 
-      department, 
-      message: `Department successfully ${department.isActive ? 'activated' : 'deactivated'}.` 
+    return res.status(200).json({
+      department,
+      message: `Department successfully ${department.isActive ? 'activated' : 'deactivated'}.`
     });
   } catch (error) {
     return next(error);

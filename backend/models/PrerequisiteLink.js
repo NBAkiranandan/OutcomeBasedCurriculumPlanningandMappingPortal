@@ -3,7 +3,9 @@ import mongoose from 'mongoose';
 const PrerequisiteLinkSchema = new mongoose.Schema({
   sourceCourseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true }, // The prerequisite course
   targetCourseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true }, // The dependent course
-  regulationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Regulation', required: true }
+  regulationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Regulation', required: true },
+  isDeleted: { type: Boolean, default: false },
+  deletedAt: { type: Date }
 }, { timestamps: true });
 
 // Unique link per regulation

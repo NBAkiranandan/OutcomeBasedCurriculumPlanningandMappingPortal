@@ -2,7 +2,7 @@ import CourseCategory from '../models/CourseCategory.js';
 
 export const getCategories = async (req, res, next) => {
   try {
-    const categories = await CourseCategory.find().sort({ code: 1 });
+    const categories = await CourseCategory.find().sort({ order: 1, code: 1 });
     return res.status(200).json({ categories });
   } catch (error) {
     return next(error);
@@ -11,12 +11,12 @@ export const getCategories = async (req, res, next) => {
 
 export const createCategory = async (req, res, next) => {
   try {
-    const { code, name, ugc } = req.body;
+    const { code, name, ugc, order } = req.body;
     const existing = await CourseCategory.findOne({ code });
     if (existing) {
       return res.status(400).json({ message: 'Course Category with this code already exists.' });
     }
-    const category = new CourseCategory({ code, name, ugc });
+    const category = new CourseCategory({ code, name, ugc, order: order || 0 });
     await category.save();
     return res.status(201).json({ category, message: 'Course Category created successfully.' });
   } catch (error) {
@@ -27,7 +27,7 @@ export const createCategory = async (req, res, next) => {
 export const updateCategory = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { code, name, ugc } = req.body;
+    const { code, name, ugc, order } = req.body;
     
     // Check if another category is using the same code
     const existing = await CourseCategory.findOne({ code, _id: { $ne: id } });
@@ -37,7 +37,7 @@ export const updateCategory = async (req, res, next) => {
 
     const category = await CourseCategory.findByIdAndUpdate(
       id,
-      { code, name, ugc },
+      { code, name, ugc, order },
       { new: true, runValidators: true }
     );
 

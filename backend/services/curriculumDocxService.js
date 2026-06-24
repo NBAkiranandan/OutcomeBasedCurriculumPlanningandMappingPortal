@@ -10,11 +10,13 @@ import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   BorderStyle, WidthType, AlignmentType, HeadingLevel, ImageRun,
   PageBreak, SectionType, convertInchesToTwip, convertMillimetersToTwip,
-  Header, Footer, PageNumber, NumberFormat, TableLayoutType,
+  Header, Footer, PageNumber, NumberFormat, TableLayoutType, VerticalMergeType,
 } from 'docx';
+import Course from '../models/Course.js';
 import CourseVersion from '../models/CourseVersion.js';
 import Regulation from '../models/Regulation.js';
 import MinorStream from '../models/MinorStream.js';
+import PrerequisiteLink from '../models/PrerequisiteLink.js';
 import CourseCategory from '../models/CourseCategory.js';
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
@@ -487,6 +489,9 @@ export const generateCurriculumDocx = async ({
     .populate({ path: 'courseId', populate: { path: 'departmentId' } })
     .sort({ semester: 1, 'courseId.code': 1 })
     .lean();
+    
+  const prereqLinks = await PrerequisiteLink.find({ regulationId }).populate('sourceCourseId').lean();
+
 
   const courses = departmentId
     ? allVersions.filter(v => {
@@ -502,6 +507,25 @@ export const generateCurriculumDocx = async ({
     : [];
 
   const dbCategories = await CourseCategory.find().lean();
+
+  // Fetch ALL published Minor Degrees for this regulation
+  const MinorDegree = (await import('../models/MinorDegree.js')).default;
+  const MinorDegreeCourse = (await import('../models/MinorDegreeCourse.js')).default;
+  const publishedMinors = await MinorDegree.find({ regulationId, status: 'Published', isDeleted: { $ne: true } })
+    .sort({ departmentName: 1, minorName: 1 })
+    .lean();
+  
+  const publishedMinorDegrees = {};
+  for (let minor of publishedMinors) {
+    const minorCourses = await MinorDegreeCourse.find({ minorDegreeId: minor._id, isDeleted: { $ne: true } })
+      .sort({ semester: 1 })
+      .lean();
+    minor.courses = minorCourses;
+    
+    const dName = minor.departmentName || 'Unknown Department';
+    if (!publishedMinorDegrees[dName]) publishedMinorDegrees[dName] = [];
+    publishedMinorDegrees[dName].push(minor);
+  }
 
   // Category credit totals
   const categoryTotals = courses.reduce((acc, v) => {
@@ -682,6 +706,115 @@ export const generateCurriculumDocx = async ({
   ] : [];
 
   // ─────────────────────────────────────────────────────────
+  //  SECTION 5.5: MINOR DEGREES
+  // ─────────────────────────────────────────────────────────
+  const minorDegreesSection = Object.keys(publishedMinorDegrees).length ? [
+    sectionHeading('Available Minor Degree Offerings (Cross-Departmental)'),
+    ...Object.keys(publishedMinorDegrees).flatMap(deptName => [
+      subHeading(deptName),
+      ...publishedMinorDegrees[deptName].flatMap(minor => [
+        new Paragraph({ children: [boldRun(minor.minorName, { color: 'C0504D' })], spacing: { before: convertMillimetersToTwip(3), after: convertMillimetersToTwip(1) } }),
+        new Paragraph({ children: [boldRun('Required Credits: '), textRun(String(minor.requiredCredits)), textRun('   |   '), boldRun('Eligibility: '), textRun(minor.eligibility || 'N/A')], spacing: { after: convertMillimetersToTwip(1) } }),
+        new Paragraph({ children: [textRun(minor.description)], spacing: { after: convertMillimetersToTwip(3) } }),
+        new Table({
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          layout: TableLayoutType.FIXED,
+          rows: [
+            new TableRow({
+              tableHeader: true,
+              children: [
+                headerCell('Course Code', 1, { width: { size: 13, type: WidthType.PERCENTAGE } }),
+                headerCell('Course Name', 1, { width: { size: 30, type: WidthType.PERCENTAGE } }),
+                headerCell('Level', 1, { width: { size: 8, type: WidthType.PERCENTAGE } }),
+                headerCell('L', 1, { width: { size: 5, type: WidthType.PERCENTAGE } }),
+                headerCell('T', 1, { width: { size: 5, type: WidthType.PERCENTAGE } }),
+                headerCell('P', 1, { width: { size: 5, type: WidthType.PERCENTAGE } }),
+                headerCell('C', 1, { width: { size: 5, type: WidthType.PERCENTAGE } }),
+                headerCell('CIE', 1, { width: { size: 7, type: WidthType.PERCENTAGE } }),
+                headerCell('SEE', 1, { width: { size: 7, type: WidthType.PERCENTAGE } }),
+                headerCell('Total', 1, { width: { size: 7, type: WidthType.PERCENTAGE } }),
+                headerCell('Pre-requisite', 1, { width: { size: 8, type: WidthType.PERCENTAGE } }),
+              ]
+            }),
+            ...(() => {
+              let sumL = 0, sumT = 0, sumP = 0, sumC = 0;
+              const groupSizes = {};
+              (minor.courses || []).forEach(c => {
+                if (c.orGroupId) groupSizes[c.orGroupId] = (groupSizes[c.orGroupId] || 0) + 1;
+              });
+              const renderedGroups = new Set();
+              const groupCounters = {};
+
+              const rows = (minor.courses || []).map(c => {
+                const v = allVersions.find(ver => ver.courseId?.code === c.courseCode);
+                const level = v?.courseLevel || v?.level || c.level || 'IC';
+                const L = v?.credits?.L || 0;
+                const T = v?.credits?.T || 0;
+                const P = v?.credits?.P || 0;
+                const C = v?.credits?.C || c.credits;
+                const CIE = v?.cieSee?.cieMaxMarks || 50;
+                const SEE = v?.cieSee?.seeMaxMarks || 50;
+                const total = CIE + SEE;
+                
+                const isGrouped = !!c.orGroupId;
+                const isFirstInGroup = isGrouped && !renderedGroups.has(c.orGroupId);
+                const groupSize = isGrouped ? groupSizes[c.orGroupId] : 1;
+                if (isGrouped) {
+                  renderedGroups.add(c.orGroupId);
+                  groupCounters[c.orGroupId] = (groupCounters[c.orGroupId] || 0) + 1;
+                }
+                const isLastInGroup = isGrouped && groupCounters[c.orGroupId] === groupSize;
+                const appendOr = isGrouped && !isLastInGroup;
+                const skipMergedColumns = isGrouped && !isFirstInGroup;
+
+                const vMergeType = isGrouped ? (isFirstInGroup ? VerticalMergeType.RESTART : VerticalMergeType.CONTINUE) : undefined;
+
+                if (!skipMergedColumns) {
+                  sumL += L; sumT += T; sumP += P; sumC += C;
+                }
+
+                const prereqs = v ? prereqLinks.filter(l => String(l.targetCourseId?._id || l.targetCourseId) === String(v.courseId?._id)) : [];
+                const prereqStr = prereqs.length > 0 
+                  ? prereqs.map(l => l.sourceCourseId?.keyword || l.sourceCourseId?.code || '').filter(Boolean).join(', ') 
+                  : '-';
+
+                return new TableRow({
+                  children: [
+                    dataCell(c.courseCode),
+                    dataCell(c.courseName + (appendOr ? ' (or)' : ''), { align: AlignmentType.LEFT }),
+                    dataCell(skipMergedColumns ? '' : String(level), { vMerge: vMergeType }),
+                    dataCell(String(L || '')),
+                    dataCell(String(T || '')),
+                    dataCell(String(P || '')),
+                    dataCell(skipMergedColumns ? '' : String(C), { bold: true, vMerge: vMergeType }),
+                    dataCell(skipMergedColumns ? '' : String(CIE), { vMerge: vMergeType }),
+                    dataCell(skipMergedColumns ? '' : String(SEE), { vMerge: vMergeType }),
+                    dataCell(skipMergedColumns ? '' : String(total), { vMerge: vMergeType }),
+                    dataCell(skipMergedColumns ? '' : (prereqStr || '-'), { vMerge: vMergeType }),
+                  ]
+                });
+              });
+
+              rows.push(new TableRow({
+                children: [
+                  dataCell('Total', { align: AlignmentType.CENTER, bold: true, columnSpan: 3 }),
+                  dataCell(String(sumL), { bold: true }),
+                  dataCell(String(sumT), { bold: true }),
+                  dataCell(String(sumP), { bold: true }),
+                  dataCell(String(sumC), { bold: true }),
+                  dataCell('', { columnSpan: 4 }),
+                ]
+              }));
+              return rows;
+            })()
+          ]
+        }),
+        ...emptyPara(1)
+      ])
+    ])
+  ] : [];
+
+  // ─────────────────────────────────────────────────────────
   //  SECTION 6: INDIVIDUAL COURSE PAGES
   // ─────────────────────────────────────────────────────────
   const coursesSectionHeading = [sectionHeading('Detailed Course Syllabi')];
@@ -719,6 +852,7 @@ export const generateCurriculumDocx = async ({
           ...categoryTablesSection,
           ...semesterSection,
           ...minorSection,
+          ...minorDegreesSection,
           ...coursesSectionHeading,
           ...coursePagesChildren,
         ],

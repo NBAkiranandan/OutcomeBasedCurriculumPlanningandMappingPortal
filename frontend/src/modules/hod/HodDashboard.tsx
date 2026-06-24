@@ -16,7 +16,7 @@ import Papa from 'papaparse';
 import CurriculumBuilder from './CurriculumBuilder';
 import { HodSyllabusEditor } from './HodSyllabusEditor';
 import { CurriculumBookGenerator } from '../../components/common/CurriculumBookGenerator';
-import { CurriculumBookManager } from './CurriculumBookManager/CurriculumBookManager';
+
 
 
 export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: string) => void }> = ({ activeTab, setActiveTab }) => {
@@ -43,9 +43,21 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   const [addPrereqOpen, setAddPrereqOpen] = useState(false);
   const [newPrereqData, setNewPrereqData] = useState({ sourceCourseId: '', targetCourseId: '' });
 
+  // Minor Degrees states
+  const [minorDegrees, setMinorDegrees] = useState<any[]>([]);
+  const [minorDegreeModalOpen, setMinorDegreeModalOpen] = useState(false);
+  const [editingMinorDegree, setEditingMinorDegree] = useState<any | null>(null);
+  const defaultMinorDegreeData = { minorName: '', description: '', requiredCredits: 18, eligibility: '' };
+  const [newMinorDegreeData, setNewMinorDegreeData] = useState(defaultMinorDegreeData);
+  const [minorDegreeCoursesModalOpen, setMinorDegreeCoursesModalOpen] = useState(false);
+  const [activeMinorDegree, setActiveMinorDegree] = useState<any | null>(null);
+  const defaultMinorDegreeCourseData = { courseCode: '', courseName: '', credits: 3, semester: 'Semester 4', courseType: 'PC', description: '', orGroupId: '' };
+  const [newMinorDegreeCourseData, setNewMinorDegreeCourseData] = useState(defaultMinorDegreeCourseData);
+  const [editingMinorDegreeCourse, setEditingMinorDegreeCourse] = useState<any | null>(null);
+
   // Regulation Manager states
   const [createRegOpen, setCreateRegOpen] = useState(false);
-  const [newRegData, setNewRegData] = useState({ code: '', academicYear: 2025 });
+  const [newRegData, setNewRegData] = useState({ code: '', academicYear: 2025, programId: '' });
   const [cloneSourceId, setCloneSourceId] = useState('');
   const [selectedClonePeos, setSelectedClonePeos] = useState<string[]>([]);
   const [selectedClonePsos, setSelectedClonePsos] = useState<string[]>([]);
@@ -60,9 +72,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [bulkFile, setBulkFile] = useState<File | null>(null);
   const [newCourseData, setNewCourseData] = useState({
-    code: '', title: '', programId: '', category: 'PC', semester: 1,
+    code: '', title: '', keyword: '', programId: '', regulationId: '', category: 'PC', semester: 1,
     L: 3, T: 0, P: 0, S: 0, credits: 3, cieMarks: 40, seeMarks: 60, coordinatorId: '',
-    courseLevel: 'FC - Foundation', suggestiveSemester: '1', status: 'Active', prerequisites: '',
+    courseLevel: 'Foundation Courses - FC', suggestiveSemester: '1', status: 'Active', prerequisites: '',
     description: '', offeredFor: ['CSE'], objectives: ['']
   });
   const branchOptions = ['CSE', 'CSE AI', 'AI/ML', 'IT', 'ECE', 'EEE', 'Mechanical', 'Civil'];
@@ -79,6 +91,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   const [builderRegulationId, setBuilderRegulationId] = useState('');
 
   // Faculty Management states
+  const [editingFacultyId, setEditingFacultyId] = useState<string | null>(null);
   const [facultyForm, setFacultyForm] = useState({
     facultyId: '',
     name: '',
@@ -89,17 +102,30 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
     status: 'Active'
   });
   const [facultySearch, setFacultySearch] = useState('');
+  const currentAcademicYear = new Date().getFullYear();
+  const defaultAssignmentForm = {
+    facultyId: '',
+    courseId: '',
+    regulationId: '',
+    academicYear: currentAcademicYear,
+    semester: 1,
+    section: 'A'
+  };
+  const [courseAssignments, setCourseAssignments] = useState<any[]>([]);
+  const [assignmentForm, setAssignmentForm] = useState(defaultAssignmentForm);
+  const [editingAssignment, setEditingAssignment] = useState<any | null>(null);
 
   // Course Approvals states
   const [approvalComments, setApprovalComments] = useState<Record<string, string>>({});
   const [approvalEditModal, setApprovalEditModal] = useState<{ open: boolean, version: any }>({ open: false, version: null });
   const [editCourseData, setEditCourseData] = useState({
-    title: '', code: '', programId: '', category: 'PC', semester: 1, courseLevel: 'FC - Foundation', status: 'Active',
+    title: '', code: '', programId: '', regulationId: '', category: 'PC', semester: 1, courseLevel: 'Foundation Courses - FC', status: 'Active',
     L: 3, T: 0, P: 0, S: 0, C: 3, cieMarks: 40, seeMarks: 60,
     description: '', offeredFor: ['CSE'], objectives: [''], coordinatorId: '', prerequisites: ''
   });
-
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [editingSyllabusId, setEditingSyllabusId] = useState<string | null>(null);
+  const [peoPsoData, setPeoPsoData] = useState<any>({ peos: [], psos: [], pos: [] });
 
   // Course Categories State
   const [courseCategories, setCourseCategories] = useState<any[]>([]);
@@ -112,6 +138,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   // Profile Standardized States
   const [bookViewMode, setBookViewMode] = useState<'directory' | 'view'>('directory');
   const [builderViewMode, setBuilderViewMode] = useState<'directory' | 'edit'>('directory');
+  const [curriculumReviews, setCurriculumReviews] = useState<any[]>([]);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [phoneVal, setPhoneVal] = useState('+91 9876543210');
   const [altEmailVal, setAltEmailVal] = useState('ananya.rao.alt@university.edu');
@@ -125,40 +152,88 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   const [deptAnnouncements, setDeptAnnouncements] = useState(false);
   const [curriculumReviewAlerts, setCurriculumReviewAlerts] = useState(true);
 
-  // Load HOD Portal Data
+  // Load HOD Portal Data — all scoped to HOD's assigned department only
   const loadData = async () => {
-    if (!selectedDepartment) return;
     setLoading(true);
     try {
-      // 1. Load context-centric curriculum course versions
+      // 1. Fetch HOD's assigned department (secured by JWT on backend)
+      const deptRes = await api.auth.myDepartment();
+      const hodDept = deptRes.department;
+      if (!hodDept) {
+        console.error('[HOD Dashboard] No department assigned to this HOD.');
+        setLoading(false);
+        return;
+      }
+      setSelectedDepartment(hodDept);
+
+      // 2. Resolve program from the department
+      const program = hodDept.programId;
+      if (program) {
+        setSelectedProgram({ _id: program._id, name: program.name, code: program.code } as any);
+      }
+
+      // 3. Load regulations filtered to this department's program
+      const regRes = await api.regulations.list();
+      const allRegs = regRes.regulations || [];
+      setRegulations(allRegs);
+
+      // 4. Auto-select regulation if none selected yet
+      if (!selectedRegulation && program) {
+        const deptRegs = allRegs.filter((r: any) => {
+          const rProgId = typeof r.programId === 'object' ? r.programId._id : r.programId;
+          return rProgId === program._id;
+        });
+        if (deptRegs.length > 0) {
+          setSelectedRegulation(deptRegs[0]);
+          setBuilderRegulationId(deptRegs[0]._id);
+        }
+      }
+
+      // 5. Load courses for this department
+      const courseRes = await api.courses.listByDept(hodDept._id);
+      setCourses(courseRes.courses || []);
+
+      // 6. Load regulation-specific course versions and PEO/PSO mapping
       if (selectedRegulation) {
         const verRes = await api.courses.listByReg(selectedRegulation._id);
         setVersions(verRes.versions || []);
         setBuilderRegulationId(selectedRegulation._id);
+
+        try {
+          const peoPsoRes = await api.peoPso.getByDept(hodDept._id, selectedRegulation._id);
+          if (peoPsoRes.peoPso) setPeoPsoData(peoPsoRes.peoPso);
+        } catch (err) {
+          console.error('[HOD Dashboard] Failed to load PEO/PSO:', err);
+        }
       }
 
-      // 1.5 Load Department PEO/PSO/POs
-      const peoRes = await api.peoPso.getByDept(selectedDepartment._id);
-      if (peoRes.peoPso) {
-        setPeoPso(peoRes.peoPso);
-      }
-
-      // 2. Load Department Shared Course Repository
-      const courseRes = await api.courses.listByDept(selectedDepartment._id);
-      setCourses(courseRes.courses || []);
-
-      // 3. Load Department Faculty list
+      // 7. Load faculty for this department
       const facRes = await api.auth.getFaculty();
       setFaculty(facRes.faculty || []);
 
-      let currentPrograms = programs;
+      try {
+        const assignmentRes = await api.courseAssignments.list({ departmentId: hodDept._id });
+        setCourseAssignments(assignmentRes.assignments || []);
+      } catch (err) {
+        console.error('[HOD Dashboard] Failed to load faculty course assignments:', err);
+        setCourseAssignments([]);
+      }
+
+      try {
+        const reviewRes = await api.curriculumBooks.reviews({ departmentId: hodDept._id });
+        setCurriculumReviews(reviewRes.reviews || []);
+      } catch (err) {
+        console.error('[HOD Dashboard] Failed to load curriculum book review statuses:', err);
+        setCurriculumReviews([]);
+      }
+
+      // 8. Load programs list (for course add forms etc.)
       if (programs.length === 0) {
         const progRes = await api.programs.list();
         setPrograms(progRes.programs || []);
-        currentPrograms = progRes.programs;
       }
 
-      // 5. Load dynamic course categories
+      // 9. Load course categories
       try {
         const catRes = await api.courseCategories.list();
         setCourseCategories(catRes.categories || []);
@@ -166,37 +241,33 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
         console.error('Failed to load categories:', err);
       }
 
-      const progId = typeof selectedDepartment.programId === 'object' ? selectedDepartment.programId._id : selectedDepartment.programId;
-      if (!selectedProgram && selectedDepartment) {
-        const prog = currentPrograms.find((p: any) => p._id === progId);
-        if (prog) setSelectedProgram(prog);
-      }
-
-      // 5. Load Regulations to contextual picker list
-      const regRes = await api.regulations.list();
-      const progRegs = regRes.regulations.filter((r: any) => {
-        const rProgId = typeof r.programId === 'object' ? r.programId._id : r.programId;
-        return rProgId === progId;
-      });
-
-      setRegulations(progRegs);
-
-      if (selectedRegulation && selectedDepartment) {
+      // 10. Load minor streams and prerequisites if regulation selected
+      if (selectedRegulation && hodDept) {
         try {
           const streamsRes = await api.minorStreams.list({
             regulationId: selectedRegulation._id,
-            departmentId: selectedDepartment._id
+            departmentId: hodDept._id
           });
-          setMinorStreams(streamsRes.minorStreams || []);
+          setMinorStreams(streamsRes.streams || []);
         } catch (e) {
           console.error('[HOD Dashboard] Failed to load minor streams:', e);
+        }
+
+        try {
+          const mdRes = await api.minorDegrees.list({
+            regulationId: selectedRegulation._id,
+            departmentId: hodDept._id
+          });
+          setMinorDegrees(mdRes.minorDegrees || []);
+        } catch (e) {
+          console.error('[HOD Dashboard] Failed to load minor degrees:', e);
         }
 
         try {
           const prereqsRes = await api.prerequisites.list({
             regulationId: selectedRegulation._id
           });
-          setPrereqs(prereqsRes.prerequisites || []);
+          setPrereqs(prereqsRes.links || []);
         } catch (e) {
           console.error('[HOD Dashboard] Failed to load prerequisites:', e);
         }
@@ -210,7 +281,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
   useEffect(() => {
     loadData();
-  }, [selectedRegulation, selectedDepartment]);
+  }, [selectedRegulation]);
 
   // Handle clone source change -> pre-populate outcomes checklist
   const handleCloneSourceChange = (sourceId: string) => {
@@ -235,7 +306,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       const payload = {
         code: newRegData.code,
         academicYear: newRegData.academicYear,
-        programId: programs[0]?._id,
+        programId: newRegData.programId || selectedProgram?._id || programs[0]?._id,
         departmentId: selectedDepartment?._id,
         durationYears: 4,
         semesterCount: 8
@@ -244,7 +315,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
       alert('Regulation created successfully!');
       setCreateRegOpen(false);
-      setNewRegData({ code: '', academicYear: 2025 });
+      setNewRegData({ code: '', academicYear: 2025, programId: '' });
       loadData();
     } catch (err: any) {
       alert(err.message || 'Failed to update workflow.');
@@ -296,62 +367,165 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
     }
   };
 
-  // Add Statement Workspace
+  // Add Statement to Department Outcomes (PEO/PSO)
   const handleAddWorkspaceStatement = async () => {
     if (!selectedDepartment) return;
     if (!newStatement.code || !newStatement.description) return;
-    const type = workspaceTab === 'peo' ? 'peos' : workspaceTab === 'pso' ? 'psos' : 'pos';
-    const updated = { ...peoPso };
-    if (!updated[type]) updated[type] = [];
-    updated[type].push({
+    const outcomeName = workspaceTab === 'peo' ? 'PEO' : workspaceTab === 'pso' ? 'PSO' : 'PO';
+
+    const outcomes = [...((selectedDepartment as any).outcomes || [])];
+    let groupIndex = outcomes.findIndex((o: any) => o.name === outcomeName);
+    if (groupIndex === -1) {
+      outcomes.push({ name: outcomeName, isGlobal: false, isLocal: true, isMapped: false, items: [] });
+      groupIndex = outcomes.length - 1;
+    }
+    outcomes[groupIndex].items = [...(outcomes[groupIndex].items || []), {
       code: newStatement.code,
-      description: newStatement.description,
-      status: newStatement.status
-    });
+      description: newStatement.description
+    }];
 
     try {
-      await api.peoPso.updateByDept(selectedDepartment._id, updated);
-      setPeoPso(updated);
+      await api.programs.updateDept((selectedDepartment as any)._id, { outcomes });
+      const refreshed = await api.auth.myDepartment();
+      if (refreshed.department) setSelectedDepartment(refreshed.department);
       setNewStatement({ code: '', description: '', status: 'Draft' });
       alert('Statement added successfully!');
-      loadData();
     } catch (err: any) {
       alert(`Failed to save: ${err.message}`);
     }
   };
 
-  // Delete Workspace Statement
+  // Delete Statement from Department Outcomes
   const handleDeleteStatement = async (idx: number) => {
     if (!selectedDepartment) return;
-    const type = workspaceTab === 'peo' ? 'peos' : workspaceTab === 'pso' ? 'psos' : 'pos';
-    const updated = { ...peoPso };
-    updated[type].splice(idx, 1);
+    const outcomeName = workspaceTab === 'peo' ? 'PEO' : workspaceTab === 'pso' ? 'PSO' : 'PO';
+
+    const outcomes = [...((selectedDepartment as any).outcomes || [])];
+    const groupIndex = outcomes.findIndex((o: any) => o.name === outcomeName);
+    if (groupIndex > -1) {
+      outcomes[groupIndex].items = outcomes[groupIndex].items.filter((_: any, i: number) => i !== idx);
+    }
     try {
-      await api.peoPso.updateByDept(selectedDepartment._id, updated);
-      setPeoPso(updated);
+      await api.programs.updateDept((selectedDepartment as any)._id, { outcomes });
+      const refreshed = await api.auth.myDepartment();
+      if (refreshed.department) setSelectedDepartment(refreshed.department);
       alert('Statement removed.');
+    } catch (err: any) {
+      alert(`Failed to delete: ${err.message}`);
+    }
+  };
+
+  // Update Statement in Department Outcomes
+  const handleUpdateStatement = async () => {
+    if (!selectedDepartment || !editingStatement) return;
+    const { idx, type, code, description } = editingStatement;
+    const outcomeName = type === 'peos' ? 'PEO' : type === 'psos' ? 'PSO' : 'PO';
+
+    const outcomes = [...((selectedDepartment as any).outcomes || [])];
+    const groupIndex = outcomes.findIndex((o: any) => o.name === outcomeName);
+    if (groupIndex > -1 && outcomes[groupIndex].items[idx]) {
+      outcomes[groupIndex].items[idx] = { ...outcomes[groupIndex].items[idx], code, description };
+    }
+
+    try {
+      await api.programs.updateDept((selectedDepartment as any)._id, { outcomes });
+      const refreshed = await api.auth.myDepartment();
+      if (refreshed.department) setSelectedDepartment(refreshed.department);
+      setEditingStatement(null);
+      alert('Statement updated successfully!');
+    } catch (err: any) {
+      alert(`Failed to save: ${err.message}`);
+    }
+  };
+
+  // --- Minor Degrees Handlers ---
+  const handleSaveMinorDegree = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedRegulation || !selectedDepartment) return;
+    try {
+      const payload = {
+        minorName: newMinorDegreeData.minorName,
+        description: newMinorDegreeData.description,
+        requiredCredits: newMinorDegreeData.requiredCredits,
+        eligibility: newMinorDegreeData.eligibility,
+        regulationId: selectedRegulation._id,
+        departmentId: selectedDepartment._id
+      };
+      if (editingMinorDegree) {
+        await api.minorDegrees.update(editingMinorDegree._id, payload);
+        alert('Minor Degree updated successfully!');
+      } else {
+        await api.minorDegrees.create(payload);
+        alert('Minor Degree created successfully!');
+      }
+      setMinorDegreeModalOpen(false);
+      setEditingMinorDegree(null);
+      setNewMinorDegreeData(defaultMinorDegreeData);
+      loadData();
+    } catch (err: any) {
+      alert(`Failed to save Minor Degree: ${err.message}`);
+    }
+  };
+
+  const handleDeleteMinorDegree = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this Minor Degree?')) return;
+    try {
+      await api.minorDegrees.delete(id);
+      alert('Minor Degree deleted successfully.');
       loadData();
     } catch (err: any) {
       alert(`Failed to delete: ${err.message}`);
     }
   };
 
-  // Update Workspace Statement
-  const handleUpdateStatement = async () => {
-    if (!selectedDepartment || !editingStatement) return;
-    const { idx, type, code, description, status } = editingStatement;
-    const updated = { ...peoPso };
-    if (!updated[type]) updated[type] = [];
-    updated[type][idx] = { code, description, status };
-
+  const handlePublishMinorDegree = async (id: string) => {
+    if (!confirm('Are you sure you want to publish this Minor Degree? Once published, it will be visible in the Curriculum Book.')) return;
     try {
-      await api.peoPso.updateByDept(selectedDepartment._id, updated);
-      setPeoPso(updated);
-      setEditingStatement(null);
-      alert('Statement updated successfully!');
+      await api.minorDegrees.publish(id);
+      alert('Minor Degree published successfully!');
       loadData();
     } catch (err: any) {
-      alert(`Failed to save: ${err.message}`);
+      alert(`Failed to publish: ${err.message}`);
+    }
+  };
+
+  const handleSaveMinorDegreeCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeMinorDegree) return;
+    try {
+      const payload = {
+        courseCode: newMinorDegreeCourseData.courseCode,
+        courseName: newMinorDegreeCourseData.courseName,
+        credits: newMinorDegreeCourseData.credits,
+        semester: newMinorDegreeCourseData.semester,
+        courseType: newMinorDegreeCourseData.courseType,
+        description: newMinorDegreeCourseData.description,
+        orGroupId: newMinorDegreeCourseData.orGroupId
+      };
+
+      if (editingMinorDegreeCourse) {
+        await api.minorDegrees.updateCourse(editingMinorDegreeCourse._id, payload);
+        alert('Course updated successfully!');
+      } else {
+        await api.minorDegrees.addCourse(activeMinorDegree._id, payload);
+        alert('Course added successfully!');
+      }
+      setEditingMinorDegreeCourse(null);
+      setNewMinorDegreeCourseData(defaultMinorDegreeCourseData);
+      loadData();
+    } catch (err: any) {
+      alert(`Failed to save course: ${err.message}`);
+    }
+  };
+
+  const handleDeleteMinorDegreeCourse = async (courseId: string) => {
+    if (!confirm('Are you sure you want to remove this course?')) return;
+    try {
+      await api.minorDegrees.deleteCourse(courseId);
+      alert('Course removed successfully.');
+      loadData();
+    } catch (err: any) {
+      alert(`Failed to delete course: ${err.message}`);
     }
   };
 
@@ -417,18 +591,26 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       alert('Prerequisite link created successfully!');
       setAddPrereqOpen(false);
       setNewPrereqData({ sourceCourseId: '', targetCourseId: '' });
-      loadData();
+
+      // Refresh prerequisites list
+      const prereqsRes = await api.prerequisites.list({ regulationId: selectedRegulation._id });
+      setPrereqs(prereqsRes.links || []);
     } catch (err: any) {
       alert(`Failed to create prerequisite link: ${err.message}`);
     }
   };
 
-  const handleDeletePrereq = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this Prerequisite link?')) return;
+  const handleDeletePrereq = async (linkId: string) => {
+    if (!window.confirm('Are you sure you want to remove this prerequisite link?')) return;
     try {
-      await api.prerequisites.delete(id);
+      await api.prerequisites.delete(linkId);
       alert('Prerequisite link deleted successfully.');
-      loadData();
+
+      // Refresh prerequisites list
+      if (selectedRegulation) {
+        const prereqsRes = await api.prerequisites.list({ regulationId: selectedRegulation._id });
+        setPrereqs(prereqsRes.links || []);
+      }
     } catch (err: any) {
       alert(`Failed to delete: ${err.message}`);
     }
@@ -443,14 +625,16 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       const coursePayload = {
         code: newCourseData.code,
         title: newCourseData.title,
+        keyword: newCourseData.keyword,
         departmentId: selectedDepartment?._id
       };
 
       // 2. Add course to active regulation context
-      if (selectedRegulation) {
+      const targetRegId = newCourseData.regulationId || selectedRegulation?._id;
+      if (targetRegId) {
         const createdVerRes = await api.courses.create({
           ...coursePayload,
-          regulationId: selectedRegulation._id,
+          regulationId: targetRegId,
           semester: newCourseData.semester,
           category: newCourseData.category
         });
@@ -460,6 +644,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
         if (createdVersion) {
           await api.courses.saveDraft(createdVersion._id, {
             category: newCourseData.category,
+            courseLevel: newCourseData.courseLevel,
             credits: {
               L: Number(newCourseData.L),
               T: Number(newCourseData.T),
@@ -489,9 +674,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       alert('Course successfully registered in repository!');
       setAddCourseOpen(false);
       setNewCourseData({
-        code: '', title: '', programId: '', category: 'PC', semester: 1,
+        code: '', title: '', keyword: '', programId: '', regulationId: '', category: 'PC', semester: 1,
         L: 3, T: 0, P: 0, S: 0, credits: 3, cieMarks: 40, seeMarks: 60, coordinatorId: '',
-        courseLevel: 'FC - Foundation', suggestiveSemester: '1', status: 'Active', prerequisites: '',
+        courseLevel: 'Foundation Courses - FC', suggestiveSemester: '1', status: 'Active', prerequisites: '',
         description: '', offeredFor: ['CSE'], objectives: ['']
       });
       loadData();
@@ -519,21 +704,36 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
           let successCount = 0;
           for (const row of rows) {
             const code = row['Course Code'] || row['code'] || row['Code'];
-            const title = row['Course Title'] || row['title'] || row['Title'];
+            const title = row['Course Name'] || row['Course Title'] || row['title'] || row['Title'];
+            const keyword = row['Keyword'] || row['keyword'] || row['Shortcut'] || row['shortcut'] || '';
             if (!code || !title) continue;
 
-            const category = row['Category'] || row['category'] || 'PC';
+            const category = row['Course Type'] || row['Category'] || row['category'] || 'PC';
+            const courseLevel = row['Course Level'] || row['courseLevel'] || 'Foundation Courses - FC';
+            const status = row['Status'] || row['status'] || 'Active';
+
+            const regCode = row['Regulation'] || row['regulation'] || '';
+            let targetRegId = selectedRegulation._id;
+            if (regCode) {
+              const matchedReg = regulations.find((r: any) => r.code?.toLowerCase() === regCode.toLowerCase().trim() || r.name?.toLowerCase() === regCode.toLowerCase().trim());
+              if (matchedReg) targetRegId = matchedReg._id;
+            }
+
             const semester = Number(row['Semester'] || row['semester'] || 1);
             const L = Number(row['L'] || 3);
             const T = Number(row['T'] || 0);
             const P = Number(row['P'] || 0);
             const S = Number(row['S'] || 0);
-            const credits = Number(row['Total Credits'] || row['credits'] || 3);
+            const credits = Number(row['Credits (C)'] || row['C'] || row['Total Credits'] || row['credits'] || 3);
             const cieMarks = Number(row['CIE Marks'] || row['cieMarks'] || 40);
             const seeMarks = Number(row['SEE Marks'] || row['seeMarks'] || 60);
+
+            const branchesStr = row['Course Offered for Branches'] || row['Branches'] || row['branches'] || selectedDepartment.code;
+            const offeredFor = branchesStr.split(',').map((b: string) => b.trim()).filter(Boolean);
+
             const description = row['Description'] || row['description'] || '';
             const prerequisites = row['Prerequisites'] || row['prerequisites'] || '';
-            const coordinatorQuery = row['Coordinator Email'] || row['coordinatorEmail'] || row['Coordinator'] || '';
+            const coordinatorQuery = row['Course Coordinator'] || row['Coordinator Email'] || row['coordinatorEmail'] || row['Coordinator'] || '';
 
             let coordinatorId = '';
             if (coordinatorQuery) {
@@ -549,12 +749,13 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
             const coursePayload = {
               code,
               title,
+              keyword,
               departmentId: selectedDepartment._id
             };
 
             const createdVerRes = await api.courses.create({
               ...coursePayload,
-              regulationId: selectedRegulation._id,
+              regulationId: targetRegId,
               semester,
               category
             });
@@ -566,7 +767,10 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                 credits: { L, T, P, S, C: credits },
                 cieSee: { cieMaxMarks: cieMarks, seeMaxMarks: seeMarks },
                 description,
-                prerequisites: prerequisites ? [prerequisites] : []
+                prerequisites: prerequisites ? [prerequisites] : [],
+                courseLevel,
+                status,
+                offeredFor
               });
 
               if (coordinatorId) {
@@ -641,19 +845,30 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
     }
   };
 
-  // Faculty Management: Add Member account
-  const handleAddFaculty = async (e: React.FormEvent) => {
+  // Faculty Management: Add or Edit Member account
+  const handleFacultySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.users.create({
-        name: facultyForm.name,
-        email: facultyForm.email,
-        password: 'facultypassword', // Default password
-        role: facultyForm.role,
-        departmentId: selectedDepartment?._id,
-        programId: programs[0]?._id
-      });
-      alert(`Faculty member (${facultyForm.name}) successfully registered!`);
+      if (editingFacultyId) {
+        await api.users.update(editingFacultyId, {
+          name: facultyForm.name,
+          email: facultyForm.email,
+          role: facultyForm.role,
+          departmentId: selectedDepartment?._id,
+        });
+        alert(`Faculty member (${facultyForm.name}) successfully updated!`);
+      } else {
+        await api.users.create({
+          name: facultyForm.name,
+          email: facultyForm.email,
+          password: 'facultypassword', // Default password
+          role: facultyForm.role,
+          departmentId: selectedDepartment?._id,
+          programId: programs[0]?._id
+        });
+        alert(`Faculty member (${facultyForm.name}) successfully registered!`);
+      }
+      setEditingFacultyId(null);
       setFacultyForm({
         facultyId: '',
         name: '',
@@ -665,7 +880,108 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       });
       loadData();
     } catch (err: any) {
-      alert(`Failed to add faculty: ${err.message}`);
+      alert(err.message || 'Error processing faculty account');
+    }
+  };
+
+  const resetAssignmentForm = () => {
+    setEditingAssignment(null);
+    setAssignmentForm({
+      ...defaultAssignmentForm,
+      regulationId: selectedRegulation?._id || ''
+    });
+  };
+
+  const handleSaveCourseAssignment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDepartment) return;
+
+    try {
+      const payload = {
+        ...assignmentForm,
+        regulationId: assignmentForm.regulationId || selectedRegulation?._id || '',
+        departmentId: selectedDepartment._id,
+        academicYear: Number(assignmentForm.academicYear),
+        semester: Number(assignmentForm.semester)
+      };
+
+      if (editingAssignment) {
+        await api.courseAssignments.update(editingAssignment._id, payload);
+        alert('Faculty course assignment updated successfully.');
+      } else {
+        await api.courseAssignments.create(payload);
+        alert('Faculty course assignment created successfully.');
+      }
+
+      resetAssignmentForm();
+      loadData();
+    } catch (err: any) {
+      alert(`Failed to save faculty assignment: ${err.message}`);
+    }
+  };
+
+  const handleEditCourseAssignment = (assignment: any) => {
+    setEditingAssignment(assignment);
+    setAssignmentForm({
+      facultyId: assignment.facultyId?._id || assignment.facultyId || '',
+      courseId: assignment.courseId?._id || assignment.courseId || '',
+      regulationId: assignment.regulationId?._id || assignment.regulationId || selectedRegulation?._id || '',
+      academicYear: assignment.academicYear || currentAcademicYear,
+      semester: assignment.semester || 1,
+      section: assignment.section || 'A'
+    });
+  };
+
+  const handleDeleteCourseAssignment = async (id: string) => {
+    if (!window.confirm('Remove this faculty course assignment?')) return;
+    try {
+      await api.courseAssignments.delete(id);
+      alert('Faculty course assignment removed successfully.');
+      if (editingAssignment?._id === id) resetAssignmentForm();
+      loadData();
+    } catch (err: any) {
+      alert(`Failed to delete assignment: ${err.message}`);
+    }
+  };
+
+  const handleSubmitCurriculumBookReview = async (regId: string) => {
+    if (!selectedDepartment) return;
+    try {
+      await api.curriculumBooks.updateReviewStatus({
+        regulationId: regId,
+        departmentId: selectedDepartment._id,
+        status: 'Submitted',
+        remarks: 'Submitted by HOD for admin review.'
+      });
+      alert('Curriculum book submitted to Admin for review.');
+      loadData();
+    } catch (err: any) {
+      alert(`Failed to submit curriculum book: ${err.message}`);
+    }
+  };
+
+  const handleEditFacultyClick = (f: any) => {
+    setEditingFacultyId(f._id);
+    setFacultyForm({
+      facultyId: f.id || `CSE-F${f._id.substring(f._id.length - 3)}`,
+      name: f.name,
+      email: f.email,
+      departmentId: selectedDepartment?._id || '',
+      designation: f.designation || 'Assistant Professor',
+      role: f.role || 'Faculty',
+      status: f.isActive ? 'Active' : 'Inactive'
+    });
+  };
+
+  const handleDeleteFacultyClick = async (f: any) => {
+    if (!f._id) return;
+    if (!window.confirm(`Are you sure you want to permanently delete ${f.name}?`)) return;
+    try {
+      await api.users.delete(f._id);
+      alert('Faculty deleted successfully.');
+      loadData();
+    } catch (err: any) {
+      alert(err.message || 'Error deleting faculty');
     }
   };
 
@@ -691,6 +1007,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       await api.courses.saveDraft(approvalEditModal.version._id, {
         title: editCourseData.title,
         code: editCourseData.code,
+        regulationId: editCourseData.regulationId,
         semester: editCourseData.semester,
         category: editCourseData.category,
         courseLevel: editCourseData.courseLevel,
@@ -768,30 +1085,112 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   const curriculumCoverage = courses.length > 0 ? Math.round((versions.length / courses.length) * 100) : 0;
   const approvalRate = versions.length > 0 ? Math.round((approvedCount / versions.length) * 100) : 0;
 
+  const isRegulationArchived = selectedRegulation?.status === 'ARCHIVED';
+  const getCurriculumReview = (regId: string, deptId = selectedDepartment?._id) => {
+    return curriculumReviews.find((review: any) =>
+      review.regulationId === regId && (!deptId || review.departmentId === deptId)
+    ) || { status: 'Draft', remarks: '' };
+  };
+
+  // === REGULATION LIFECYCLE READ-ONLY GUARD ===
+  const currentReview = selectedRegulation ? getCurriculumReview(selectedRegulation._id) : { status: 'Draft' };
+  const isRegulationLocked = selectedRegulation?.status === 'LOCKED' || 
+                             selectedRegulation?.status === 'ARCHIVED' || 
+                             ['Submitted', 'Published', 'Archived'].includes(currentReview.status);
+
+  const getCurriculumReviewClass = (status: string) => {
+    if (status === 'Published') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    if (status === 'Unlocked') return 'bg-amber-50 text-amber-700 border-amber-200';
+    if (status === 'Submitted') return 'bg-blue-50 text-blue-700 border-blue-200';
+    return 'bg-slate-100 text-slate-600 border-slate-200';
+  };
 
   if (editingSyllabusId) {
     return <HodSyllabusEditor courseVersionId={editingSyllabusId} onClose={() => { setEditingSyllabusId(null); loadData(); }} />;
   }
 
+  // Guard: Show meaningful error if HOD has no department assigned
+  if (!loading && !selectedDepartment) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center">
+        <div className="w-20 h-20 rounded-3xl bg-amber-50 border border-amber-200 flex items-center justify-center">
+          <Building2 className="w-10 h-10 text-amber-500" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-slate-800">No Department Assigned</h2>
+          <p className="text-sm text-slate-500 mt-2 max-w-md">
+            Your account is not linked to any department yet. Please contact the <strong>System Administrator</strong> to assign you to a department from the Admin Module → Departments.
+          </p>
+        </div>
+        <button
+          onClick={() => loadData()}
+          className="flex items-center gap-2 px-5 py-2.5 bg-teal-700 text-white rounded-xl text-sm font-bold hover:bg-teal-800 transition-all cursor-pointer"
+        >
+          <RotateCw className="w-4 h-4" />
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 font-sans">
 
+      {/* === REGULATION LOCKED/ARCHIVED BANNER === */}
+      {isRegulationLocked && (
+        <div className={`flex items-start gap-3 px-5 py-4 rounded-2xl border font-semibold text-sm ${isRegulationArchived
+          ? 'bg-slate-100 border-slate-300 text-slate-700'
+          : 'bg-red-50 border-red-200 text-red-800'
+          }`}>
+          <div className="text-xl mt-0.5">{isRegulationArchived ? '📦' : '🔒'}</div>
+          <div>
+            <p className="font-extrabold text-base">
+              Regulation {selectedRegulation?.code} is {isRegulationArchived ? 'ARCHIVED' : 'LOCKED'}
+            </p>
+            <p className="text-xs font-medium mt-0.5 opacity-80">
+              {isRegulationArchived
+                ? 'This regulation is permanently archived for historical reference. All content is read-only. Contact the System Administrator for any queries.'
+                : 'This regulation has been locked by Admin. All course, PEO/PSO, curriculum, and mapping operations are read-only. Contact the System Administrator to request an unlock.'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* TOPBAR BANNER */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-extrabold text-slate-800">{selectedDepartment?.name || 'Computer Science and Engineering'}</h1>
+          <h1 className="text-xl font-extrabold text-slate-800">{selectedDepartment?.name || 'Loading Department...'}</h1>
           <p className="text-xs text-slate-500 mt-1 font-semibold">
-            AY {new Date().getFullYear()}-{new Date().getFullYear() + 1} • {selectedRegulation?.code || 'R2025'} Regulation context
+            Active Context: {(selectedDepartment as any)?.programId?.name || selectedProgram?.name || 'No Program'} &bull; {selectedRegulation?.code || 'No Regulation'}
           </p>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setActiveTab('curriculum-book')}
-            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-bold transition-all border shadow-sm ${activeTab === 'curriculum-book' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'}`}
-          >
-            <BookOpen className="w-4 h-4" />
-            <span>Curriculum Book</span>
-          </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-500">Regulation:</span>
+            <select
+              value={selectedRegulation?._id || ''}
+              onChange={(e) => {
+                const reg = regulations.find(r => r._id === e.target.value);
+                if (reg) setSelectedRegulation(reg);
+              }}
+              className="border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-700 outline-none bg-white shadow-sm focus:ring-1 focus:ring-teal-700 cursor-pointer"
+            >
+              <option value="">Select Regulation</option>
+              {regulations
+                .filter((r: any) => {
+                  const rProgId = typeof r.programId === 'object' ? r.programId._id : r.programId;
+                  const deptProgId = typeof (selectedDepartment as any)?.programId === 'object'
+                    ? (selectedDepartment as any).programId._id
+                    : (selectedDepartment as any)?.programId;
+                  return !deptProgId || rProgId === deptProgId;
+                })
+                .map((r: any) => (
+                  <option key={r._id} value={r._id}>{r.code} - {r.academicYear}</option>
+                ))}
+            </select>
+          </div>
+
+
         </div>
       </div>
 
@@ -981,17 +1380,21 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
               <h1 className="text-xl font-extrabold text-slate-800 font-sans">PEO & PSO Management</h1>
-              <p className="text-xs text-slate-500 mt-1">Configure Program Educational Objectives (PEOs) and Program Specific Outcomes (PSOs) for your department.</p>
+              <p className="text-xs text-slate-500 mt-1">Configure Program Educational Objectives (PEOs) and Program Specific Outcomes (PSOs) for your department. Changes are saved directly to the department record.</p>
             </div>
             <button
-              onClick={() => {
+              onClick={async () => {
                 if (!(selectedDepartment as any)) return alert('No department selected.');
-                api.programs.updateDept((selectedDepartment as any)._id, { outcomes: (selectedDepartment as any).outcomes }).then(() => {
-                  alert('PEOs and PSOs successfully saved to department!');
-                  loadData();
-                }).catch((err: any) => alert(err.message));
+                try {
+                  await api.peoPso.updateByDept((selectedDepartment as any)._id, peoPsoData, selectedRegulation?._id);
+                  alert('PEOs and PSOs saved successfully for the selected regulation!');
+                } catch (err: any) { alert(err.message); }
               }}
-              className="flex items-center gap-1.5 px-4.5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold transition-all shadow cursor-pointer"
+              disabled={isRegulationLocked}
+              className={`flex items-center gap-1.5 px-4.5 py-2.5 rounded-lg text-xs font-bold transition-all shadow ${isRegulationLocked
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                : 'bg-teal-700 hover:bg-teal-800 text-white cursor-pointer'
+                }`}
             >
               <FileSpreadsheet className="w-4 h-4" />
               <span>Save PEOs & PSOs</span>
@@ -1000,7 +1403,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
           {(selectedDepartment as any) ? (
             <div className="grid grid-cols-2 gap-6">
-              
+
               {/* PEO Builder */}
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                 <div className="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -1012,24 +1415,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
                 <div className="space-y-3">
                   {(() => {
-                    const deptIndex = departments.findIndex(d => d._id === (selectedDepartment as any)._id);
-                    if (deptIndex === -1) return null;
-                    const dept = departments[deptIndex];
-                    let peoIndex = dept.outcomes ? dept.outcomes.findIndex((o: any) => o.name === 'PEO') : -1;
-                    
-                    // Auto-initialize PEO object if missing
-                    if (peoIndex === -1) {
-                       const newDepts = [...departments];
-                       newDepts[deptIndex] = {
-                         ...newDepts[deptIndex],
-                         outcomes: [...(newDepts[deptIndex].outcomes || []), { name: 'PEO', isGlobal: false, isLocal: true, isMapped: false, items: [] }]
-                       };
-                       // We delay setDepartments to avoid render loop, but React handles it. 
-                       // Actually, better to just render empty state and let "Add" create it.
-                    }
-
-                    peoIndex = dept.outcomes ? dept.outcomes.findIndex((o: any) => o.name === 'PEO') : -1;
-                    const items = (peoIndex > -1 && dept.outcomes) ? (dept.outcomes[peoIndex].items || []) : [];
+                    const items = peoPsoData.peos || [];
 
                     return (
                       <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
@@ -1048,14 +1434,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                                     placeholder="e.g. PEO1"
                                     value={item.code}
                                     onChange={(e) => {
-                                      const newDepts = [...departments];
-                                      const newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
-                                      if (peoIndex > -1) {
-                                        newOutcomes[peoIndex].items[iIdx].code = e.target.value;
-                                      }
-                                      newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
-                                      setDepartments(newDepts);
-                                      setSelectedDepartment(newDepts[deptIndex]);
+                                      const newPeos = [...items];
+                                      newPeos[iIdx].code = e.target.value;
+                                      setPeoPsoData({ ...peoPsoData, peos: newPeos });
                                     }}
                                     className="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-700 outline-none focus:ring-1 focus:ring-teal-500 bg-white shadow-sm"
                                   />
@@ -1067,14 +1448,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                                     rows={2}
                                     value={item.description}
                                     onChange={(e) => {
-                                      const newDepts = [...departments];
-                                      const newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
-                                      if (peoIndex > -1) {
-                                        newOutcomes[peoIndex].items[iIdx].description = e.target.value;
-                                      }
-                                      newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
-                                      setDepartments(newDepts);
-                                      setSelectedDepartment(newDepts[deptIndex]);
+                                      const newPeos = [...items];
+                                      newPeos[iIdx].description = e.target.value;
+                                      setPeoPsoData({ ...peoPsoData, peos: newPeos });
                                     }}
                                     className="w-full border border-slate-300 rounded-lg p-2 text-xs text-slate-700 outline-none focus:ring-1 focus:ring-teal-500 bg-white shadow-sm resize-y"
                                   />
@@ -1083,14 +1459,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                               <button
                                 type="button"
                                 onClick={() => {
-                                  const newDepts = [...departments];
-                                  const newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
-                                  if (peoIndex > -1) {
-                                    newOutcomes[peoIndex].items.splice(iIdx, 1);
-                                  }
-                                  newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
-                                  setDepartments(newDepts);
-                                  setSelectedDepartment(newDepts[deptIndex]);
+                                  const newPeos = [...items];
+                                  newPeos.splice(iIdx, 1);
+                                  setPeoPsoData({ ...peoPsoData, peos: newPeos });
                                 }}
                                 className="p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
                                 title="Remove PEO"
@@ -1100,22 +1471,13 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                             </div>
                           ))
                         )}
-                        
+
                         <button
                           type="button"
                           onClick={() => {
-                            const newDepts = [...departments];
-                            let newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
-                            let pIndex = newOutcomes.findIndex((o: any) => o.name === 'PEO');
-                            if (pIndex === -1) {
-                              newOutcomes.push({ name: 'PEO', isGlobal: false, isLocal: true, isMapped: false, items: [] });
-                              pIndex = newOutcomes.length - 1;
-                            }
-                            if (!newOutcomes[pIndex].items) newOutcomes[pIndex].items = [];
-                            newOutcomes[pIndex].items.push({ code: `PEO${newOutcomes[pIndex].items.length + 1}`, description: '' });
-                            newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
-                            setDepartments(newDepts);
-                            setSelectedDepartment(newDepts[deptIndex]);
+                            const newPeos = [...items];
+                            newPeos.push({ code: `PEO${newPeos.length + 1}`, description: '' });
+                            setPeoPsoData({ ...peoPsoData, peos: newPeos });
                           }}
                           className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors mt-4 cursor-pointer w-fit border border-teal-200/50"
                         >
@@ -1138,12 +1500,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
                 <div className="space-y-3">
                   {(() => {
-                    const deptIndex = departments.findIndex(d => d._id === (selectedDepartment as any)._id);
-                    if (deptIndex === -1) return null;
-                    const dept = departments[deptIndex];
-                    let psoIndex = dept.outcomes ? dept.outcomes.findIndex((o: any) => o.name === 'PSO') : -1;
-                    
-                    const items = (psoIndex > -1 && dept.outcomes) ? (dept.outcomes[psoIndex].items || []) : [];
+                    const items = peoPsoData.psos || [];
 
                     return (
                       <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
@@ -1162,14 +1519,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                                     placeholder="e.g. PSO1"
                                     value={item.code}
                                     onChange={(e) => {
-                                      const newDepts = [...departments];
-                                      const newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
-                                      if (psoIndex > -1) {
-                                        newOutcomes[psoIndex].items[iIdx].code = e.target.value;
-                                      }
-                                      newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
-                                      setDepartments(newDepts);
-                                      setSelectedDepartment(newDepts[deptIndex]);
+                                      const newPsos = [...items];
+                                      newPsos[iIdx].code = e.target.value;
+                                      setPeoPsoData({ ...peoPsoData, psos: newPsos });
                                     }}
                                     className="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-700 outline-none focus:ring-1 focus:ring-teal-500 bg-white shadow-sm"
                                   />
@@ -1181,14 +1533,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                                     rows={2}
                                     value={item.description}
                                     onChange={(e) => {
-                                      const newDepts = [...departments];
-                                      const newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
-                                      if (psoIndex > -1) {
-                                        newOutcomes[psoIndex].items[iIdx].description = e.target.value;
-                                      }
-                                      newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
-                                      setDepartments(newDepts);
-                                      setSelectedDepartment(newDepts[deptIndex]);
+                                      const newPsos = [...items];
+                                      newPsos[iIdx].description = e.target.value;
+                                      setPeoPsoData({ ...peoPsoData, psos: newPsos });
                                     }}
                                     className="w-full border border-slate-300 rounded-lg p-2 text-xs text-slate-700 outline-none focus:ring-1 focus:ring-teal-500 bg-white shadow-sm resize-y"
                                   />
@@ -1197,14 +1544,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                               <button
                                 type="button"
                                 onClick={() => {
-                                  const newDepts = [...departments];
-                                  const newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
-                                  if (psoIndex > -1) {
-                                    newOutcomes[psoIndex].items.splice(iIdx, 1);
-                                  }
-                                  newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
-                                  setDepartments(newDepts);
-                                  setSelectedDepartment(newDepts[deptIndex]);
+                                  const newPsos = [...items];
+                                  newPsos.splice(iIdx, 1);
+                                  setPeoPsoData({ ...peoPsoData, psos: newPsos });
                                 }}
                                 className="p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
                                 title="Remove PSO"
@@ -1214,22 +1556,13 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                             </div>
                           ))
                         )}
-                        
+
                         <button
                           type="button"
                           onClick={() => {
-                            const newDepts = [...departments];
-                            let newOutcomes = [...(newDepts[deptIndex].outcomes || [])];
-                            let pIndex = newOutcomes.findIndex((o: any) => o.name === 'PSO');
-                            if (pIndex === -1) {
-                              newOutcomes.push({ name: 'PSO', isGlobal: false, isLocal: true, isMapped: false, items: [] });
-                              pIndex = newOutcomes.length - 1;
-                            }
-                            if (!newOutcomes[pIndex].items) newOutcomes[pIndex].items = [];
-                            newOutcomes[pIndex].items.push({ code: `PSO${newOutcomes[pIndex].items.length + 1}`, description: '' });
-                            newDepts[deptIndex] = { ...newDepts[deptIndex], outcomes: newOutcomes };
-                            setDepartments(newDepts);
-                            setSelectedDepartment(newDepts[deptIndex]);
+                            const newPsos = [...items];
+                            newPsos.push({ code: `PSO${newPsos.length + 1}`, description: '' });
+                            setPeoPsoData({ ...peoPsoData, psos: newPsos });
                           }}
                           className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors mt-4 cursor-pointer w-fit border border-teal-200/50"
                         >
@@ -1258,15 +1591,36 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => setAddCourseOpen(true)}
-                className="flex items-center gap-1.5 px-4 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold transition-all shadow cursor-pointer"
+                onClick={() => {
+                  setNewCourseData({
+                    code: '', title: '', keyword: '',
+                    programId: selectedProgram?._id || '',
+                    regulationId: selectedRegulation?._id || '',
+                    category: 'PC', semester: 1,
+                    L: 3, T: 0, P: 0, S: 0, credits: 3, cieMarks: 40, seeMarks: 60, coordinatorId: '',
+                    courseLevel: 'Foundation Courses - FC', suggestiveSemester: '1', status: 'Active', prerequisites: '',
+                    description: '', offeredFor: [selectedDepartment?.code || 'CSE'], objectives: ['']
+                  });
+                  setAddCourseOpen(true);
+                }}
+                disabled={isRegulationLocked}
+                title={isRegulationLocked ? 'Regulation is locked. Contact Admin to unlock.' : ''}
+                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-bold transition-all shadow ${isRegulationLocked
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  : 'bg-teal-700 hover:bg-teal-800 text-white cursor-pointer'
+                  }`}
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Course</span>
               </button>
               <button
                 onClick={() => setBulkImportOpen(true)}
-                className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                disabled={isRegulationLocked}
+                title={isRegulationLocked ? 'Regulation is locked. Contact Admin to unlock.' : ''}
+                className={`flex items-center gap-1.5 px-4 py-2.5 border rounded-lg text-xs font-bold transition-all ${isRegulationLocked
+                  ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300 cursor-pointer'
+                  }`}
               >
                 <Upload className="w-4 h-4" />
                 <span>Bulk Import</span>
@@ -1335,6 +1689,18 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                   .filter(c => {
                     const matchesSearch = c.code.toLowerCase().includes(courseSearch.toLowerCase()) || c.title.toLowerCase().includes(courseSearch.toLowerCase());
                     const v = versions.find((ver: any) => ver.courseId?._id === c._id || ver.courseId === c._id);
+
+                    // IF the course is not in the current regulation AND we are not searching globally, hide it
+                    // Let's assume if courseSearch is active, we show global, otherwise we hide unless mapped.
+                    // To be safe, if `v` is not found, we only show it if the user is explicitly searching or we add a toggle.
+                    // For now, let's just hide courses that are not in the current regulation unless they have NO regulation at all.
+                    if (!v && c.mappedRegulations?.length > 0) {
+                      // It is mapped to SOME regulation, but NOT the current one.
+                      // The user complained it shows up in Regulation B when added to Regulation A.
+                      // So we hide it from Regulation B's view!
+                      return false;
+                    }
+
                     const category = v?.category || 'PC';
                     const matchesCat = courseCategoryFilter ? category === courseCategoryFilter : true;
                     const matchesStatus = courseStatusFilter ? (v?.status === courseStatusFilter) : true;
@@ -1343,6 +1709,12 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                   .map((c) => {
                     const v = versions.find((ver: any) => ver.courseId?._id === c._id || ver.courseId === c._id);
                     const category = v?.category || 'PC';
+                    const reg = regulations.find(r => r._id === (v?.regulationId?._id || v?.regulationId || selectedRegulation?._id));
+                    const regulationCode = c.mappedRegulations?.length > 0 ? c.mappedRegulations.join(', ') : 'Not Assigned';
+                    const regProgId = reg?.programId && typeof reg.programId === 'object' ? (reg.programId as any)._id : reg?.programId;
+                    const selProgId = selectedProgram?._id || '';
+                    const prog = programs.find(p => p._id === (regProgId || selProgId));
+                    const programName = prog?.name || 'B.Tech';
 
                     const formatCategory = (cat: string) => {
                       switch (cat) {
@@ -1366,9 +1738,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                       <tr key={c._id} className="border-b border-slate-100 hover:bg-slate-50/20 text-slate-600 font-medium">
                         <td className="p-4 pl-6 font-mono font-bold text-teal-650">{c.code}</td>
                         <td className="p-4 font-bold text-slate-800">{c.title}</td>
-                        <td className="p-4">B.Tech</td>
+                        <td className="p-4">{programName}</td>
                         <td className="p-4">{selectedDepartment?.code || 'CSE'}</td>
-                        <td className="p-4 font-semibold text-slate-500">{selectedRegulation?.code || 'R2025'}</td>
+                        <td className="p-4 font-semibold text-slate-500">{regulationCode}</td>
                         <td className="p-4 font-bold text-slate-650">{formatCategory(category)}</td>
                         <td className="p-4 font-mono font-semibold">{creditsStr}</td>
                         <td className="p-4 text-center">{sem}</td>
@@ -1377,13 +1749,16 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                             <>
                               <button
                                 onClick={() => {
+                                  const reg = regulations.find(r => r._id === (v.regulationId?._id || v.regulationId));
+                                  const progId = reg ? (typeof reg.programId === 'object' ? reg.programId._id : reg.programId) : '';
                                   setEditCourseData({
                                     title: v.courseId?.title || '',
                                     code: v.courseId?.code || '',
-                                    programId: v.programId || '',
+                                    programId: progId,
+                                    regulationId: v.regulationId?._id || v.regulationId || '',
                                     category: v.category || 'PC',
                                     semester: v.semester || 1,
-                                    courseLevel: v.courseLevel || 'FC - Foundation',
+                                    courseLevel: v.courseLevel || 'Foundation Courses - FC',
                                     status: v.status || 'Active',
                                     L: v.credits?.L || 0,
                                     T: v.credits?.T || 0,
@@ -1400,24 +1775,30 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                                   });
                                   setApprovalEditModal({ open: true, version: v });
                                 }}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors cursor-pointer"
-                                title="Edit Course Details"
+                                disabled={isRegulationLocked}
+                                title={isRegulationLocked ? 'Regulation is locked' : 'Edit Course Details'}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer'
+                                  }`}
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
                                 Edit
                               </button>
                               <button
                                 onClick={() => setEditingSyllabusId(v._id)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 text-teal-700 rounded-lg text-xs font-bold hover:bg-teal-100 transition-colors cursor-pointer"
-                                title="Edit Complete Syllabus"
+                                disabled={isRegulationLocked}
+                                title={isRegulationLocked ? 'Regulation is locked' : 'Edit Complete Syllabus'}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-teal-50 text-teal-700 hover:bg-teal-100 cursor-pointer'
+                                  }`}
                               >
                                 <BookOpen className="w-3.5 h-3.5" />
                                 Syllabus Console
                               </button>
                               <button
                                 onClick={() => handleRemoveCourseVersion(v._id)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors cursor-pointer"
-                                title="Remove course from regulation"
+                                disabled={isRegulationLocked}
+                                title={isRegulationLocked ? 'Regulation is locked' : 'Remove course from regulation'}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-red-50 text-red-700 hover:bg-red-100 cursor-pointer'
+                                  }`}
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1425,8 +1806,10 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                           ) : (
                             <button
                               onClick={() => handleCreateCourseVersion(c)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-colors cursor-pointer"
-                              title="Add this course to current regulation"
+                              disabled={isRegulationLocked}
+                              title={isRegulationLocked ? 'Regulation is locked' : 'Add this course to current regulation'}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 cursor-pointer'
+                                }`}
                             >
                               <Plus className="w-3.5 h-3.5" />
                               Add to Regulation
@@ -1434,8 +1817,10 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                           )}
                           <button
                             onClick={() => handleDeleteGlobalCourse(c._id)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors cursor-pointer ml-1"
-                            title="Delete Global Course and all its versions"
+                            disabled={isRegulationLocked}
+                            title={isRegulationLocked ? 'Regulation is locked' : 'Delete Global Course and all its versions'}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ml-1 ${isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-red-600 text-white hover:bg-red-700 cursor-pointer'
+                              }`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                             Delete Base Course
@@ -1610,7 +1995,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                 Back to Directory
               </button>
               <div className="h-[calc(100vh-140px)]">
-                <CurriculumBuilder />
+                <CurriculumBuilder readOnly={isRegulationLocked} />
               </div>
             </div>
           ) : (
@@ -1622,42 +2007,91 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
               <div className="space-y-8 animate-fadeIn">
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                  <h3 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">
-                    {selectedDepartment?.name || 'Your Department'} Regulations
-                  </h3>
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+                    <h3 className="text-lg font-bold text-slate-800">
+                      {selectedDepartment?.name || 'Your Department'} Regulations
+                    </h3>
+                    <button
+                      onClick={() => {
+                        setNewRegData({
+                          code: '',
+                          academicYear: new Date().getFullYear(),
+                          programId: selectedProgram?._id || programs[0]?._id || ''
+                        });
+                        setCreateRegOpen(true);
+                      }}
+                      className="flex items-center gap-1.5 px-4.5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold transition-all shadow cursor-pointer border border-teal-700"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Create Regulation</span>
+                    </button>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {regulations.map((reg) => (
-                      <div key={reg._id} className="border border-slate-200 rounded-xl p-5 hover:border-blue-300 transition-colors bg-slate-50 relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-16 h-16 bg-blue-100/50 rounded-bl-full -z-0 group-hover:scale-110 transition-transform"></div>
-                        <h4 className="font-extrabold text-slate-800 text-lg relative z-10">{reg.code}</h4>
-                        <p className="text-xs text-slate-500 font-medium mb-4 relative z-10">Academic Year: {reg.academicYear}</p>
+                    {regulations
+                      .filter((r: any) => {
+                        const rProgId = typeof r.programId === 'object' ? r.programId._id : r.programId;
+                        return !selectedProgram || rProgId === selectedProgram._id;
+                      })
+                      .map((reg) => {
+                        const review = getCurriculumReview(reg._id);
+                        const reviewLocksEditing = review.status === 'Submitted' || review.status === 'Published' || review.status === 'Archived';
+                        return (
+                          <div key={reg._id} className="border border-slate-200 rounded-xl p-5 hover:border-blue-300 transition-colors bg-slate-50 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-16 h-16 bg-blue-100/50 rounded-bl-full -z-0 group-hover:scale-110 transition-transform"></div>
+                            <div className="flex justify-between items-start mb-1">
+                              <h4 className="font-extrabold text-slate-800 text-lg relative z-10">{reg.code}</h4>
+                              <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${getCurriculumReviewClass(review.status)}`}>
+                                Book: {review.status}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-500 font-medium mb-4 relative z-10">Academic Year: {reg.academicYear}</p>
+                            {review.status === 'Unlocked' && review.remarks && (
+                              <p className="text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-100 rounded-lg p-2 mb-4 relative z-10">
+                                Admin remarks: {review.remarks}
+                              </p>
+                            )}
 
-                        <div className="flex flex-wrap gap-2 relative z-10">
-                          <button
-                            onClick={() => {
-                              setSelectedRegulation(reg);
-                              setBookViewMode('view');
-                              setBuilderViewMode('directory');
-                            }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors cursor-pointer"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            View Book
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedRegulation(reg);
-                              setBuilderViewMode('edit');
-                              setBookViewMode('directory');
-                            }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-100 transition-colors cursor-pointer"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                            Edit Builder
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                            <div className="flex flex-wrap gap-2 relative z-10">
+                              <button
+                                onClick={() => {
+                                  setSelectedRegulation(reg);
+                                  setBookViewMode('view');
+                                  setBuilderViewMode('directory');
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors cursor-pointer"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                                View Book
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedRegulation(reg);
+                                  setBuilderViewMode('edit');
+                                  setBookViewMode('directory');
+                                }}
+                                disabled={reg.status === 'LOCKED' || reg.status === 'ARCHIVED' || reviewLocksEditing}
+                                title={reg.status === 'LOCKED' || reg.status === 'ARCHIVED' || reviewLocksEditing ? 'Curriculum cannot be edited in current state' : 'Edit Curriculum Builder'}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${reg.status === 'LOCKED' || reg.status === 'ARCHIVED' || reviewLocksEditing
+                                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                  : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 cursor-pointer'
+                                  }`}
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                                Edit Builder
+                              </button>
+                              {(review.status === 'Draft' || review.status === 'Unlocked') && (
+                                <button
+                                  onClick={() => handleSubmitCurriculumBookReview(reg._id)}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold hover:bg-amber-100 transition-colors cursor-pointer w-full justify-center mt-2"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  Submit to Admin
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
               </div>
@@ -1672,15 +2106,180 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       {activeTab === 'faculty-management' && (
         <div className="space-y-6 animate-fadeIn">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <h1 className="text-xl font-extrabold text-slate-800">Faculty Management</h1>
-            <p className="text-xs text-slate-500 mt-1">Add faculty, edit details, and activate or deactivate faculty records.</p>
+            <h1 className="text-xl font-extrabold text-slate-800">Faculty Assignment & Management</h1>
+            <p className="text-xs text-slate-500 mt-1">Assign courses to faculty and maintain faculty account records.</p>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3">
+                {editingAssignment ? 'Edit Course Assignment' : 'Assign Course to Faculty'}
+              </h3>
+              <form onSubmit={handleSaveCourseAssignment} className="space-y-3 text-xs font-bold text-slate-500">
+                <div className="space-y-1">
+                  <span>Faculty</span>
+                  <select
+                    value={assignmentForm.facultyId}
+                    onChange={(e) => setAssignmentForm({ ...assignmentForm, facultyId: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 outline-none bg-white font-semibold focus:ring-1 focus:ring-teal-700"
+                    required
+                  >
+                    <option value="">Select faculty</option>
+                    {faculty.map((f: any) => (
+                      <option key={f._id} value={f._id}>{f.name} ({f.email})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <span>Course</span>
+                  <select
+                    value={assignmentForm.courseId}
+                    onChange={(e) => {
+                      const selectedVersion = versions.find((v: any) => (v.courseId?._id || v.courseId) === e.target.value);
+                      setAssignmentForm({
+                        ...assignmentForm,
+                        courseId: e.target.value,
+                        semester: selectedVersion?.semester || assignmentForm.semester,
+                        regulationId: selectedVersion?.regulationId?._id || selectedVersion?.regulationId || selectedRegulation?._id || ''
+                      });
+                    }}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 outline-none bg-white font-semibold focus:ring-1 focus:ring-teal-700"
+                    required
+                  >
+                    <option value="">Select course</option>
+                    {versions.map((v: any) => (
+                      <option key={v._id} value={v.courseId?._id || v.courseId}>
+                        {v.courseId?.code} - {v.courseId?.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <span>Year</span>
+                    <input
+                      type="number"
+                      value={assignmentForm.academicYear}
+                      onChange={(e) => setAssignmentForm({ ...assignmentForm, academicYear: Number(e.target.value) })}
+                      className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 outline-none bg-white font-semibold focus:ring-1 focus:ring-teal-700"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <span>Sem</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={8}
+                      value={assignmentForm.semester}
+                      onChange={(e) => setAssignmentForm({ ...assignmentForm, semester: Number(e.target.value) })}
+                      className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 outline-none bg-white font-semibold focus:ring-1 focus:ring-teal-700"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <span>Section</span>
+                    <input
+                      type="text"
+                      value={assignmentForm.section}
+                      onChange={(e) => setAssignmentForm({ ...assignmentForm, section: e.target.value.toUpperCase() })}
+                      className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 outline-none bg-white font-semibold focus:ring-1 focus:ring-teal-700"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {editingAssignment && (
+                    <button
+                      type="button"
+                      onClick={resetAssignmentForm}
+                      className="flex-1 py-2.5 border border-slate-300 text-slate-600 rounded-lg font-bold hover:bg-slate-50 cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg font-bold shadow flex items-center justify-center gap-1.5 cursor-pointer text-center"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{editingAssignment ? 'Update Assignment' : 'Save Assignment'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div className="xl:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Course Assignments</h3>
+                <span className="text-[10px] px-2 py-1 rounded bg-slate-100 text-slate-500 font-bold border border-slate-200">{courseAssignments.length} Active</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-400 bg-slate-50/50 uppercase font-bold">
+                      <th className="p-3 pl-4">Faculty</th>
+                      <th className="p-3">Course</th>
+                      <th className="p-3">Regulation</th>
+                      <th className="p-3">Year</th>
+                      <th className="p-3">Sem</th>
+                      <th className="p-3">Section</th>
+                      <th className="p-3 pr-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {courseAssignments.map((assignment: any) => (
+                      <tr key={assignment._id} className="border-b border-slate-100 hover:bg-slate-50/20 text-slate-600 font-medium">
+                        <td className="p-3 pl-4">
+                          <span className="block font-bold text-slate-800">{assignment.facultyId?.name || 'Faculty'}</span>
+                          <span className="block text-[10px] text-slate-400">{assignment.facultyId?.email}</span>
+                        </td>
+                        <td className="p-3">
+                          <span className="block font-mono font-bold text-teal-700">{assignment.courseId?.code}</span>
+                          <span className="block text-[10px] text-slate-500 font-semibold">{assignment.courseId?.title}</span>
+                        </td>
+                        <td className="p-3 font-bold text-blue-700">{assignment.regulationId?.code || '-'}</td>
+                        <td className="p-3 font-semibold">{assignment.academicYear}</td>
+                        <td className="p-3 font-semibold">{assignment.semester}</td>
+                        <td className="p-3 font-bold">{assignment.section}</td>
+                        <td className="p-3 pr-4 text-right">
+                          <div className="flex justify-end gap-1.5">
+                            <button
+                              onClick={() => handleEditCourseAssignment(assignment)}
+                              className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 rounded cursor-pointer"
+                              title="Edit Assignment"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCourseAssignment(assignment._id)}
+                              className="p-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-100 rounded cursor-pointer"
+                              title="Delete Assignment"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {courseAssignments.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="p-8 text-center text-slate-400 font-semibold">
+                          No faculty course assignments found for this department.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-3 gap-6">
             {/* Left Add form */}
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-              <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3">Add Faculty</h3>
-              <form onSubmit={handleAddFaculty} className="space-y-3 text-xs font-bold text-slate-500">
+              <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3">{editingFacultyId ? 'Edit Faculty' : 'Add Faculty'}</h3>
+              <form onSubmit={handleFacultySubmit} className="space-y-3 text-xs font-bold text-slate-500">
                 <div className="space-y-1">
                   <span>Faculty ID</span>
                   <input
@@ -1758,13 +2357,27 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     <option value="Inactive">Inactive</option>
                   </select>
                 </div>
-                <button
-                  type="submit"
-                  className="w-full py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg font-bold shadow flex items-center justify-center gap-1.5 cursor-pointer text-center"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Faculty</span>
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg font-bold shadow flex items-center justify-center gap-1.5 cursor-pointer text-center transition-all"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>{editingFacultyId ? 'Update Faculty' : 'Add Faculty'}</span>
+                  </button>
+                  {editingFacultyId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingFacultyId(null);
+                        setFacultyForm({ facultyId: '', name: '', email: '', departmentId: '', designation: 'Professor', role: 'Faculty', status: 'Active' });
+                      }}
+                      className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg font-bold shadow cursor-pointer transition-all"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </form>
             </div>
 
@@ -1814,11 +2427,28 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                             {statusLabel}
                           </span>
                         </td>
-                        <td className="p-3 pr-4 text-right">
+                        <td className="p-3 pr-4 text-right flex gap-1 justify-end">
                           <button
-                            onClick={() => handleToggleUserActive(f._id)}
-                            className="p-1 text-slate-400 hover:text-red-500 cursor-pointer"
-                            title={statusLabel === 'Active' ? "Deactivate Faculty" : "Activate Faculty"}
+                            onClick={() => f._id && handleEditFacultyClick(f)}
+                            className={`p-1 text-slate-400 hover:text-blue-500 ${!f._id ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
+                            disabled={!f._id}
+                            title="Edit Faculty"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => f._id && handleToggleUserActive(f._id)}
+                            className={`p-1 text-slate-400 hover:text-amber-500 ${!f._id ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
+                            disabled={!f._id}
+                            title={f.status === 'Active' ? "Deactivate Faculty" : "Activate Faculty"}
+                          >
+                            <Lock className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => f._id && handleDeleteFacultyClick(f)}
+                            className={`p-1 text-slate-400 hover:text-red-500 ${!f._id ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
+                            disabled={!f._id}
+                            title="Delete Faculty"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -1927,13 +2557,16 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     <td className="p-4 pr-6 text-right flex justify-end gap-1.5">
                       <button
                         onClick={() => {
+                          const reg = regulations.find(r => r._id === (v.regulationId?._id || v.regulationId));
+                          const progId = reg ? (typeof reg.programId === 'object' ? reg.programId._id : reg.programId) : '';
                           setEditCourseData({
                             title: v.courseId?.title || '',
                             code: v.courseId?.code || '',
-                            programId: v.programId || '',
+                            programId: progId,
+                            regulationId: v.regulationId?._id || v.regulationId || '',
                             category: v.category || 'PC',
                             semester: v.semester || 1,
-                            courseLevel: v.courseLevel || 'FC - Foundation',
+                            courseLevel: v.courseLevel || 'Foundation Courses - FC',
                             status: v.status || 'Active',
                             L: v.credits?.L || 0,
                             T: v.credits?.T || 0,
@@ -1993,6 +2626,121 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
 
       {/* ============================================================== */}
+      {/* MINOR DEGREES TAB */}
+      {/* ============================================================== */}
+      {activeTab === 'minor-degrees' && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-extrabold text-slate-800">Minor Degrees Management</h1>
+              <p className="text-xs text-slate-500 mt-1 font-semibold">Manage formal Minor Degrees for your department and their course sequences.</p>
+            </div>
+            <button
+              onClick={() => {
+                setEditingMinorDegree(null);
+                setNewMinorDegreeData(defaultMinorDegreeData);
+                setMinorDegreeModalOpen(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Create Minor Degree
+            </button>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-xs font-extrabold text-slate-500 uppercase tracking-wider">
+                  <th className="py-3 px-4">Minor Degree</th>
+                  <th className="py-3 px-4">Credits</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-[13px] font-medium text-slate-700">
+                {minorDegrees.map((minor: any) => (
+                  <tr key={minor._id} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-3 px-4">
+                      <div className="font-bold text-slate-800">{minor.minorName}</div>
+                      <div className="text-[11px] text-slate-500 line-clamp-1 max-w-[250px]">{minor.description}</div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full ${minor.currentCredits >= minor.requiredCredits ? 'bg-success-500' : 'bg-primary-500'}`}
+                            style={{ width: `${Math.min(100, (minor.currentCredits / minor.requiredCredits) * 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-bold">{minor.currentCredits}/{minor.requiredCredits}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-1 rounded text-[10px] font-bold tracking-wide uppercase ${minor.status === 'Published' ? 'bg-success-100 text-success-700' : 'bg-amber-100 text-amber-700'}`}>
+                        {minor.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => {
+                          setActiveMinorDegree(minor);
+                          setMinorDegreeCoursesModalOpen(true);
+                        }}
+                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        title="Manage Courses"
+                      >
+                        <Layers className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingMinorDegree(minor);
+                          setNewMinorDegreeData({
+                            minorName: minor.minorName,
+                            description: minor.description,
+                            requiredCredits: minor.requiredCredits,
+                            eligibility: minor.eligibility
+                          });
+                          setMinorDegreeModalOpen(true);
+                        }}
+                        className="p-1.5 text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                        title="Edit Minor Degree"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                      {minor.status === 'Draft' && minor.currentCredits >= minor.requiredCredits && (
+                        <button
+                          onClick={() => handlePublishMinorDegree(minor._id)}
+                          className="p-1.5 text-success-600 hover:bg-success-50 rounded transition-colors"
+                          title="Publish"
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteMinorDegree(minor._id)}
+                        className="p-1.5 text-danger-600 hover:bg-danger-50 rounded transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {minorDegrees.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-slate-500 text-xs font-medium">
+                      No Minor Degrees created yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
       {/* MINOR STREAMS TAB */}
       {/* ============================================================== */}
       {activeTab === 'minor-streams' && (
@@ -2008,7 +2756,10 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                 setNewMinorStreamData(defaultMinorStreamData);
                 setMinorStreamModalOpen(true);
               }}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold transition-all shadow cursor-pointer font-sans"
+              disabled={isRegulationLocked}
+              title={isRegulationLocked ? 'Regulation is locked' : 'Create Minor Stream'}
+              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-bold transition-all shadow font-sans ${isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-800 text-white cursor-pointer'
+                }`}
             >
               <Plus className="w-4 h-4" />
               <span>Create Minor Stream</span>
@@ -2055,15 +2806,19 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                           });
                           setMinorStreamModalOpen(true);
                         }}
-                        className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-200 cursor-pointer"
-                        title="Edit Stream"
+                        disabled={isRegulationLocked}
+                        title={isRegulationLocked ? 'Regulation is locked' : 'Edit Stream'}
+                        className={`p-1.5 rounded border transition-colors ${isRegulationLocked ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200 cursor-pointer'
+                          }`}
                       >
                         <Edit3 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleDeleteMinorStream(stream._id)}
-                        className="p-1.5 bg-red-50 hover:bg-red-100 text-red-655 rounded border border-red-150 cursor-pointer"
-                        title="Delete Stream"
+                        disabled={isRegulationLocked}
+                        title={isRegulationLocked ? 'Regulation is locked' : 'Delete Stream'}
+                        className={`p-1.5 rounded border transition-colors ${isRegulationLocked ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-red-50 hover:bg-red-100 text-red-655 border-red-150 cursor-pointer'
+                          }`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -2098,7 +2853,10 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                 setNewPrereqData({ sourceCourseId: '', targetCourseId: '' });
                 setAddPrereqOpen(true);
               }}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold transition-all shadow cursor-pointer font-sans"
+              disabled={isRegulationLocked}
+              title={isRegulationLocked ? 'Regulation is locked' : 'Add Prerequisite Link'}
+              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-bold transition-all shadow font-sans ${isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-800 text-white cursor-pointer'
+                }`}
             >
               <Plus className="w-4 h-4" />
               <span>Add Prerequisite Link</span>
@@ -2132,8 +2890,10 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     <td className="p-4 pr-6 text-right flex justify-end">
                       <button
                         onClick={() => handleDeletePrereq(link._id)}
-                        className="p-1.5 bg-red-50 hover:bg-red-100 text-red-650 rounded border border-red-150 cursor-pointer"
-                        title="Remove Link"
+                        disabled={isRegulationLocked}
+                        title={isRegulationLocked ? 'Regulation is locked' : 'Remove Link'}
+                        className={`p-1.5 rounded border transition-colors ${isRegulationLocked ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-red-50 hover:bg-red-100 text-red-650 border-red-150 cursor-pointer'
+                          }`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -2506,6 +3266,30 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     />
                   </div>
                 </div>
+                <div className="space-y-1 pt-2">
+                  <span>Program</span>
+                  <select
+                    value={newRegData.programId}
+                    onChange={(e) => setNewRegData({ ...newRegData, programId: e.target.value })}
+                    className={`w-full border rounded-lg p-2.5 font-semibold outline-none ${selectedProgram
+                      ? 'border-slate-200 text-slate-500 bg-slate-50 cursor-not-allowed'
+                      : 'border-slate-300 text-slate-700 bg-white cursor-pointer focus:ring-1 focus:ring-teal-700 focus:border-teal-700'
+                      }`}
+                    disabled={!!selectedProgram}
+                    required
+                  >
+                    {selectedProgram ? (
+                      <option value={selectedProgram._id}>{selectedProgram.name}</option>
+                    ) : (
+                      <>
+                        <option value="">Select Program</option>
+                        {programs.map((p: any) => (
+                          <option key={p._id} value={p._id}>{p.name}</option>
+                        ))}
+                      </>
+                    )}
+                  </select>
+                </div>
               </div>
 
 
@@ -2541,7 +3325,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
               <button onClick={() => setAddCourseOpen(false)} className="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
             </div>
             <form onSubmit={handleAddRepositoryCourse} className="p-6 space-y-4 text-xs font-bold text-slate-500">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-1">
                   <span>Course Name *</span>
                   <input
@@ -2564,18 +3348,46 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     required
                   />
                 </div>
+                <div className="space-y-1">
+                  <span>Keyword (Shortcut Name)</span>
+                  <input
+                    type="text"
+                    placeholder="e.g. LAC"
+                    value={newCourseData.keyword}
+                    onChange={(e) => setNewCourseData({ ...newCourseData, keyword: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none focus:ring-1 focus:ring-teal-700 bg-white"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <span>Program *</span>
+                  <span>Program</span>
+                  {/* HOD's program is fixed — locked to their assigned department's program */}
                   <select
                     value={newCourseData.programId}
-                    onChange={(e) => setNewCourseData({ ...newCourseData, programId: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none bg-white"
+                    onChange={(e) => {
+                      const selectedProgId = e.target.value;
+                      const filteredRegs = regulations.filter((r: any) => {
+                        const rProgId = typeof r.programId === 'object' ? r.programId._id : r.programId;
+                        return rProgId === selectedProgId;
+                      });
+                      setNewCourseData({
+                        ...newCourseData,
+                        programId: selectedProgId,
+                        regulationId: filteredRegs[0]?._id || ''
+                      });
+                    }}
+                    className="w-full border border-slate-200 rounded-lg p-2.5 text-slate-500 font-semibold outline-none bg-slate-50 cursor-not-allowed"
+                    disabled
                   >
-                    <option value="">B.Tech</option>
+                    {selectedProgram ? (
+                      <option value={selectedProgram._id}>{selectedProgram.name}</option>
+                    ) : (
+                      <option value="">No program assigned</option>
+                    )}
                   </select>
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Fixed to your department's program</p>
                 </div>
                 <div className="space-y-1">
                   <span>Department *</span>
@@ -2592,10 +3404,21 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                 <div className="space-y-1">
                   <span>Regulation *</span>
                   <select
-                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-400 outline-none bg-slate-50 font-semibold"
-                    disabled
+                    value={newCourseData.regulationId}
+                    onChange={(e) => setNewCourseData({ ...newCourseData, regulationId: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none bg-white cursor-pointer"
+                    required
                   >
-                    <option>{selectedRegulation?.code || 'R2025'}</option>
+                    <option value="">Select Regulation</option>
+                    {regulations
+                      .filter((r: any) => {
+                        const rProgId = typeof r.programId === 'object' ? r.programId._id : r.programId;
+                        const hodProgId = selectedProgram?._id;
+                        return hodProgId ? rProgId === hodProgId : true;
+                      })
+                      .map((r: any) => (
+                        <option key={r._id} value={r._id}>{r.code} - {r.academicYear}</option>
+                      ))}
                   </select>
                 </div>
                 <div className="space-y-1">
@@ -2624,9 +3447,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     onChange={(e) => setNewCourseData({ ...newCourseData, courseLevel: e.target.value })}
                     className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none bg-white"
                   >
-                    <option value="FC - Foundation">FC - Foundation</option>
-                    <option value="PC - Core">PC - Core</option>
-                    <option value="PE - Elective">PE - Elective</option>
+                    <option value="Foundation Courses - FC">Foundation Courses - FC</option>
+                    <option value="Intermediate-level Courses - IC">Intermediate-level Courses - IC</option>
+                    <option value="Advanced Courses - AC">Advanced Courses - AC</option>
                   </select>
                 </div>
                 <div className="space-y-1">
@@ -2925,7 +3748,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       {/* BULK IMPORT DIALOGUE */}
       {bulkImportOpen && (
         <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-fadeIn">
-          <div className="bg-white w-[500px] rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+          <div className="bg-white w-[650px] rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
             <div className="p-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
               <h3 className="text-base font-bold text-slate-800 flex items-center gap-1.5">
                 <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
@@ -2934,7 +3757,66 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
               <button onClick={() => { setBulkImportOpen(false); setBulkFile(null); }} className="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
             </div>
             <div className="p-6 space-y-4 text-xs font-bold text-slate-500 text-center">
-              <p className="text-slate-400 font-semibold mb-2">Upload curriculum metadata via CSV. Headers should match: Course Code, Course Title, Category, Semester, etc.</p>
+              <div className="text-left bg-blue-50 text-blue-800 p-3 rounded-lg border border-blue-100 font-normal text-[11px]">
+                <div className="flex justify-between items-center mb-2">
+                  <p className="font-bold">CSV Template Format:</p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left whitespace-nowrap">
+                    <thead>
+                      <tr className="border-b border-blue-200">
+                        <th className="pr-3 pb-1">Course Name</th>
+                        <th className="pr-3 pb-1">Course Code</th>
+                        <th className="pr-3 pb-1">Keyword</th>
+                        <th className="pr-3 pb-1">Program</th>
+                        <th className="pr-3 pb-1">Department</th>
+                        <th className="pr-3 pb-1">Regulation</th>
+                        <th className="pr-3 pb-1">Course Type</th>
+                        <th className="pr-3 pb-1">Course Level</th>
+                        <th className="pr-3 pb-1">Semester</th>
+                        <th className="pr-3 pb-1">Status</th>
+                        <th className="pr-2 pb-1">L</th>
+                        <th className="pr-2 pb-1">T</th>
+                        <th className="pr-2 pb-1">P</th>
+                        <th className="pr-2 pb-1">S</th>
+                        <th className="pr-3 pb-1">Credits (C)</th>
+                        <th className="pr-3 pb-1">Branches</th>
+                        <th className="pr-3 pb-1">CIE Marks</th>
+                        <th className="pr-3 pb-1">SEE Marks</th>
+                        <th className="pr-3 pb-1">Total Marks</th>
+                        <th className="pr-3 pb-1">Course Coordinator</th>
+                        <th className="pb-1">Prerequisites</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="opacity-70 font-mono text-[10px]">
+                        <td className="pr-3 pt-1">Programming</td>
+                        <td className="pr-3 pt-1">CS101</td>
+                        <td className="pr-3 pt-1">PRG</td>
+                        <td className="pr-3 pt-1">Engineering</td>
+                        <td className="pr-3 pt-1">CSE</td>
+                        <td className="pr-3 pt-1">AR27</td>
+                        <td className="pr-3 pt-1">PC</td>
+                        <td className="pr-3 pt-1">Foundation Courses - FC</td>
+                        <td className="pr-3 pt-1">1</td>
+                        <td className="pr-3 pt-1">Active</td>
+                        <td className="pr-2 pt-1">3</td>
+                        <td className="pr-2 pt-1">0</td>
+                        <td className="pr-2 pt-1">0</td>
+                        <td className="pr-2 pt-1">0</td>
+                        <td className="pr-3 pt-1">3</td>
+                        <td className="pr-3 pt-1">CSE, IT</td>
+                        <td className="pr-3 pt-1">40</td>
+                        <td className="pr-3 pt-1">60</td>
+                        <td className="pr-3 pt-1">100</td>
+                        <td className="pr-3 pt-1">prof@au.edu</td>
+                        <td className="pt-1">CS100</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <p className="text-slate-400 font-semibold mb-2 mt-4">Upload curriculum metadata via CSV matching the format above.</p>
               <label className="border-2 border-dashed border-slate-300 rounded-xl p-8 hover:border-teal-700 transition-colors flex flex-col items-center gap-2 cursor-pointer bg-slate-50 relative">
                 <input
                   type="file"
@@ -3004,16 +3886,22 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <span>Program</span>
+                  {/* HOD's program is fixed — locked to their assigned department's program */}
                   <select
                     value={editCourseData.programId}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-400 outline-none bg-slate-50 font-semibold"
+                    className="w-full border border-slate-200 rounded-lg p-2.5 text-slate-500 font-semibold outline-none bg-slate-50 cursor-not-allowed"
                     disabled
                   >
-                    <option value="">B.Tech</option>
+                    {selectedProgram ? (
+                      <option value={selectedProgram._id}>{selectedProgram.name}</option>
+                    ) : (
+                      <option value={editCourseData.programId}>{editCourseData.programId || 'No program assigned'}</option>
+                    )}
                   </select>
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Fixed to your department's program</p>
                 </div>
                 <div className="space-y-1">
-                  <span>Department</span>
+                  <span>Department *</span>
                   <select className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-400 outline-none bg-slate-50 font-semibold" disabled>
                     <option>{selectedDepartment?.name || 'Computer Science and Engineering'}</option>
                   </select>
@@ -3022,9 +3910,23 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <span>Regulation</span>
-                  <select className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-400 outline-none bg-slate-50 font-semibold" disabled>
-                    <option>{selectedRegulation?.code || 'R2025'}</option>
+                  <span>Regulation *</span>
+                  <select
+                    value={editCourseData.regulationId}
+                    onChange={(e) => setEditCourseData({ ...editCourseData, regulationId: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none bg-white cursor-pointer"
+                    required
+                  >
+                    <option value="">Select Regulation</option>
+                    {regulations
+                      .filter((r: any) => {
+                        const rProgId = typeof r.programId === 'object' ? r.programId._id : r.programId;
+                        const hodProgId = selectedProgram?._id;
+                        return hodProgId ? rProgId === hodProgId : true;
+                      })
+                      .map((r: any) => (
+                        <option key={r._id} value={r._id}>{r.code} - {r.academicYear}</option>
+                      ))}
                   </select>
                 </div>
                 <div className="space-y-1">
@@ -3053,9 +3955,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     onChange={(e) => setEditCourseData({ ...editCourseData, courseLevel: e.target.value })}
                     className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none bg-white"
                   >
-                    <option value="FC - Foundation">FC - Foundation</option>
-                    <option value="PC - Core">PC - Core</option>
-                    <option value="PE - Elective">PE - Elective</option>
+                    <option value="Foundation Courses - FC">Foundation Courses - FC</option>
+                    <option value="Intermediate-level Courses - IC">Intermediate-level Courses - IC</option>
+                    <option value="Advanced Courses - AC">Advanced Courses - AC</option>
                   </select>
                 </div>
                 <div className="space-y-1">
@@ -3402,27 +4304,34 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
               <div className="space-y-2 pt-2">
                 <span className="text-[10px] text-teal-800 font-bold uppercase tracking-wide block">Map Department Courses to Stream *</span>
                 <div className="border border-slate-200 rounded-lg p-3 max-h-[200px] overflow-y-auto bg-slate-50 space-y-2">
-                  {courses.map((course) => {
-                    const isChecked = newMinorStreamData.courses.includes(course._id);
-                    return (
-                      <label key={course._id} className="flex items-center gap-2.5 p-1.5 rounded hover:bg-slate-100 cursor-pointer font-medium text-slate-700">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => {
-                            const updatedCourses = isChecked
-                              ? newMinorStreamData.courses.filter(id => id !== course._id)
-                              : [...newMinorStreamData.courses, course._id];
-                            setNewMinorStreamData({ ...newMinorStreamData, courses: updatedCourses });
-                          }}
-                          className="accent-teal-700"
-                        />
-                        <span><strong className="text-teal-750 font-bold font-mono">{course.code}</strong> - {course.title}</span>
-                      </label>
-                    );
-                  })}
-                  {courses.length === 0 && (
-                    <p className="text-slate-400 italic text-center py-6 font-normal">No department courses available in repository</p>
+                  {courses
+                    .filter((c) => {
+                      // Only show courses that are assigned to this regulation under MSC/UEC category
+                      return versions.some(
+                        (v) => v.courseId?._id === c._id && ['MSC/UEC', 'MSC', 'UEC'].includes(v.category)
+                      );
+                    })
+                    .map((course) => {
+                      const isChecked = newMinorStreamData.courses.includes(course._id);
+                      return (
+                        <label key={course._id} className="flex items-center gap-2.5 p-1.5 rounded hover:bg-slate-100 cursor-pointer font-medium text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              const updatedCourses = isChecked
+                                ? newMinorStreamData.courses.filter(id => id !== course._id)
+                                : [...newMinorStreamData.courses, course._id];
+                              setNewMinorStreamData({ ...newMinorStreamData, courses: updatedCourses });
+                            }}
+                            className="accent-teal-700"
+                          />
+                          <span><strong className="text-teal-750 font-bold font-mono">{course.code}</strong> - {course.title}</span>
+                        </label>
+                      );
+                    })}
+                  {courses.filter(c => versions.some(v => v.courseId?._id === c._id && ['MSC/UEC', 'MSC', 'UEC'].includes(v.category))).length === 0 && (
+                    <p className="text-slate-400 italic text-center py-6 font-normal">No courses categorized as MSC/UEC available in this regulation.</p>
                   )}
                 </div>
               </div>
@@ -3514,11 +4423,245 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
         </div>
       )}
 
-      {/* ============================================================== */}
-      {/* CURRICULUM BOOK MANAGER SUBPAGE */}
-      {/* ============================================================== */}
-      {activeTab === 'curriculum-book' && (
-        <CurriculumBookManager />
+
+
+      {/* MINOR DEGREE MODAL */}
+      {minorDegreeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h3 className="font-extrabold text-slate-800 text-lg">
+                {editingMinorDegree ? 'Edit Minor Degree' : 'Create Minor Degree'}
+              </h3>
+              <button onClick={() => setMinorDegreeModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveMinorDegree} className="p-6 overflow-y-auto">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Minor Name</label>
+                  <input
+                    required
+                    value={newMinorDegreeData.minorName}
+                    onChange={e => setNewMinorDegreeData({ ...newMinorDegreeData, minorName: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+                    placeholder="e.g. Data Science Minor"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Required Credits</label>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    value={newMinorDegreeData.requiredCredits}
+                    onChange={e => setNewMinorDegreeData({ ...newMinorDegreeData, requiredCredits: Number(e.target.value) })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Description</label>
+                  <textarea
+                    rows={3}
+                    value={newMinorDegreeData.description}
+                    onChange={e => setNewMinorDegreeData({ ...newMinorDegreeData, description: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+                    placeholder="Interdisciplinary specialization in..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Eligibility Criteria</label>
+                  <textarea
+                    rows={2}
+                    value={newMinorDegreeData.eligibility}
+                    onChange={e => setNewMinorDegreeData({ ...newMinorDegreeData, eligibility: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+                    placeholder="e.g. Minimum CGPA of 7.5"
+                  />
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setMinorDegreeModalOpen(false)}
+                  className="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm font-bold bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                >
+                  Save Minor Degree
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MINOR DEGREE COURSES MODAL */}
+      {minorDegreeCoursesModalOpen && activeMinorDegree && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-4xl rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h3 className="font-extrabold text-slate-800 text-lg">
+                Manage Courses: {activeMinorDegree.minorName}
+              </h3>
+              <button onClick={() => {
+                setMinorDegreeCoursesModalOpen(false);
+                setActiveMinorDegree(null);
+                setEditingMinorDegreeCourse(null);
+                setNewMinorDegreeCourseData(defaultMinorDegreeCourseData);
+              }} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto flex gap-6">
+              <div className="w-1/3">
+                <h4 className="font-bold text-slate-800 mb-4">{editingMinorDegreeCourse ? 'Edit Course' : 'Add New Course'}</h4>
+                <form onSubmit={handleSaveMinorDegreeCourse} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Select Course from Repository</label>
+                    <select
+                      required
+                      value={newMinorDegreeCourseData.courseCode}
+                      onChange={e => {
+                        const code = e.target.value;
+                        const selectedCourse = courses.find((c: any) => c.code === code);
+                        if (selectedCourse) {
+                          setNewMinorDegreeCourseData({
+                            ...newMinorDegreeCourseData,
+                            courseCode: selectedCourse.code,
+                            courseName: selectedCourse.title,
+                            credits: selectedCourse.credits?.C || 3
+                          });
+                        } else {
+                          setNewMinorDegreeCourseData({ ...newMinorDegreeCourseData, courseCode: code });
+                        }
+                      }}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                    >
+                      <option value="" disabled>-- Choose a Course --</option>
+                      {courses.map((c: any) => (
+                        <option key={c._id} value={c.code}>
+                          {c.code} - {c.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {newMinorDegreeCourseData.courseName && (
+                    <div className="text-xs text-slate-500 font-medium">
+                      Selected: <span className="text-slate-800">{newMinorDegreeCourseData.courseName}</span>
+                    </div>
+                  )}
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Semester</label>
+                      <input
+                        required
+                        value={newMinorDegreeCourseData.semester}
+                        onChange={e => setNewMinorDegreeCourseData({ ...newMinorDegreeCourseData, semester: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                        placeholder="Semester 4"
+                      />
+                    </div>
+                    <div className="w-24">
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Credits</label>
+                      <input
+                        type="number"
+                        required min={1} max={10}
+                        value={newMinorDegreeCourseData.credits}
+                        onChange={e => setNewMinorDegreeCourseData({ ...newMinorDegreeCourseData, credits: Number(e.target.value) })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">OR Group ID (Optional)</label>
+                    <input
+                      value={newMinorDegreeCourseData.orGroupId}
+                      onChange={e => setNewMinorDegreeCourseData({ ...newMinorDegreeCourseData, orGroupId: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                      placeholder="e.g. group1 (to group elective courses)"
+                    />
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    {editingMinorDegreeCourse && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingMinorDegreeCourse(null);
+                          setNewMinorDegreeCourseData(defaultMinorDegreeCourseData);
+                        }}
+                        className="flex-1 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-lg"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                    <button
+                      type="submit"
+                      className="flex-1 py-2 text-sm font-bold bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                    >
+                      {editingMinorDegreeCourse ? 'Update Course' : 'Add Course'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+              <div className="w-2/3 border-l border-slate-100 pl-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-bold text-slate-800">Course List</h4>
+                  <div className="text-xs font-bold text-slate-500">
+                    Total Credits: <span className={activeMinorDegree.currentCredits >= activeMinorDegree.requiredCredits ? 'text-success-600' : 'text-primary-600'}>{activeMinorDegree.currentCredits}</span> / {activeMinorDegree.requiredCredits}
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {activeMinorDegree.courses && activeMinorDegree.courses.length > 0 ? activeMinorDegree.courses.map((course: any) => (
+                    <div key={course._id} className="flex items-center justify-between p-3 border border-slate-200 rounded-xl hover:shadow-sm">
+                      <div>
+                        <div className="text-sm font-bold text-slate-800">{course.courseCode}: {course.courseName}</div>
+                        <div className="text-xs text-slate-500">
+                          {course.semester} &bull; {course.credits} Credits
+                          {course.orGroupId && <span className="ml-2 px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded font-medium">OR Group: {course.orGroupId}</span>}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingMinorDegreeCourse(course);
+                            setNewMinorDegreeCourseData({
+                              courseCode: course.courseCode,
+                              courseName: course.courseName,
+                              credits: course.credits,
+                              semester: course.semester,
+                              courseType: course.courseType,
+                              description: course.description,
+                              orGroupId: course.orGroupId
+                            });
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMinorDegreeCourse(course._id)}
+                          className="p-1.5 text-slate-400 hover:text-danger-600 hover:bg-danger-50 rounded"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="text-center py-8 text-sm text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                      No courses added yet.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

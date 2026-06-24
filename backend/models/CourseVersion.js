@@ -58,6 +58,7 @@ const CourseVersionSchema = new mongoose.Schema({
     enum: ['Foundation', 'Intermediate', 'Advanced'], 
     default: 'Foundation' 
   },
+  courseLevel: { type: String, default: 'Foundation Courses - FC' },
   knowledgeLevel: { type: String, default: '' },
   objectives: [{ type: String }],
   prerequisites: [{ type: String }],
@@ -123,7 +124,9 @@ const CourseVersionSchema = new mongoose.Schema({
     lab: { type: Number, default: 0 }
   },
 
-  comments: { type: String, default: '' } // Review/Return comments from HOD/Admin
+  comments: { type: String, default: '' }, // Review/Return comments from HOD/Admin
+  isDeleted: { type: Boolean, default: false },
+  deletedAt: { type: Date }
 }, { timestamps: true });
 
 // A course version should be unique per course and regulation

@@ -11,7 +11,9 @@ const MinorStreamSchema = new mongoose.Schema({
   courses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
   created_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   updated_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  is_active: { type: Boolean, default: true }
+  is_active: { type: Boolean, default: true },
+  isDeleted: { type: Boolean, default: false },
+  deletedAt: { type: Date }
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 
 // A minor stream code should be unique per department and regulation
