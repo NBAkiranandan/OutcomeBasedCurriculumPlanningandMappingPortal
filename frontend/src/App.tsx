@@ -7,22 +7,42 @@ import { AdminDashboard } from './modules/admin/AdminDashboard';
 import { HodDashboard } from './modules/hod/HodDashboard';
 import { CoordinatorDashboard } from './modules/coordinator/CoordinatorDashboard';
 import { FacultyDashboard } from './modules/faculty/FacultyDashboard';
+import { NotificationCenter } from './components/NotificationCenter';
 
 export const App: React.FC = () => {
   const { isAuthenticated, user } = useAuthStore();
   const { clearTransientState } = useUIStore();
-  const [activeTab, setActiveTabRaw] = useState('dashboard');
+  const [activeTab, setActiveTabRaw] = useState(() => {
+    return window.location.hash.replace('#', '') || 'dashboard';
+  });
 
-  // Wrap tab setter — always clear transient UI state on every navigation
+  // Wrap tab setter — clear transient UI state and update URL hash
   const setActiveTab = useCallback((tab: string) => {
     clearTransientState();
+    if (window.location.hash !== `#${tab}`) {
+      window.history.pushState(null, '', `#${tab}`);
+    }
     setActiveTabRaw(tab);
   }, [clearTransientState]);
 
-  // Reset to dashboard on user change (login/logout)
+  // Listen for browser back/forward buttons
   useEffect(() => {
-    setActiveTab('dashboard');
-  }, [user]);
+    const handlePopState = () => {
+      const hashTab = window.location.hash.replace('#', '');
+      clearTransientState();
+      setActiveTabRaw(hashTab || 'dashboard');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [clearTransientState]);
+
+  // Initialize or reset on user change (login/logout)
+  useEffect(() => {
+    if (user) {
+      const hashTab = window.location.hash.replace('#', '');
+      setActiveTab(hashTab || 'dashboard');
+    }
+  }, [user, setActiveTab]);
 
   if (!isAuthenticated || !user) {
     return <Login />;
@@ -49,6 +69,11 @@ export const App: React.FC = () => {
       {/* 4. FACULTY MODULE */}
       {user.role === 'Faculty' && (
         <FacultyDashboard activeTab={activeTab} setActiveTab={setActiveTab} />
+      )}
+
+      {/* 5. NOTIFICATIONS MODULE */}
+      {activeTab === 'notifications' && (
+        <NotificationCenter />
       )}
 
     </DashboardLayout>

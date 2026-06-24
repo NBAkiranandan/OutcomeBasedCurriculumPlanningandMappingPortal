@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useUIStore } from '../../store/uiStore';
 import { api } from '../../services/api';
-import { X, Key, ShieldAlert, CheckCircle2, Loader2 } from 'lucide-react';
+import { X, Key, ShieldAlert, CheckCircle2, Loader2, Eye, EyeOff } from 'lucide-react';
 
 export const ChangePasswordModal: React.FC = () => {
   const { changePasswordModalOpen, setChangePasswordModalOpen } = useUIStore();
@@ -9,6 +9,10 @@ export const ChangePasswordModal: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -120,7 +124,7 @@ export const ChangePasswordModal: React.FC = () => {
         {/* Header */}
         <div className="px-6 py-5 border-b border-border flex justify-between items-center bg-slate-50/50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-650">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
               <Key className="w-5 h-5" />
             </div>
             <div>
@@ -141,7 +145,7 @@ export const ChangePasswordModal: React.FC = () => {
         <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs font-bold text-slate-500">
           
           {/* Alerts */}
-          {error && (
+          {error && error !== 'Current password is incorrect.' && (
             <div className="p-4 bg-danger-50 border border-danger-100 text-danger-700 rounded-2xl flex items-start gap-3 font-semibold leading-relaxed animate-fadeIn">
               <ShieldAlert className="w-5 h-5 text-danger-500 flex-shrink-0 mt-0.5" />
               <span>{error}</span>
@@ -156,33 +160,66 @@ export const ChangePasswordModal: React.FC = () => {
           )}
 
           {/* Input 1: Current Password */}
-          <div className="space-y-1.5 text-left">
+          <div className="space-y-1.5 text-left relative">
             <label htmlFor="currentPassword">Current Password</label>
-            <input 
-              id="currentPassword"
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="••••••••"
-              disabled={loading || !!success}
-              className="w-full border border-slate-300 rounded-xl p-3 text-slate-700 font-medium bg-white outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600 disabled:bg-slate-50 disabled:text-slate-400"
-              required
-            />
+            <div className="relative">
+              <input 
+                id="currentPassword"
+                type={showCurrent ? "text" : "password"}
+                value={currentPassword}
+                onChange={(e) => {
+                  setCurrentPassword(e.target.value);
+                  setError(null);
+                }}
+                placeholder="••••••••"
+                disabled={loading || !!success}
+                className={`w-full border rounded-xl pl-3 pr-10 py-3 text-slate-700 font-medium bg-white outline-none focus:ring-2 disabled:bg-slate-50 disabled:text-slate-400 ${
+                  error === 'Current password is incorrect.'
+                    ? 'border-danger-400 focus:ring-danger-100 focus:border-danger-500'
+                    : 'border-slate-300 focus:ring-indigo-100 focus:border-indigo-600'
+                }`}
+                required
+              />
+              <button 
+                type="button" 
+                onClick={() => setShowCurrent(!showCurrent)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+              >
+                {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            {error === 'Current password is incorrect.' && (
+              <p className="text-[10px] text-danger-600 font-bold pl-1 pt-0.5">
+                Current password is incorrect. Please try again.
+              </p>
+            )}
           </div>
 
           {/* Input 2: New Password */}
           <div className="space-y-1.5 text-left">
             <label htmlFor="newPassword">New Password</label>
-            <input 
-              id="newPassword"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="••••••••"
-              disabled={loading || !!success}
-              className="w-full border border-slate-300 rounded-xl p-3 text-slate-700 font-medium bg-white outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600 disabled:bg-slate-50 disabled:text-slate-400"
-              required
-            />
+            <div className="relative">
+              <input 
+                id="newPassword"
+                type={showNew ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => {
+                  setNewPassword(e.target.value);
+                  setError(null);
+                }}
+                placeholder="••••••••"
+                disabled={loading || !!success}
+                className="w-full border border-slate-300 rounded-xl pl-3 pr-10 py-3 text-slate-700 font-medium bg-white outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600 disabled:bg-slate-50 disabled:text-slate-400"
+                required
+              />
+              <button 
+                type="button" 
+                onClick={() => setShowNew(!showNew)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+              >
+                {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
             <p className="text-[10px] text-text-subtle font-medium leading-relaxed pl-1 pt-0.5">
               Must be at least 8 characters with 1 uppercase, 1 lowercase, 1 number, and 1 special symbol.
             </p>
@@ -191,16 +228,44 @@ export const ChangePasswordModal: React.FC = () => {
           {/* Input 3: Confirm Password */}
           <div className="space-y-1.5 text-left">
             <label htmlFor="confirmPassword">Confirm New Password</label>
-            <input 
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="••••••••"
-              disabled={loading || !!success}
-              className="w-full border border-slate-300 rounded-xl p-3 text-slate-700 font-medium bg-white outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600 disabled:bg-slate-50 disabled:text-slate-400"
-              required
-            />
+            <div className="relative">
+              <input 
+                id="confirmPassword"
+                type={showConfirm ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  setError(null);
+                }}
+                placeholder="••••••••"
+                disabled={loading || !!success}
+                className={`w-full border rounded-xl pl-3 pr-10 py-3 text-slate-700 font-medium bg-white outline-none focus:ring-2 disabled:bg-slate-50 disabled:text-slate-400 ${
+                  confirmPassword.length > 0 && newPassword !== confirmPassword 
+                    ? 'border-danger-400 focus:ring-danger-100 focus:border-danger-500' 
+                    : confirmPassword.length > 0 && newPassword === confirmPassword 
+                      ? 'border-success-400 focus:ring-success-100 focus:border-success-500'
+                      : 'border-slate-300 focus:ring-indigo-100 focus:border-indigo-600'
+                }`}
+                required
+              />
+              <button 
+                type="button" 
+                onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+              >
+                {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            {confirmPassword.length > 0 && newPassword !== confirmPassword && (
+              <p className="text-[10px] text-danger-600 font-bold pl-1 pt-0.5">
+                Passwords do not match
+              </p>
+            )}
+            {confirmPassword.length > 0 && newPassword === confirmPassword && (
+              <p className="text-[10px] text-success-600 font-bold pl-1 pt-0.5">
+                Passwords match
+              </p>
+            )}
           </div>
 
           {/* Action Buttons */}
@@ -216,7 +281,7 @@ export const ChangePasswordModal: React.FC = () => {
             <button
               type="submit"
               disabled={loading || !!success}
-              className="flex-1 py-3 bg-indigo-650 hover:bg-indigo-750 active:bg-indigo-850 text-white rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:bg-indigo-400 disabled:cursor-not-allowed"
+              className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:bg-indigo-400 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
