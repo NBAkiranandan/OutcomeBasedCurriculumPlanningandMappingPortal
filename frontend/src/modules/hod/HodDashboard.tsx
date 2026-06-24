@@ -804,10 +804,12 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
             let coordinatorId = '';
             if (coordinatorQuery) {
-              const fac = faculty.find((f: any) =>
-                (f.email && f.email.toLowerCase() === coordinatorQuery.toLowerCase().trim()) ||
-                (f.name && f.name.toLowerCase() === coordinatorQuery.toLowerCase().trim())
-              );
+              const query = coordinatorQuery.toLowerCase().trim();
+              const fac = faculty.find((f: any) => {
+                const fEmail = (f.email || '').toLowerCase().trim();
+                const fName = (f.name || '').toLowerCase().trim();
+                return fEmail === query || fName === query || fName.includes(query) || query.includes(fName);
+              });
               if (fac) {
                 coordinatorId = fac._id;
               }
