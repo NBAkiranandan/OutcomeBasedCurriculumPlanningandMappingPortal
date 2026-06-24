@@ -158,6 +158,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   // Load HOD Portal Data — all scoped to HOD's assigned department only
   const loadData = async () => {
     setLoading(true);
+    // Reset regulation-scoped data to avoid stale data from previous regulation
+    setPeoPsoData({ peos: [], psos: [], pos: [] });
     try {
       // 1. Fetch HOD's assigned department (secured by JWT on backend)
       const deptRes = await api.auth.myDepartment();
@@ -180,8 +182,10 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       const allRegs = regRes.regulations || [];
       setRegulations(allRegs);
 
-      // 4. Auto-select regulation if none selected yet
-      if (!selectedRegulation && program) {
+      // 4. Resolve the active regulation using a local variable (avoids stale state)
+      // Use existing selectedRegulation if already set, otherwise auto-select
+      let effectiveRegId: string | null = selectedRegulation?._id || null;
+      if (!effectiveRegId && program) {
         const deptRegs = allRegs.filter((r: any) => {
           const rProgId = typeof r.programId === 'object' ? r.programId._id : r.programId;
           return rProgId === program._id;
@@ -189,6 +193,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
         if (deptRegs.length > 0) {
           setSelectedRegulation(deptRegs[0]);
           setBuilderRegulationId(deptRegs[0]._id);
+          effectiveRegId = deptRegs[0]._id;
         }
       }
 
@@ -196,17 +201,34 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       const courseRes = await api.courses.listByDept(hodDept._id);
       setCourses(courseRes.courses || []);
 
-      // 6. Load regulation-specific course versions and PEO/PSO mapping
-      if (selectedRegulation) {
-        const verRes = await api.courses.listByReg(selectedRegulation._id);
+      // 6. Load regulation-specific course versions, PEO/PSO mapping, and course categories
+      if (effectiveRegId) {
+        const verRes = await api.courses.listByReg(effectiveRegId);
         setVersions(verRes.versions || []);
-        setBuilderRegulationId(selectedRegulation._id);
+        setBuilderRegulationId(effectiveRegId);
 
+        // Load PEO/PSO for the effective regulation (uses local var, not stale state)
         try {
-          const peoPsoRes = await api.peoPso.getByDept(hodDept._id, selectedRegulation._id);
+          const peoPsoRes = await api.peoPso.getByDept(hodDept._id, effectiveRegId);
           if (peoPsoRes.peoPso) setPeoPsoData(peoPsoRes.peoPso);
         } catch (err) {
           console.error('[HOD Dashboard] Failed to load PEO/PSO:', err);
+        }
+
+        // Load course categories scoped to the effective regulation
+        try {
+          const catRes = await api.courseCategories.list(effectiveRegId);
+          setCourseCategories(catRes.categories || []);
+        } catch (err) {
+          console.error('Failed to load categories:', err);
+        }
+      } else {
+        // No regulation selected — load global categories
+        try {
+          const catRes = await api.courseCategories.list();
+          setCourseCategories(catRes.categories || []);
+        } catch (err) {
+          console.error('Failed to load categories:', err);
         }
       }
 
@@ -236,19 +258,11 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
         setPrograms(progRes.programs || []);
       }
 
-      // 9. Load course categories
-      try {
-        const catRes = await api.courseCategories.list();
-        setCourseCategories(catRes.categories || []);
-      } catch (err) {
-        console.error('Failed to load categories:', err);
-      }
-
-      // 10. Load minor streams and prerequisites if regulation selected
-      if (selectedRegulation && hodDept) {
+      // 9. Load minor streams and prerequisites if regulation selected
+      if (effectiveRegId && hodDept) {
         try {
           const streamsRes = await api.minorStreams.list({
-            regulationId: selectedRegulation._id,
+            regulationId: effectiveRegId,
             departmentId: hodDept._id
           });
           setMinorStreams(streamsRes.streams || []);
@@ -258,7 +272,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
         try {
           const mdRes = await api.minorDegrees.list({
-            regulationId: selectedRegulation._id,
+            regulationId: effectiveRegId,
             departmentId: hodDept._id
           });
           setMinorDegrees(mdRes.minorDegrees || []);
@@ -268,7 +282,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
         try {
           const prereqsRes = await api.prerequisites.list({
-            regulationId: selectedRegulation._id
+            regulationId: effectiveRegId
           });
           setPrereqs(prereqsRes.links || []);
         } catch (e) {
@@ -285,6 +299,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   useEffect(() => {
     loadData();
   }, [selectedRegulation]);
+
+
 
   // Handle clone source change -> pre-populate outcomes checklist
   const handleCloneSourceChange = (sourceId: string) => {
@@ -331,16 +347,17 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       alert('Code and Name are required.');
       return;
     }
+    const regId = selectedRegulation?._id;
     try {
       if (editCategoryData._id) {
-        await api.courseCategories.update(editCategoryData._id, editCategoryData);
+        await api.courseCategories.update(editCategoryData._id, { ...editCategoryData, regulationId: regId });
         alert('Course category updated.');
       } else {
-        await api.courseCategories.create(editCategoryData);
+        await api.courseCategories.create({ ...editCategoryData, regulationId: regId });
         alert('Course category added.');
       }
       setCategoryModalOpen(false);
-      const catRes = await api.courseCategories.list();
+      const catRes = await api.courseCategories.list(regId);
       setCourseCategories(catRes.categories || []);
     } catch (err: any) {
       alert(err.message || 'Failed to save course category.');
@@ -351,6 +368,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
     e.preventDefault();
     if (!bulkCategoryText.trim()) return;
     setBulkCategoryLoading(true);
+    const regId = selectedRegulation?._id;
     try {
       const lines = bulkCategoryText.split('\n').filter(l => l.trim().length > 0);
       for (const line of lines) {
@@ -360,18 +378,19 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
           const name = parts[1];
           const ugc = parts.length > 2 ? parts.slice(2).join(',').trim() : '-';
           
-          const exists = courseCategories.find(c => c.code === code);
+          // Match existing category in the same regulation scope
+          const exists = courseCategories.find(c => c.code === code && (c.regulationId === regId || (!c.regulationId && !regId)));
           if (exists) {
-            await api.courseCategories.update(exists._id, { code, name, ugc });
+            await api.courseCategories.update(exists._id, { code, name, ugc, regulationId: regId });
           } else {
-            await api.courseCategories.create({ code, name, ugc });
+            await api.courseCategories.create({ code, name, ugc, regulationId: regId });
           }
         }
       }
       setBulkCategoryModalOpen(false);
       setBulkCategoryText('');
       alert(`Successfully processed ${lines.length} categories.`);
-      const catRes = await api.courseCategories.list();
+      const catRes = await api.courseCategories.list(regId);
       setCourseCategories(catRes.categories || []);
     } catch (err: any) {
       alert(err.message || 'Bulk import failed.');
@@ -382,10 +401,11 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
   const handleDeleteCategory = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this course type?')) return;
+    const regId = selectedRegulation?._id;
     try {
       await api.courseCategories.delete(id);
       alert('Course category deleted.');
-      const catRes = await api.courseCategories.list();
+      const catRes = await api.courseCategories.list(regId);
       setCourseCategories(catRes.categories || []);
     } catch (err: any) {
       alert(err.message || 'Failed to delete category.');
@@ -1465,10 +1485,20 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
             <div>
               <h1 className="text-xl font-extrabold text-slate-800 font-sans">PEO & PSO Management</h1>
               <p className="text-xs text-slate-500 mt-1">Configure Program Educational Objectives (PEOs) and Program Specific Outcomes (PSOs) for your department. Changes are saved directly to the department record.</p>
+              {selectedRegulation ? (
+                <span className="inline-flex items-center mt-2 px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200 text-[11px] font-semibold">
+                  📋 Regulation: {selectedRegulation.code} — {selectedRegulation.academicYear}
+                </span>
+              ) : (
+                <span className="inline-flex items-center mt-2 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[11px] font-semibold">
+                  ⚠ No regulation selected — please select one from the top bar
+                </span>
+              )}
             </div>
             <button
               onClick={async () => {
                 if (!(selectedDepartment as any)) return alert('No department selected.');
+                if (!selectedRegulation) return alert('Please select a regulation first.');
                 try {
                   await api.peoPso.updateByDept((selectedDepartment as any)._id, peoPsoData, selectedRegulation?._id);
                   alert('PEOs and PSOs saved successfully for the selected regulation!');
@@ -1928,7 +1958,17 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
             <div>
               <h1 className="text-xl font-extrabold text-slate-800">Course Categories (Types)</h1>
               <p className="text-xs text-slate-500 mt-1">Manage standard and custom course types and their UGC credits.</p>
+              {selectedRegulation ? (
+                <span className="inline-flex items-center mt-2 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-semibold">
+                  📋 Showing categories for Regulation: {selectedRegulation.code} — {selectedRegulation.academicYear} (+ global)
+                </span>
+              ) : (
+                <span className="inline-flex items-center mt-2 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 text-[11px] font-semibold">
+                  Showing global categories (no regulation selected)
+                </span>
+              )}
             </div>
+
             <div className="flex gap-2">
               <button
                 onClick={() => {

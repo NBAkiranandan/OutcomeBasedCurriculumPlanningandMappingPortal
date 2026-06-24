@@ -283,9 +283,17 @@ const formatCommonTo = (items = [], fallback) => {
 };
 
 const getCourseLevelCode = (version) => {
-  const raw = `${version.level || version.knowledgeLevel || ''}`.toLowerCase();
-  if (raw === 'advanced' || raw === 'ac') return 'AC';
-  if (raw === 'intermediate' || raw === 'ic') return 'IC';
+  // Check the `level` enum field first (Foundation / Intermediate / Advanced)
+  const levelRaw = `${version.level || ''}`.toLowerCase();
+  if (levelRaw === 'advanced') return 'AC';
+  if (levelRaw === 'intermediate') return 'IC';
+  if (levelRaw === 'foundation') return 'FC';
+
+  // Fallback: parse the `courseLevel` string (e.g. "Intermediate Courses - IC")
+  const courseLevelRaw = `${version.courseLevel || version.knowledgeLevel || ''}`.toLowerCase();
+  if (courseLevelRaw.includes('advanced') || courseLevelRaw.includes(' ac') || courseLevelRaw.endsWith('-ac') || courseLevelRaw === 'ac') return 'AC';
+  if (courseLevelRaw.includes('intermediate') || courseLevelRaw.includes(' ic') || courseLevelRaw.endsWith('-ic') || courseLevelRaw === 'ic') return 'IC';
+
   return 'FC'; // Foundation / default
 };
 

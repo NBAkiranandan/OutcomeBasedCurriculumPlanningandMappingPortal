@@ -301,6 +301,18 @@ export const saveSyllabusDraft = async (versionId, updateData, operatorUser) => 
     }
   }
 
+  // Auto-sync `level` enum from `courseLevel` string so curriculum book categorisation works
+  if (sanitizedUpdateData.courseLevel && !sanitizedUpdateData.level) {
+    const cl = `${sanitizedUpdateData.courseLevel}`.toLowerCase();
+    if (cl.includes('advanced') || cl.includes(' ac') || cl.endsWith('-ac')) {
+      sanitizedUpdateData.level = 'Advanced';
+    } else if (cl.includes('intermediate') || cl.includes(' ic') || cl.endsWith('-ic')) {
+      sanitizedUpdateData.level = 'Intermediate';
+    } else {
+      sanitizedUpdateData.level = 'Foundation';
+    }
+  }
+
   // Update version
   const updated = await courseRepository.updateCourseVersion(versionId, sanitizedUpdateData);
 

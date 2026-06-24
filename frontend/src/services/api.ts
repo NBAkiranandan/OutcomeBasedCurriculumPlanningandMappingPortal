@@ -281,7 +281,10 @@ export const api = {
     delete: (id: string) => apiRequest(`/api/course-assignments/${id}`, { method: 'DELETE' })
   },
   courseCategories: {
-    list: () => apiRequest('/api/course-types'),
+    list: (regulationId?: string) => {
+      const url = regulationId ? `/api/course-types?regulationId=${regulationId}` : '/api/course-types';
+      return apiRequest(url);
+    },
     create: (body: any) => apiRequest('/api/course-types', { method: 'POST', body: JSON.stringify(body) }),
     update: (id: string, body: any) => apiRequest(`/api/course-types/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
     delete: (id: string) => apiRequest(`/api/course-types/${id}`, { method: 'DELETE' })
