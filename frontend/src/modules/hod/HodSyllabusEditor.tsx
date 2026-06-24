@@ -1077,11 +1077,7 @@ export const HodSyllabusEditor: React.FC<HodSyllabusEditorProps> = ({ courseVers
         cieSee: activeVersion.cieSee
       };
 
-      // If it is mock data, simulate save
-      if (activeVersion._id.startsWith('mock-')) {
-        alert('Mock syllabus draft progress saved successfully!');
-        return;
-      }
+
       const res = await api.courses.saveDraft(activeVersion._id, coordinatorPayload);
       alert(res.message || 'Syllabus progress saved successfully as Draft!');
       loadCourseVersion(activeVersion._id);
@@ -1101,12 +1097,7 @@ export const HodSyllabusEditor: React.FC<HodSyllabusEditorProps> = ({ courseVers
         return;
       }
 
-      if (activeVersion._id.startsWith('mock-')) {
-        const updatedVersion = { ...activeVersion, status: 'Approved' };
-        setActiveVersion(updatedVersion);
-        alert('Mock syllabus successfully approved!');
-        return;
-      }
+
 
       await api.courses.updateStatus(activeVersion._id, {
         status: 'Approved',

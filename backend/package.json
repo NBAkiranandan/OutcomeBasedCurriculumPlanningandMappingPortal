@@ -7,9 +7,7 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "seed": "node utils/seed.js",
-    "seed:pdf": "node utils/parse_and_seed_pdf.js",
-    "seed:r24": "node utils/seed_curriculum_r24.js"
+    "seed": "node utils/seed.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

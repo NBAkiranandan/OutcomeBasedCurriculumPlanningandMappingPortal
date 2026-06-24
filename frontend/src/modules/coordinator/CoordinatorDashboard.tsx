@@ -1051,7 +1051,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
   }, []);
 
   const saveDraftAutomatically = async (updatedVersion: any) => {
-    if (!updatedVersion || updatedVersion._id.startsWith('mock-')) return;
+    if (!updatedVersion) return;
     try {
       const coordinatorPayload = {
         courseOutcomes: updatedVersion.courseOutcomes || [],
@@ -1099,11 +1099,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
         knowledgeLevel: activeVersion.knowledgeLevel || ''
       };
 
-      // If it is mock data, simulate save
-      if (activeVersion._id.startsWith('mock-')) {
-        alert('Mock syllabus draft progress saved successfully!');
-        return;
-      }
+
       const res = await api.courses.saveDraft(activeVersion._id, coordinatorPayload);
       alert(res.message || 'Syllabus progress saved successfully as Draft!');
       loadCourseVersion(activeVersion._id);
@@ -1123,13 +1119,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
         return;
       }
 
-      if (activeVersion._id.startsWith('mock-')) {
-        const updatedVersion = { ...activeVersion, status: 'Pending HOD' };
-        setActiveVersion(updatedVersion);
-        setAssignedVersions(prev => prev.map(v => v._id === activeVersion._id ? updatedVersion : v));
-        alert('Mock syllabus successfully submitted to HOD!');
-        return;
-      }
+
 
       // 1. Save all pending changes to the backend first
       const coordinatorPayload = {

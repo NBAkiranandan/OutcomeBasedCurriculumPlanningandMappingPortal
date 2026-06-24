@@ -746,23 +746,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 <button className="text-[11px] text-primary-600 hover:underline font-semibold">View all</button>
               </div>
               <div className="flex-1 overflow-y-auto pr-1 space-y-3">
-                {isDbEmpty ? (
+                {approvalsQueue.length === 0 ? (
                   <div className="text-center p-8">
                     <p className="text-xs text-text-subtle">No recent activity found.</p>
                   </div>
                 ) : (
-                  [
-                    { title: 'HOD CSE submitted curriculum for R25 regulation', time: '10 mins ago', color: 'bg-primary-500' },
-                    { title: 'Admin approved DBMS course (CS203)', time: '28 mins ago', color: 'bg-success-500' },
-                    { title: 'New faculty Dr. Kumar added to ECE department', time: '1 hour ago', color: 'bg-info-500' },
-                    { title: 'R25 CSE curriculum returned by admin', time: '2 hours ago', color: 'bg-warning-500' },
-                    { title: 'Full curriculum report generated for R23 ECE', time: '3 hours ago', color: 'bg-violet-500' },
-                  ].map((act, idx) => (
+                  approvalsQueue.slice(0, 5).map((v, idx) => (
                     <div key={idx} className="flex gap-3 text-xs leading-relaxed py-1">
-                      <span className={`w-2 h-2 rounded-full ${act.color} mt-1.5 flex-shrink-0`}></span>
+                      <span className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${v.status === 'Approved' ? 'bg-success-500' : v.status === 'Returned' ? 'bg-warning-500' : 'bg-primary-500'}`}></span>
                       <div>
-                        <p className="font-medium text-text-secondary">{act.title}</p>
-                        <span className="text-[10px] text-text-subtle block mt-0.5">{act.time}</span>
+                        <p className="font-medium text-text-secondary">{v.courseId?.title || v.courseId?.code} set to {v.status}</p>
+                        <span className="text-[10px] text-text-subtle block mt-0.5">Recently updated</span>
                       </div>
                     </div>
                   ))

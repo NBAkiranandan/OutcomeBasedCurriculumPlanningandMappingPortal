@@ -1796,46 +1796,35 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Standard predefined faculty details matching bottom-left screenshot */}
-                  {[
-                    { _id: undefined as string | undefined, id: 'CSE-F001', name: 'Dr. Kavitha Menon', email: 'kavitha.menon@university.edu', designation: 'Professor', status: 'Active' },
-                    { _id: undefined as string | undefined, id: 'CSE-F002', name: 'Prof. Arjun Nair', email: 'arjun.nair@university.edu', designation: 'Associate Professor', status: 'Active' },
-                    { _id: undefined as string | undefined, id: 'CSE-F003', name: 'Dr. Meera Iyer', email: 'meera.iyer@university.edu', designation: 'Assistant Professor', status: 'Active' }
-                  ]
-                    .concat(faculty.slice(3).map((f, i) => ({
-                      _id: f._id,
-                      id: `CSE-F00${4 + i}`,
-                      name: f.name,
-                      email: f.email,
-                      designation: 'Assistant Professor',
-                      status: f.isActive ? 'Active' : 'Inactive'
-                    })))
+                  {faculty
                     .filter(f => f.name.toLowerCase().includes(facultySearch.toLowerCase()))
-                    .map((f) => (
-                      <tr key={f.id} className="border-b border-slate-100 hover:bg-slate-50/20 text-slate-600 font-medium">
-                        <td className="p-3 pl-4 font-mono font-bold text-teal-800">{f.id}</td>
+                    .map((f, i) => {
+                      const facultyId = `CSE-F${String(i + 1).padStart(3, '0')}`;
+                      const statusLabel = f.isActive ? 'Active' : 'Inactive';
+                      return (
+                      <tr key={f._id} className="border-b border-slate-100 hover:bg-slate-50/20 text-slate-600 font-medium">
+                        <td className="p-3 pl-4 font-mono font-bold text-teal-800">{facultyId}</td>
                         <td className="p-3 font-bold text-slate-800">{f.name}</td>
                         <td className="p-3">{f.email}</td>
                         <td className="p-3">{selectedDepartment?.name || 'Computer Science and Engineering'}</td>
-                        <td className="p-3 font-semibold">{f.designation}</td>
+                        <td className="p-3 font-semibold">Assistant Professor</td>
                         <td className="p-3">
-                          <span className={`px-2.5 py-0.5 rounded text-[9px] font-bold border ${f.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200'
+                          <span className={`px-2.5 py-0.5 rounded text-[9px] font-bold border ${statusLabel === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200'
                             }`}>
-                            {f.status}
+                            {statusLabel}
                           </span>
                         </td>
                         <td className="p-3 pr-4 text-right">
                           <button
-                            onClick={() => f._id && handleToggleUserActive(f._id)}
-                            className={`p-1 text-slate-400 hover:text-red-500 ${!f._id ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
-                            disabled={!f._id}
-                            title={f.status === 'Active' ? "Deactivate Faculty" : "Activate Faculty"}
+                            onClick={() => handleToggleUserActive(f._id)}
+                            className="p-1 text-slate-400 hover:text-red-500 cursor-pointer"
+                            title={statusLabel === 'Active' ? "Deactivate Faculty" : "Activate Faculty"}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </td>
                       </tr>
-                    ))}
+                    )})}
                 </tbody>
               </table>
             </div>
