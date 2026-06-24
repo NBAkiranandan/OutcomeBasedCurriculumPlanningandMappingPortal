@@ -119,7 +119,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   const [approvalComments, setApprovalComments] = useState<Record<string, string>>({});
   const [approvalEditModal, setApprovalEditModal] = useState<{ open: boolean, version: any }>({ open: false, version: null });
   const [editCourseData, setEditCourseData] = useState({
-    title: '', code: '', programId: '', regulationId: '', category: 'PC', semester: 1, courseLevel: 'Foundation Courses - FC', status: 'Active',
+    title: '', code: '', keyword: '', programId: '', regulationId: '', category: 'PC', semester: 1, courseLevel: 'Foundation Courses - FC', status: 'Active',
     L: 3, T: 0, P: 0, S: 0, C: 3, cieMarks: 40, seeMarks: 60,
     description: '', offeredFor: ['CSE'], objectives: [''], coordinatorId: '', prerequisites: ''
   });
@@ -1111,6 +1111,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       await api.courses.saveDraft(approvalEditModal.version._id, {
         title: editCourseData.title,
         code: editCourseData.code,
+        keyword: editCourseData.keyword,
         regulationId: editCourseData.regulationId,
         semester: editCourseData.semester,
         category: editCourseData.category,
@@ -1868,6 +1869,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                                   setEditCourseData({
                                     title: v.courseId?.title || '',
                                     code: v.courseId?.code || '',
+                                    keyword: v.courseId?.keyword || '',
                                     programId: progId,
                                     regulationId: v.regulationId?._id || v.regulationId || '',
                                     category: v.category || 'PC',
@@ -2742,6 +2744,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                           setEditCourseData({
                             title: v.courseId?.title || '',
                             code: v.courseId?.code || '',
+                            keyword: v.courseId?.keyword || '',
                             programId: progId,
                             regulationId: v.regulationId?._id || v.regulationId || '',
                             category: v.category || 'PC',
@@ -4058,6 +4061,15 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     type="text"
                     value={editCourseData.code}
                     onChange={(e) => setEditCourseData({ ...editCourseData, code: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none bg-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <span>Keyword (Shortcut)</span>
+                  <input
+                    type="text"
+                    value={editCourseData.keyword}
+                    onChange={(e) => setEditCourseData({ ...editCourseData, keyword: e.target.value })}
                     className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none bg-white"
                   />
                 </div>

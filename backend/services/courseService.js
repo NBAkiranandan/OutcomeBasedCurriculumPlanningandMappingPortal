@@ -290,12 +290,13 @@ export const saveSyllabusDraft = async (versionId, updateData, operatorUser) => 
       }, {})
     : updateData;
 
-  // HOD can update global course code and title directly from the version editor
+  // HOD can update global course code, title, and keyword directly from the version editor
   if (operatorUser.role === 'HOD' || operatorUser.role === 'Admin') {
-    if (updateData.title || updateData.code) {
+    if (updateData.title || updateData.code || updateData.keyword !== undefined) {
       const courseUpdate = {};
       if (updateData.title) courseUpdate.title = updateData.title;
       if (updateData.code) courseUpdate.code = updateData.code;
+      if (updateData.keyword !== undefined) courseUpdate.keyword = updateData.keyword;
       const cId = version.courseId._id || version.courseId;
       await courseRepository.updateCourseById(cId, courseUpdate);
     }
