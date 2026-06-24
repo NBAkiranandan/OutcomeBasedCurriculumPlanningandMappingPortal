@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const MONGO_URI = 'mongodb+srv://nbakiranandan8055_db_user:Akira8055@cluster1.99bdnnp.mongodb.net/obcpmp?retryWrites=true&w=majority&appName=Cluster1';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/obcpmp?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+2.6.0';
 
 async function fixRoles() {
   await mongoose.connect(MONGO_URI);
