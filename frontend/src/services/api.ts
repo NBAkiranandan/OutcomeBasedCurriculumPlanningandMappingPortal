@@ -270,6 +270,7 @@ export const api = {
       const qs = new URLSearchParams(params).toString();
       return apiRequest(`/api/course-assignments?${qs}`);
     },
+    listMyCourses: () => apiRequest('/api/course-assignments/my-courses'),
     create: (body: any) => apiRequest('/api/course-assignments', { method: 'POST', body: JSON.stringify(body) }),
     update: (id: string, body: any) => apiRequest(`/api/course-assignments/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
     delete: (id: string) => apiRequest(`/api/course-assignments/${id}`, { method: 'DELETE' })
@@ -281,6 +282,11 @@ export const api = {
     delete: (id: string) => apiRequest(`/api/course-categories/${id}`, { method: 'DELETE' })
   },
   curriculumBooks: {
+    reviews: (params: any = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      return apiRequest(`/api/curriculum-books/reviews?${qs}`);
+    },
+    updateReviewStatus: (body: any) => apiRequest('/api/curriculum-books/reviews/status', { method: 'PUT', body: JSON.stringify(body) }),
     // Removed unused PDF import endpoints
     exportPdf: async (body: any) => {
       const { accessToken } = useAuthStore.getState();

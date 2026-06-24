@@ -4,7 +4,7 @@ import AuditLog from '../models/AuditLog.js';
 export const getPeos = async (req, res, next) => {
   try {
     const { departmentId } = req.query;
-    const filter = { is_active: true };
+    const filter = { is_active: true, isDeleted: { $ne: true } };
     if (departmentId) filter.departmentId = departmentId;
     
     const peos = await Peo.find(filter).populate('mappedPsos').sort({ peoCode: 1 });

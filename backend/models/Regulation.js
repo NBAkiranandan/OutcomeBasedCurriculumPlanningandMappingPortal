@@ -13,6 +13,29 @@ const lifecycleHistorySchema = new mongoose.Schema({
   notes: { type: String, default: '' }
 }, { _id: false });
 
+const curriculumBookReviewSchema = new mongoose.Schema({
+  departmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Department', required: true },
+  status: {
+    type: String,
+    enum: ['Draft', 'Submitted', 'Published', 'Archived', 'Unlocked'],
+    default: 'Draft'
+  },
+  remarks: { type: String, default: '' },
+  submittedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  submittedAt: { type: Date, default: null },
+  reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  publishedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  publishedAt: { type: Date, default: null },
+  returnedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  returnedAt: { type: Date, default: null },
+  archivedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  archivedAt: { type: Date, default: null },
+  unlockedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  unlockedAt: { type: Date, default: null },
+  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  updatedAt: { type: Date, default: Date.now }
+}, { _id: false });
+
 const RegulationSchema = new mongoose.Schema({
   code: { type: String, required: true }, // e.g. "R23", "R25"
   academicYear: { type: Number, required: true }, // e.g. 2023, 2025
@@ -51,6 +74,7 @@ const RegulationSchema = new mongoose.Schema({
     accentColor: { type: String, default: '#1d4ed8' }
   },
   // CODEx-added end
+  curriculumBookReviews: [curriculumBookReviewSchema],
   outcomes: [{
     name: { type: String, required: true },
     isGlobal: { type: Boolean, default: false },

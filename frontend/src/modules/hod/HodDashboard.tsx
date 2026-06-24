@@ -91,6 +91,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   const [builderRegulationId, setBuilderRegulationId] = useState('');
 
   // Faculty Management states
+  const [editingFacultyId, setEditingFacultyId] = useState<string | null>(null);
   const [facultyForm, setFacultyForm] = useState({
     facultyId: '',
     name: '',
@@ -101,6 +102,18 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
     status: 'Active'
   });
   const [facultySearch, setFacultySearch] = useState('');
+  const currentAcademicYear = new Date().getFullYear();
+  const defaultAssignmentForm = {
+    facultyId: '',
+    courseId: '',
+    regulationId: '',
+    academicYear: currentAcademicYear,
+    semester: 1,
+    section: 'A'
+  };
+  const [courseAssignments, setCourseAssignments] = useState<any[]>([]);
+  const [assignmentForm, setAssignmentForm] = useState(defaultAssignmentForm);
+  const [editingAssignment, setEditingAssignment] = useState<any | null>(null);
 
   // Course Approvals states
   const [approvalComments, setApprovalComments] = useState<Record<string, string>>({});
@@ -125,6 +138,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   // Profile Standardized States
   const [bookViewMode, setBookViewMode] = useState<'directory' | 'view'>('directory');
   const [builderViewMode, setBuilderViewMode] = useState<'directory' | 'edit'>('directory');
+  const [curriculumReviews, setCurriculumReviews] = useState<any[]>([]);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [phoneVal, setPhoneVal] = useState('+91 9876543210');
   const [altEmailVal, setAltEmailVal] = useState('ananya.rao.alt@university.edu');
@@ -196,6 +210,22 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       // 7. Load faculty for this department
       const facRes = await api.auth.getFaculty();
       setFaculty(facRes.faculty || []);
+
+      try {
+        const assignmentRes = await api.courseAssignments.list({ departmentId: hodDept._id });
+        setCourseAssignments(assignmentRes.assignments || []);
+      } catch (err) {
+        console.error('[HOD Dashboard] Failed to load faculty course assignments:', err);
+        setCourseAssignments([]);
+      }
+
+      try {
+        const reviewRes = await api.curriculumBooks.reviews({ departmentId: hodDept._id });
+        setCurriculumReviews(reviewRes.reviews || []);
+      } catch (err) {
+        console.error('[HOD Dashboard] Failed to load curriculum book review statuses:', err);
+        setCurriculumReviews([]);
+      }
 
       // 8. Load programs list (for course add forms etc.)
       if (programs.length === 0) {
@@ -342,7 +372,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
     if (!selectedDepartment) return;
     if (!newStatement.code || !newStatement.description) return;
     const outcomeName = workspaceTab === 'peo' ? 'PEO' : workspaceTab === 'pso' ? 'PSO' : 'PO';
-    
+
     const outcomes = [...((selectedDepartment as any).outcomes || [])];
     let groupIndex = outcomes.findIndex((o: any) => o.name === outcomeName);
     if (groupIndex === -1) {
@@ -369,7 +399,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   const handleDeleteStatement = async (idx: number) => {
     if (!selectedDepartment) return;
     const outcomeName = workspaceTab === 'peo' ? 'PEO' : workspaceTab === 'pso' ? 'PSO' : 'PO';
-    
+
     const outcomes = [...((selectedDepartment as any).outcomes || [])];
     const groupIndex = outcomes.findIndex((o: any) => o.name === outcomeName);
     if (groupIndex > -1) {
@@ -390,7 +420,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
     if (!selectedDepartment || !editingStatement) return;
     const { idx, type, code, description } = editingStatement;
     const outcomeName = type === 'peos' ? 'PEO' : type === 'psos' ? 'PSO' : 'PO';
-    
+
     const outcomes = [...((selectedDepartment as any).outcomes || [])];
     const groupIndex = outcomes.findIndex((o: any) => o.name === outcomeName);
     if (groupIndex > -1 && outcomes[groupIndex].items[idx]) {
@@ -561,7 +591,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       alert('Prerequisite link created successfully!');
       setAddPrereqOpen(false);
       setNewPrereqData({ sourceCourseId: '', targetCourseId: '' });
-      
+
       // Refresh prerequisites list
       const prereqsRes = await api.prerequisites.list({ regulationId: selectedRegulation._id });
       setPrereqs(prereqsRes.links || []);
@@ -575,7 +605,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
     try {
       await api.prerequisites.delete(linkId);
       alert('Prerequisite link deleted successfully.');
-      
+
       // Refresh prerequisites list
       if (selectedRegulation) {
         const prereqsRes = await api.prerequisites.list({ regulationId: selectedRegulation._id });
@@ -681,7 +711,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
             const category = row['Course Type'] || row['Category'] || row['category'] || 'PC';
             const courseLevel = row['Course Level'] || row['courseLevel'] || 'Foundation Courses - FC';
             const status = row['Status'] || row['status'] || 'Active';
-            
+
             const regCode = row['Regulation'] || row['regulation'] || '';
             let targetRegId = selectedRegulation._id;
             if (regCode) {
@@ -697,7 +727,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
             const credits = Number(row['Credits (C)'] || row['C'] || row['Total Credits'] || row['credits'] || 3);
             const cieMarks = Number(row['CIE Marks'] || row['cieMarks'] || 40);
             const seeMarks = Number(row['SEE Marks'] || row['seeMarks'] || 60);
-            
+
             const branchesStr = row['Course Offered for Branches'] || row['Branches'] || row['branches'] || selectedDepartment.code;
             const offeredFor = branchesStr.split(',').map((b: string) => b.trim()).filter(Boolean);
 
@@ -815,19 +845,30 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
     }
   };
 
-  // Faculty Management: Add Member account
-  const handleAddFaculty = async (e: React.FormEvent) => {
+  // Faculty Management: Add or Edit Member account
+  const handleFacultySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.users.create({
-        name: facultyForm.name,
-        email: facultyForm.email,
-        password: 'facultypassword', // Default password
-        role: facultyForm.role,
-        departmentId: selectedDepartment?._id,
-        programId: programs[0]?._id
-      });
-      alert(`Faculty member (${facultyForm.name}) successfully registered!`);
+      if (editingFacultyId) {
+        await api.users.update(editingFacultyId, {
+          name: facultyForm.name,
+          email: facultyForm.email,
+          role: facultyForm.role,
+          departmentId: selectedDepartment?._id,
+        });
+        alert(`Faculty member (${facultyForm.name}) successfully updated!`);
+      } else {
+        await api.users.create({
+          name: facultyForm.name,
+          email: facultyForm.email,
+          password: 'facultypassword', // Default password
+          role: facultyForm.role,
+          departmentId: selectedDepartment?._id,
+          programId: programs[0]?._id
+        });
+        alert(`Faculty member (${facultyForm.name}) successfully registered!`);
+      }
+      setEditingFacultyId(null);
       setFacultyForm({
         facultyId: '',
         name: '',
@@ -839,7 +880,108 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       });
       loadData();
     } catch (err: any) {
-      alert(`Failed to add faculty: ${err.message}`);
+      alert(err.message || 'Error processing faculty account');
+    }
+  };
+
+  const resetAssignmentForm = () => {
+    setEditingAssignment(null);
+    setAssignmentForm({
+      ...defaultAssignmentForm,
+      regulationId: selectedRegulation?._id || ''
+    });
+  };
+
+  const handleSaveCourseAssignment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDepartment) return;
+
+    try {
+      const payload = {
+        ...assignmentForm,
+        regulationId: assignmentForm.regulationId || selectedRegulation?._id || '',
+        departmentId: selectedDepartment._id,
+        academicYear: Number(assignmentForm.academicYear),
+        semester: Number(assignmentForm.semester)
+      };
+
+      if (editingAssignment) {
+        await api.courseAssignments.update(editingAssignment._id, payload);
+        alert('Faculty course assignment updated successfully.');
+      } else {
+        await api.courseAssignments.create(payload);
+        alert('Faculty course assignment created successfully.');
+      }
+
+      resetAssignmentForm();
+      loadData();
+    } catch (err: any) {
+      alert(`Failed to save faculty assignment: ${err.message}`);
+    }
+  };
+
+  const handleEditCourseAssignment = (assignment: any) => {
+    setEditingAssignment(assignment);
+    setAssignmentForm({
+      facultyId: assignment.facultyId?._id || assignment.facultyId || '',
+      courseId: assignment.courseId?._id || assignment.courseId || '',
+      regulationId: assignment.regulationId?._id || assignment.regulationId || selectedRegulation?._id || '',
+      academicYear: assignment.academicYear || currentAcademicYear,
+      semester: assignment.semester || 1,
+      section: assignment.section || 'A'
+    });
+  };
+
+  const handleDeleteCourseAssignment = async (id: string) => {
+    if (!window.confirm('Remove this faculty course assignment?')) return;
+    try {
+      await api.courseAssignments.delete(id);
+      alert('Faculty course assignment removed successfully.');
+      if (editingAssignment?._id === id) resetAssignmentForm();
+      loadData();
+    } catch (err: any) {
+      alert(`Failed to delete assignment: ${err.message}`);
+    }
+  };
+
+  const handleSubmitCurriculumBookReview = async (regId: string) => {
+    if (!selectedDepartment) return;
+    try {
+      await api.curriculumBooks.updateReviewStatus({
+        regulationId: regId,
+        departmentId: selectedDepartment._id,
+        status: 'Submitted',
+        remarks: 'Submitted by HOD for admin review.'
+      });
+      alert('Curriculum book submitted to Admin for review.');
+      loadData();
+    } catch (err: any) {
+      alert(`Failed to submit curriculum book: ${err.message}`);
+    }
+  };
+
+  const handleEditFacultyClick = (f: any) => {
+    setEditingFacultyId(f._id);
+    setFacultyForm({
+      facultyId: f.id || `CSE-F${f._id.substring(f._id.length - 3)}`,
+      name: f.name,
+      email: f.email,
+      departmentId: selectedDepartment?._id || '',
+      designation: f.designation || 'Assistant Professor',
+      role: f.role || 'Faculty',
+      status: f.isActive ? 'Active' : 'Inactive'
+    });
+  };
+
+  const handleDeleteFacultyClick = async (f: any) => {
+    if (!f._id) return;
+    if (!window.confirm(`Are you sure you want to permanently delete ${f.name}?`)) return;
+    try {
+      await api.users.delete(f._id);
+      alert('Faculty deleted successfully.');
+      loadData();
+    } catch (err: any) {
+      alert(err.message || 'Error deleting faculty');
     }
   };
 
@@ -943,9 +1085,25 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   const curriculumCoverage = courses.length > 0 ? Math.round((versions.length / courses.length) * 100) : 0;
   const approvalRate = versions.length > 0 ? Math.round((approvedCount / versions.length) * 100) : 0;
 
-  // === REGULATION LIFECYCLE READ-ONLY GUARD ===
-  const isRegulationLocked = selectedRegulation?.status === 'LOCKED' || selectedRegulation?.status === 'ARCHIVED';
   const isRegulationArchived = selectedRegulation?.status === 'ARCHIVED';
+  const getCurriculumReview = (regId: string, deptId = selectedDepartment?._id) => {
+    return curriculumReviews.find((review: any) =>
+      review.regulationId === regId && (!deptId || review.departmentId === deptId)
+    ) || { status: 'Draft', remarks: '' };
+  };
+
+  // === REGULATION LIFECYCLE READ-ONLY GUARD ===
+  const currentReview = selectedRegulation ? getCurriculumReview(selectedRegulation._id) : { status: 'Draft' };
+  const isRegulationLocked = selectedRegulation?.status === 'LOCKED' || 
+                             selectedRegulation?.status === 'ARCHIVED' || 
+                             ['Submitted', 'Published', 'Archived'].includes(currentReview.status);
+
+  const getCurriculumReviewClass = (status: string) => {
+    if (status === 'Published') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    if (status === 'Unlocked') return 'bg-amber-50 text-amber-700 border-amber-200';
+    if (status === 'Submitted') return 'bg-blue-50 text-blue-700 border-blue-200';
+    return 'bg-slate-100 text-slate-600 border-slate-200';
+  };
 
   if (editingSyllabusId) {
     return <HodSyllabusEditor courseVersionId={editingSyllabusId} onClose={() => { setEditingSyllabusId(null); loadData(); }} />;
@@ -983,7 +1141,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
         <div className={`flex items-start gap-3 px-5 py-4 rounded-2xl border font-semibold text-sm ${isRegulationArchived
           ? 'bg-slate-100 border-slate-300 text-slate-700'
           : 'bg-red-50 border-red-200 text-red-800'
-        }`}>
+          }`}>
           <div className="text-xl mt-0.5">{isRegulationArchived ? '📦' : '🔒'}</div>
           <div>
             <p className="font-extrabold text-base">
@@ -1230,14 +1388,13 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                 try {
                   await api.peoPso.updateByDept((selectedDepartment as any)._id, peoPsoData, selectedRegulation?._id);
                   alert('PEOs and PSOs saved successfully for the selected regulation!');
-                } catch(err: any) { alert(err.message); }
+                } catch (err: any) { alert(err.message); }
               }}
               disabled={isRegulationLocked}
-              className={`flex items-center gap-1.5 px-4.5 py-2.5 rounded-lg text-xs font-bold transition-all shadow ${
-                isRegulationLocked
-                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                  : 'bg-teal-700 hover:bg-teal-800 text-white cursor-pointer'
-              }`}
+              className={`flex items-center gap-1.5 px-4.5 py-2.5 rounded-lg text-xs font-bold transition-all shadow ${isRegulationLocked
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                : 'bg-teal-700 hover:bg-teal-800 text-white cursor-pointer'
+                }`}
             >
               <FileSpreadsheet className="w-4 h-4" />
               <span>Save PEOs & PSOs</span>
@@ -1246,7 +1403,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
           {(selectedDepartment as any) ? (
             <div className="grid grid-cols-2 gap-6">
-              
+
               {/* PEO Builder */}
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                 <div className="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -1314,7 +1471,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                             </div>
                           ))
                         )}
-                        
+
                         <button
                           type="button"
                           onClick={() => {
@@ -1399,7 +1556,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                             </div>
                           ))
                         )}
-                        
+
                         <button
                           type="button"
                           onClick={() => {
@@ -1448,11 +1605,10 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                 }}
                 disabled={isRegulationLocked}
                 title={isRegulationLocked ? 'Regulation is locked. Contact Admin to unlock.' : ''}
-                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-bold transition-all shadow ${
-                  isRegulationLocked 
-                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
-                    : 'bg-teal-700 hover:bg-teal-800 text-white cursor-pointer'
-                }`}
+                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-bold transition-all shadow ${isRegulationLocked
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  : 'bg-teal-700 hover:bg-teal-800 text-white cursor-pointer'
+                  }`}
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Course</span>
@@ -1461,11 +1617,10 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                 onClick={() => setBulkImportOpen(true)}
                 disabled={isRegulationLocked}
                 title={isRegulationLocked ? 'Regulation is locked. Contact Admin to unlock.' : ''}
-                className={`flex items-center gap-1.5 px-4 py-2.5 border rounded-lg text-xs font-bold transition-all ${
-                  isRegulationLocked 
-                    ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed' 
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300 cursor-pointer'
-                }`}
+                className={`flex items-center gap-1.5 px-4 py-2.5 border rounded-lg text-xs font-bold transition-all ${isRegulationLocked
+                  ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300 cursor-pointer'
+                  }`}
               >
                 <Upload className="w-4 h-4" />
                 <span>Bulk Import</span>
@@ -1534,7 +1689,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                   .filter(c => {
                     const matchesSearch = c.code.toLowerCase().includes(courseSearch.toLowerCase()) || c.title.toLowerCase().includes(courseSearch.toLowerCase());
                     const v = versions.find((ver: any) => ver.courseId?._id === c._id || ver.courseId === c._id);
-                    
+
                     // IF the course is not in the current regulation AND we are not searching globally, hide it
                     // Let's assume if courseSearch is active, we show global, otherwise we hide unless mapped.
                     // To be safe, if `v` is not found, we only show it if the user is explicitly searching or we add a toggle.
@@ -1543,7 +1698,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                       // It is mapped to SOME regulation, but NOT the current one.
                       // The user complained it shows up in Regulation B when added to Regulation A.
                       // So we hide it from Regulation B's view!
-                      return false; 
+                      return false;
                     }
 
                     const category = v?.category || 'PC';
@@ -1622,9 +1777,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                                 }}
                                 disabled={isRegulationLocked}
                                 title={isRegulationLocked ? 'Regulation is locked' : 'Edit Course Details'}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                                  isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer'
-                                }`}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer'
+                                  }`}
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
                                 Edit
@@ -1633,9 +1787,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                                 onClick={() => setEditingSyllabusId(v._id)}
                                 disabled={isRegulationLocked}
                                 title={isRegulationLocked ? 'Regulation is locked' : 'Edit Complete Syllabus'}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                                  isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-teal-50 text-teal-700 hover:bg-teal-100 cursor-pointer'
-                                }`}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-teal-50 text-teal-700 hover:bg-teal-100 cursor-pointer'
+                                  }`}
                               >
                                 <BookOpen className="w-3.5 h-3.5" />
                                 Syllabus Console
@@ -1644,9 +1797,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                                 onClick={() => handleRemoveCourseVersion(v._id)}
                                 disabled={isRegulationLocked}
                                 title={isRegulationLocked ? 'Regulation is locked' : 'Remove course from regulation'}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                                  isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-red-50 text-red-700 hover:bg-red-100 cursor-pointer'
-                                }`}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-red-50 text-red-700 hover:bg-red-100 cursor-pointer'
+                                  }`}
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1656,9 +1808,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                               onClick={() => handleCreateCourseVersion(c)}
                               disabled={isRegulationLocked}
                               title={isRegulationLocked ? 'Regulation is locked' : 'Add this course to current regulation'}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                                isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 cursor-pointer'
-                              }`}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 cursor-pointer'
+                                }`}
                             >
                               <Plus className="w-3.5 h-3.5" />
                               Add to Regulation
@@ -1668,9 +1819,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                             onClick={() => handleDeleteGlobalCourse(c._id)}
                             disabled={isRegulationLocked}
                             title={isRegulationLocked ? 'Regulation is locked' : 'Delete Global Course and all its versions'}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ml-1 ${
-                              isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-red-600 text-white hover:bg-red-700 cursor-pointer'
-                            }`}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ml-1 ${isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-red-600 text-white hover:bg-red-700 cursor-pointer'
+                              }`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                             Delete Base Course
@@ -1882,44 +2032,66 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                         const rProgId = typeof r.programId === 'object' ? r.programId._id : r.programId;
                         return !selectedProgram || rProgId === selectedProgram._id;
                       })
-                      .map((reg) => (
-                      <div key={reg._id} className="border border-slate-200 rounded-xl p-5 hover:border-blue-300 transition-colors bg-slate-50 relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-16 h-16 bg-blue-100/50 rounded-bl-full -z-0 group-hover:scale-110 transition-transform"></div>
-                        <h4 className="font-extrabold text-slate-800 text-lg relative z-10">{reg.code}</h4>
-                        <p className="text-xs text-slate-500 font-medium mb-4 relative z-10">Academic Year: {reg.academicYear}</p>
+                      .map((reg) => {
+                        const review = getCurriculumReview(reg._id);
+                        const reviewLocksEditing = review.status === 'Submitted' || review.status === 'Published' || review.status === 'Archived';
+                        return (
+                          <div key={reg._id} className="border border-slate-200 rounded-xl p-5 hover:border-blue-300 transition-colors bg-slate-50 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-16 h-16 bg-blue-100/50 rounded-bl-full -z-0 group-hover:scale-110 transition-transform"></div>
+                            <div className="flex justify-between items-start mb-1">
+                              <h4 className="font-extrabold text-slate-800 text-lg relative z-10">{reg.code}</h4>
+                              <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${getCurriculumReviewClass(review.status)}`}>
+                                Book: {review.status}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-500 font-medium mb-4 relative z-10">Academic Year: {reg.academicYear}</p>
+                            {review.status === 'Unlocked' && review.remarks && (
+                              <p className="text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-100 rounded-lg p-2 mb-4 relative z-10">
+                                Admin remarks: {review.remarks}
+                              </p>
+                            )}
 
-                        <div className="flex flex-wrap gap-2 relative z-10">
-                          <button
-                            onClick={() => {
-                              setSelectedRegulation(reg);
-                              setBookViewMode('view');
-                              setBuilderViewMode('directory');
-                            }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors cursor-pointer"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            View Book
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedRegulation(reg);
-                              setBuilderViewMode('edit');
-                              setBookViewMode('directory');
-                            }}
-                            disabled={reg.status === 'LOCKED' || reg.status === 'ARCHIVED'}
-                            title={reg.status === 'LOCKED' || reg.status === 'ARCHIVED' ? 'Regulation is locked' : 'Edit Curriculum Builder'}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                              reg.status === 'LOCKED' || reg.status === 'ARCHIVED'
-                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                                : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 cursor-pointer'
-                            }`}
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                            Edit Builder
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                            <div className="flex flex-wrap gap-2 relative z-10">
+                              <button
+                                onClick={() => {
+                                  setSelectedRegulation(reg);
+                                  setBookViewMode('view');
+                                  setBuilderViewMode('directory');
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors cursor-pointer"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                                View Book
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedRegulation(reg);
+                                  setBuilderViewMode('edit');
+                                  setBookViewMode('directory');
+                                }}
+                                disabled={reg.status === 'LOCKED' || reg.status === 'ARCHIVED' || reviewLocksEditing}
+                                title={reg.status === 'LOCKED' || reg.status === 'ARCHIVED' || reviewLocksEditing ? 'Curriculum cannot be edited in current state' : 'Edit Curriculum Builder'}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${reg.status === 'LOCKED' || reg.status === 'ARCHIVED' || reviewLocksEditing
+                                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                  : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 cursor-pointer'
+                                  }`}
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                                Edit Builder
+                              </button>
+                              {(review.status === 'Draft' || review.status === 'Unlocked') && (
+                                <button
+                                  onClick={() => handleSubmitCurriculumBookReview(reg._id)}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold hover:bg-amber-100 transition-colors cursor-pointer w-full justify-center mt-2"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  Submit to Admin
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
               </div>
@@ -1934,15 +2106,180 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       {activeTab === 'faculty-management' && (
         <div className="space-y-6 animate-fadeIn">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <h1 className="text-xl font-extrabold text-slate-800">Faculty Management</h1>
-            <p className="text-xs text-slate-500 mt-1">Add faculty, edit details, and activate or deactivate faculty records.</p>
+            <h1 className="text-xl font-extrabold text-slate-800">Faculty Assignment & Management</h1>
+            <p className="text-xs text-slate-500 mt-1">Assign courses to faculty and maintain faculty account records.</p>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3">
+                {editingAssignment ? 'Edit Course Assignment' : 'Assign Course to Faculty'}
+              </h3>
+              <form onSubmit={handleSaveCourseAssignment} className="space-y-3 text-xs font-bold text-slate-500">
+                <div className="space-y-1">
+                  <span>Faculty</span>
+                  <select
+                    value={assignmentForm.facultyId}
+                    onChange={(e) => setAssignmentForm({ ...assignmentForm, facultyId: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 outline-none bg-white font-semibold focus:ring-1 focus:ring-teal-700"
+                    required
+                  >
+                    <option value="">Select faculty</option>
+                    {faculty.map((f: any) => (
+                      <option key={f._id} value={f._id}>{f.name} ({f.email})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <span>Course</span>
+                  <select
+                    value={assignmentForm.courseId}
+                    onChange={(e) => {
+                      const selectedVersion = versions.find((v: any) => (v.courseId?._id || v.courseId) === e.target.value);
+                      setAssignmentForm({
+                        ...assignmentForm,
+                        courseId: e.target.value,
+                        semester: selectedVersion?.semester || assignmentForm.semester,
+                        regulationId: selectedVersion?.regulationId?._id || selectedVersion?.regulationId || selectedRegulation?._id || ''
+                      });
+                    }}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 outline-none bg-white font-semibold focus:ring-1 focus:ring-teal-700"
+                    required
+                  >
+                    <option value="">Select course</option>
+                    {versions.map((v: any) => (
+                      <option key={v._id} value={v.courseId?._id || v.courseId}>
+                        {v.courseId?.code} - {v.courseId?.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <span>Year</span>
+                    <input
+                      type="number"
+                      value={assignmentForm.academicYear}
+                      onChange={(e) => setAssignmentForm({ ...assignmentForm, academicYear: Number(e.target.value) })}
+                      className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 outline-none bg-white font-semibold focus:ring-1 focus:ring-teal-700"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <span>Sem</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={8}
+                      value={assignmentForm.semester}
+                      onChange={(e) => setAssignmentForm({ ...assignmentForm, semester: Number(e.target.value) })}
+                      className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 outline-none bg-white font-semibold focus:ring-1 focus:ring-teal-700"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <span>Section</span>
+                    <input
+                      type="text"
+                      value={assignmentForm.section}
+                      onChange={(e) => setAssignmentForm({ ...assignmentForm, section: e.target.value.toUpperCase() })}
+                      className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 outline-none bg-white font-semibold focus:ring-1 focus:ring-teal-700"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {editingAssignment && (
+                    <button
+                      type="button"
+                      onClick={resetAssignmentForm}
+                      className="flex-1 py-2.5 border border-slate-300 text-slate-600 rounded-lg font-bold hover:bg-slate-50 cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg font-bold shadow flex items-center justify-center gap-1.5 cursor-pointer text-center"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{editingAssignment ? 'Update Assignment' : 'Save Assignment'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div className="xl:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Course Assignments</h3>
+                <span className="text-[10px] px-2 py-1 rounded bg-slate-100 text-slate-500 font-bold border border-slate-200">{courseAssignments.length} Active</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-400 bg-slate-50/50 uppercase font-bold">
+                      <th className="p-3 pl-4">Faculty</th>
+                      <th className="p-3">Course</th>
+                      <th className="p-3">Regulation</th>
+                      <th className="p-3">Year</th>
+                      <th className="p-3">Sem</th>
+                      <th className="p-3">Section</th>
+                      <th className="p-3 pr-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {courseAssignments.map((assignment: any) => (
+                      <tr key={assignment._id} className="border-b border-slate-100 hover:bg-slate-50/20 text-slate-600 font-medium">
+                        <td className="p-3 pl-4">
+                          <span className="block font-bold text-slate-800">{assignment.facultyId?.name || 'Faculty'}</span>
+                          <span className="block text-[10px] text-slate-400">{assignment.facultyId?.email}</span>
+                        </td>
+                        <td className="p-3">
+                          <span className="block font-mono font-bold text-teal-700">{assignment.courseId?.code}</span>
+                          <span className="block text-[10px] text-slate-500 font-semibold">{assignment.courseId?.title}</span>
+                        </td>
+                        <td className="p-3 font-bold text-blue-700">{assignment.regulationId?.code || '-'}</td>
+                        <td className="p-3 font-semibold">{assignment.academicYear}</td>
+                        <td className="p-3 font-semibold">{assignment.semester}</td>
+                        <td className="p-3 font-bold">{assignment.section}</td>
+                        <td className="p-3 pr-4 text-right">
+                          <div className="flex justify-end gap-1.5">
+                            <button
+                              onClick={() => handleEditCourseAssignment(assignment)}
+                              className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 rounded cursor-pointer"
+                              title="Edit Assignment"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCourseAssignment(assignment._id)}
+                              className="p-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-100 rounded cursor-pointer"
+                              title="Delete Assignment"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {courseAssignments.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="p-8 text-center text-slate-400 font-semibold">
+                          No faculty course assignments found for this department.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-3 gap-6">
             {/* Left Add form */}
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-              <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3">Add Faculty</h3>
-              <form onSubmit={handleAddFaculty} className="space-y-3 text-xs font-bold text-slate-500">
+              <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3">{editingFacultyId ? 'Edit Faculty' : 'Add Faculty'}</h3>
+              <form onSubmit={handleFacultySubmit} className="space-y-3 text-xs font-bold text-slate-500">
                 <div className="space-y-1">
                   <span>Faculty ID</span>
                   <input
@@ -2020,13 +2357,27 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     <option value="Inactive">Inactive</option>
                   </select>
                 </div>
-                <button
-                  type="submit"
-                  className="w-full py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg font-bold shadow flex items-center justify-center gap-1.5 cursor-pointer text-center"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Faculty</span>
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg font-bold shadow flex items-center justify-center gap-1.5 cursor-pointer text-center transition-all"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>{editingFacultyId ? 'Update Faculty' : 'Add Faculty'}</span>
+                  </button>
+                  {editingFacultyId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingFacultyId(null);
+                        setFacultyForm({ facultyId: '', name: '', email: '', departmentId: '', designation: 'Professor', role: 'Faculty', status: 'Active' });
+                      }}
+                      className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg font-bold shadow cursor-pointer transition-all"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </form>
             </div>
 
@@ -2086,12 +2437,28 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                             {f.status}
                           </span>
                         </td>
-                        <td className="p-3 pr-4 text-right">
+                        <td className="p-3 pr-4 text-right flex gap-1 justify-end">
+                          <button
+                            onClick={() => f._id && handleEditFacultyClick(f)}
+                            className={`p-1 text-slate-400 hover:text-blue-500 ${!f._id ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
+                            disabled={!f._id}
+                            title="Edit Faculty"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
                           <button
                             onClick={() => f._id && handleToggleUserActive(f._id)}
-                            className={`p-1 text-slate-400 hover:text-red-500 ${!f._id ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
+                            className={`p-1 text-slate-400 hover:text-amber-500 ${!f._id ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
                             disabled={!f._id}
                             title={f.status === 'Active' ? "Deactivate Faculty" : "Activate Faculty"}
+                          >
+                            <Lock className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => f._id && handleDeleteFacultyClick(f)}
+                            className={`p-1 text-slate-400 hover:text-red-500 ${!f._id ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
+                            disabled={!f._id}
+                            title="Delete Faculty"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -2311,9 +2678,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full ${minor.currentCredits >= minor.requiredCredits ? 'bg-success-500' : 'bg-primary-500'}`} 
-                            style={{ width: `${Math.min(100, (minor.currentCredits / minor.requiredCredits) * 100)}%` }} 
+                          <div
+                            className={`h-full ${minor.currentCredits >= minor.requiredCredits ? 'bg-success-500' : 'bg-primary-500'}`}
+                            style={{ width: `${Math.min(100, (minor.currentCredits / minor.requiredCredits) * 100)}%` }}
                           />
                         </div>
                         <span className="text-xs font-bold">{minor.currentCredits}/{minor.requiredCredits}</span>
@@ -2401,9 +2768,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
               }}
               disabled={isRegulationLocked}
               title={isRegulationLocked ? 'Regulation is locked' : 'Create Minor Stream'}
-              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-bold transition-all shadow font-sans ${
-                isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-800 text-white cursor-pointer'
-              }`}
+              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-bold transition-all shadow font-sans ${isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-800 text-white cursor-pointer'
+                }`}
             >
               <Plus className="w-4 h-4" />
               <span>Create Minor Stream</span>
@@ -2452,9 +2818,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                         }}
                         disabled={isRegulationLocked}
                         title={isRegulationLocked ? 'Regulation is locked' : 'Edit Stream'}
-                        className={`p-1.5 rounded border transition-colors ${
-                          isRegulationLocked ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200 cursor-pointer'
-                        }`}
+                        className={`p-1.5 rounded border transition-colors ${isRegulationLocked ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200 cursor-pointer'
+                          }`}
                       >
                         <Edit3 className="w-3.5 h-3.5" />
                       </button>
@@ -2462,9 +2827,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                         onClick={() => handleDeleteMinorStream(stream._id)}
                         disabled={isRegulationLocked}
                         title={isRegulationLocked ? 'Regulation is locked' : 'Delete Stream'}
-                        className={`p-1.5 rounded border transition-colors ${
-                          isRegulationLocked ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-red-50 hover:bg-red-100 text-red-655 border-red-150 cursor-pointer'
-                        }`}
+                        className={`p-1.5 rounded border transition-colors ${isRegulationLocked ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-red-50 hover:bg-red-100 text-red-655 border-red-150 cursor-pointer'
+                          }`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -2501,9 +2865,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
               }}
               disabled={isRegulationLocked}
               title={isRegulationLocked ? 'Regulation is locked' : 'Add Prerequisite Link'}
-              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-bold transition-all shadow font-sans ${
-                isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-800 text-white cursor-pointer'
-              }`}
+              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-bold transition-all shadow font-sans ${isRegulationLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-800 text-white cursor-pointer'
+                }`}
             >
               <Plus className="w-4 h-4" />
               <span>Add Prerequisite Link</span>
@@ -2539,9 +2902,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                         onClick={() => handleDeletePrereq(link._id)}
                         disabled={isRegulationLocked}
                         title={isRegulationLocked ? 'Regulation is locked' : 'Remove Link'}
-                        className={`p-1.5 rounded border transition-colors ${
-                          isRegulationLocked ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-red-50 hover:bg-red-100 text-red-650 border-red-150 cursor-pointer'
-                        }`}
+                        className={`p-1.5 rounded border transition-colors ${isRegulationLocked ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-red-50 hover:bg-red-100 text-red-650 border-red-150 cursor-pointer'
+                          }`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -2919,11 +3281,10 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                   <select
                     value={newRegData.programId}
                     onChange={(e) => setNewRegData({ ...newRegData, programId: e.target.value })}
-                    className={`w-full border rounded-lg p-2.5 font-semibold outline-none ${
-                      selectedProgram 
-                        ? 'border-slate-200 text-slate-500 bg-slate-50 cursor-not-allowed' 
-                        : 'border-slate-300 text-slate-700 bg-white cursor-pointer focus:ring-1 focus:ring-teal-700 focus:border-teal-700'
-                    }`}
+                    className={`w-full border rounded-lg p-2.5 font-semibold outline-none ${selectedProgram
+                      ? 'border-slate-200 text-slate-500 bg-slate-50 cursor-not-allowed'
+                      : 'border-slate-300 text-slate-700 bg-white cursor-pointer focus:ring-1 focus:ring-teal-700 focus:border-teal-700'
+                      }`}
                     disabled={!!selectedProgram}
                     required
                   >
@@ -3961,24 +4322,24 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                       );
                     })
                     .map((course) => {
-                    const isChecked = newMinorStreamData.courses.includes(course._id);
-                    return (
-                      <label key={course._id} className="flex items-center gap-2.5 p-1.5 rounded hover:bg-slate-100 cursor-pointer font-medium text-slate-700">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => {
-                            const updatedCourses = isChecked
-                              ? newMinorStreamData.courses.filter(id => id !== course._id)
-                              : [...newMinorStreamData.courses, course._id];
-                            setNewMinorStreamData({ ...newMinorStreamData, courses: updatedCourses });
-                          }}
-                          className="accent-teal-700"
-                        />
-                        <span><strong className="text-teal-750 font-bold font-mono">{course.code}</strong> - {course.title}</span>
-                      </label>
-                    );
-                  })}
+                      const isChecked = newMinorStreamData.courses.includes(course._id);
+                      return (
+                        <label key={course._id} className="flex items-center gap-2.5 p-1.5 rounded hover:bg-slate-100 cursor-pointer font-medium text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              const updatedCourses = isChecked
+                                ? newMinorStreamData.courses.filter(id => id !== course._id)
+                                : [...newMinorStreamData.courses, course._id];
+                              setNewMinorStreamData({ ...newMinorStreamData, courses: updatedCourses });
+                            }}
+                            className="accent-teal-700"
+                          />
+                          <span><strong className="text-teal-750 font-bold font-mono">{course.code}</strong> - {course.title}</span>
+                        </label>
+                      );
+                    })}
                   {courses.filter(c => versions.some(v => v.courseId?._id === c._id && ['MSC/UEC', 'MSC', 'UEC'].includes(v.category))).length === 0 && (
                     <p className="text-slate-400 italic text-center py-6 font-normal">No courses categorized as MSC/UEC available in this regulation.</p>
                   )}

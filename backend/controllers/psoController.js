@@ -4,7 +4,7 @@ import AuditLog from '../models/AuditLog.js';
 export const getPsos = async (req, res, next) => {
   try {
     const { departmentId } = req.query;
-    const filter = { is_active: true };
+    const filter = { is_active: true, isDeleted: { $ne: true } };
     if (departmentId) filter.departmentId = departmentId;
     
     const psos = await Pso.find(filter).sort({ psoCode: 1 });

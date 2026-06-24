@@ -17,8 +17,8 @@ const defaultPOs = [
 ];
 
 export const getPeoPsoByDept = async (departmentId, regulationId) => {
-  const query = { departmentId };
-  if (regulationId) {
+  const query = { departmentId, isDeleted: false };
+  if (regulationId && regulationId !== 'undefined') {
     query.regulationId = regulationId;
   } else {
     query.regulationId = { $exists: false };
@@ -27,11 +27,11 @@ export const getPeoPsoByDept = async (departmentId, regulationId) => {
   let record = await PeoPso.findOne(query);
   if (!record) {
     // Attempt to find any existing PeoPso for this department to use as template
-    const templateRecord = await PeoPso.findOne({ departmentId }).sort({ createdAt: -1 });
+    const templateRecord = await PeoPso.findOne({ departmentId, isDeleted: false }).sort({ createdAt: -1 });
 
     record = await PeoPso.create({
       departmentId,
-      regulationId: regulationId || undefined,
+      regulationId: regulationId && regulationId !== 'undefined' ? regulationId : undefined,
       peos: templateRecord ? templateRecord.peos : [],
       psos: templateRecord ? templateRecord.psos : [],
       pos: templateRecord ? templateRecord.pos : defaultPOs
@@ -41,8 +41,8 @@ export const getPeoPsoByDept = async (departmentId, regulationId) => {
 };
 
 export const updatePeoPso = async (departmentId, data, operatorUser, regulationId) => {
-  const query = { departmentId };
-  if (regulationId) {
+  const query = { departmentId, isDeleted: false };
+  if (regulationId && regulationId !== 'undefined') {
     query.regulationId = regulationId;
   } else {
     query.regulationId = { $exists: false };
@@ -50,9 +50,10 @@ export const updatePeoPso = async (departmentId, data, operatorUser, regulationI
 
   const updateFields = {
     ...data,
-    departmentId
+    departmentId,
+    isDeleted: false
   };
-  if (regulationId) {
+  if (regulationId && regulationId !== 'undefined') {
     updateFields.regulationId = regulationId;
   }
 

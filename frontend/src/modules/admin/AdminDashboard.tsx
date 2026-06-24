@@ -50,6 +50,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
   const [departments, setDepartments] = useState<any[]>([]);
   const [regulations, setRegulations] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [curriculumReviews, setCurriculumReviews] = useState<any[]>([]);
   const [approvalsQueue, setApprovalsQueue] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -75,7 +76,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
   const [reviewComments, setReviewComments] = useState('');
 
   // Curriculum Remarks modal
-  const [curriculumRemarkModal, setCurriculumRemarkModal] = useState<{ open: boolean; regId: string | null }>({ open: false, regId: null });
+  const [curriculumRemarkModal, setCurriculumRemarkModal] = useState<{ open: boolean; regId: string | null; deptId: string | null }>({ open: false, regId: null, deptId: null });
   const [curriculumRemark, setCurriculumRemark] = useState('');
 
   // Search/Filters states
@@ -176,6 +177,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
       // Fetch Users
       const userRes = await api.users.list();
       setUsers(userRes.users);
+
+      try {
+        const reviewsRes = await api.curriculumBooks.reviews();
+        setCurriculumReviews(reviewsRes.reviews || []);
+      } catch (err) {
+        console.error('Failed to fetch reviews:', err);
+        setCurriculumReviews([]);
+      }
 
       // Fetch Approvals queue (we load all course versions to filter dynamically)
       let pendingCount = 0;
@@ -540,14 +549,81 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
     if (!curriculumRemarkModal.regId) return;
 
     try {
-      await api.regulations.update(curriculumRemarkModal.regId, { status: 'Draft' });
-      alert('Remarks successfully sent to HOD! Regulation status has been set to Draft.');
-      setCurriculumRemarkModal({ open: false, regId: null });
+      await api.curriculumBooks.updateReviewStatus({
+        regulationId: curriculumRemarkModal.regId,
+        departmentId: curriculumRemarkModal.deptId,
+        status: 'Unlocked',
+        remarks: curriculumRemark
+      });
+      alert('Curriculum book unlocked and returned to HOD with remarks.');
+      setCurriculumRemarkModal({ open: false, regId: null, deptId: null });
       setCurriculumRemark('');
       loadData();
     } catch (err: any) {
       alert(`Failed to send remarks: ${err.message}`);
     }
+  };
+
+  const handleArchiveCurriculumBook = async (regId: string, deptId: string) => {
+    if (!window.confirm('Archive this curriculum book? It will become read-only and a new version may be created later.')) return;
+    try {
+      await api.curriculumBooks.updateReviewStatus({
+        regulationId: regId,
+        departmentId: deptId,
+        status: 'Archived',
+        remarks: 'Archived by Admin.'
+      });
+      alert('Curriculum book archived successfully.');
+      loadData();
+    } catch (err: any) {
+      alert(`Failed to archive curriculum book: ${err.message}`);
+    }
+  };
+
+  const handlePublishCurriculumBook = async (regId: string, deptId: string) => {
+    if (!window.confirm('Publish this curriculum book for faculty viewing?')) return;
+    try {
+      await api.curriculumBooks.updateReviewStatus({
+        regulationId: regId,
+        departmentId: deptId,
+        status: 'Published',
+        remarks: 'Published by Admin.'
+      });
+      alert('Curriculum book published successfully. Faculty can now view it.');
+      loadData();
+    } catch (err: any) {
+      alert(`Failed to publish curriculum book: ${err.message}`);
+    }
+  };
+
+  const handleUnlockCurriculumBook = async (regId: string, deptId: string) => {
+    if (!window.confirm('Unlock this published curriculum book for HOD corrections? It will be hidden from Faculty until published again.')) return;
+    try {
+      await api.curriculumBooks.updateReviewStatus({
+        regulationId: regId,
+        departmentId: deptId,
+        status: 'Unlocked',
+        remarks: 'Unlocked by Admin for corrections.'
+      });
+      alert('Curriculum book unlocked. HOD can now edit it.');
+      loadData();
+    } catch (err: any) {
+      alert(`Failed to unlock curriculum book: ${err.message}`);
+    }
+  };
+
+  const getCurriculumReview = (regId: string, deptId: string) => {
+    return curriculumReviews.find((review: any) =>
+      review.regulationId === regId && review.departmentId === deptId
+    ) || { status: 'Draft', remarks: '' };
+  };
+
+  const getCurriculumReviewClass = (status: string) => {
+    if (status === 'Published') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    if (status === 'Unlocked') return 'bg-amber-50 text-amber-700 border-amber-200';
+    if (status === 'Archived') return 'bg-slate-100 text-slate-600 border-slate-300';
+    if (status === 'Submitted') return 'bg-blue-50 text-blue-700 border-blue-200';
+    return 'bg-slate-100 text-slate-600 border-slate-200';
   };
 
   // Workflow decisions
@@ -685,6 +761,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
   };
 
   const isDbEmpty = stats.programs === 0 && stats.regulations === 0;
+
+
 
   const approvalTrendsData = [
     { month: 'Jan', approvals: 0 },
@@ -1943,11 +2021,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                             {dept.name} ({dept.code})
                           </h3>
                           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                            {deptRegs.map((reg) => (
+                            {deptRegs.map((reg) => {
+                              const review = getCurriculumReview(reg._id, dept._id);
+                              return (
                               <div key={reg._id} className="border border-slate-200 rounded-xl p-5 hover:border-blue-300 transition-colors bg-slate-50 relative overflow-hidden group">
                                 <div className="absolute top-0 right-0 w-16 h-16 bg-blue-100/50 rounded-bl-full -z-0 group-hover:scale-110 transition-transform"></div>
-                                <h4 className="font-extrabold text-slate-800 text-lg relative z-10">{reg.code}</h4>
+                                <div className="flex items-start justify-between gap-2 relative z-10">
+                                  <h4 className="font-extrabold text-slate-800 text-lg">{reg.code}</h4>
+                                  <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${getCurriculumReviewClass(review.status)}`}>
+                                    {review.status}
+                                  </span>
+                                </div>
                                 <p className="text-xs text-slate-500 font-medium mb-4 relative z-10">Academic Year: {reg.academicYear}</p>
+                                {review.status === 'Unlocked' && review.remarks && (
+                                  <p className="text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-100 rounded-lg p-2 mb-4 relative z-10">
+                                    Last remarks: {review.remarks}
+                                  </p>
+                                )}
                                 
                                 <div className="flex flex-wrap gap-2 relative z-10">
                                   <button
@@ -1978,13 +2068,42 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                                     <Edit3 className="w-3.5 h-3.5" />
                                     Edit
                                   </button>
-                                  <button
-                                    onClick={() => setCurriculumRemarkModal({ open: true, regId: reg._id })}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold hover:bg-amber-100 transition-colors cursor-pointer"
-                                  >
-                                    <AlertCircle className="w-3.5 h-3.5" />
-                                    Remarks
-                                  </button>
+                                  {review.status !== 'Published' && review.status !== 'Archived' && (
+                                    <button
+                                      onClick={() => handlePublishCurriculumBook(reg._id, dept._id)}
+                                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 transition-colors cursor-pointer"
+                                    >
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                      Publish
+                                    </button>
+                                  )}
+                                  {review.status === 'Published' && (
+                                    <>
+                                      <button
+                                        onClick={() => handleUnlockCurriculumBook(reg._id, dept._id)}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-bold hover:bg-amber-700 transition-colors cursor-pointer"
+                                      >
+                                        <Unlock className="w-3.5 h-3.5" />
+                                        Unlock
+                                      </button>
+                                      <button
+                                        onClick={() => handleArchiveCurriculumBook(reg._id, dept._id)}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-600 text-white rounded-lg text-xs font-bold hover:bg-slate-700 transition-colors cursor-pointer"
+                                      >
+                                        <FileText className="w-3.5 h-3.5" />
+                                        Archive
+                                      </button>
+                                    </>
+                                  )}
+                                  {review.status !== 'Archived' && review.status !== 'Unlocked' && review.status !== 'Draft' && (
+                                    <button
+                                      onClick={() => setCurriculumRemarkModal({ open: true, regId: reg._id, deptId: dept._id })}
+                                      className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold hover:bg-amber-100 transition-colors cursor-pointer"
+                                    >
+                                      <AlertCircle className="w-3.5 h-3.5" />
+                                      Unlock
+                                    </button>
+                                  )}
                                   <div className="w-full h-px bg-slate-200 my-1"></div>
                                   <button
                                     onClick={() => generateDOCX(`${reg.code} Curriculum Book`, dept, reg)}
@@ -2002,7 +2121,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                                   </button>
                                 </div>
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       );
@@ -3050,7 +3170,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
               <h3 className="text-base font-bold text-slate-800">
                 Send Remarks to HOD
               </h3>
-              <button onClick={() => setCurriculumRemarkModal({ open: false, regId: null })} className="text-slate-400 hover:text-slate-700">
+              <button onClick={() => setCurriculumRemarkModal({ open: false, regId: null, deptId: null })} className="text-slate-400 hover:text-slate-700">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -3070,7 +3190,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
               <div className="flex gap-3 pt-3">
                 <button
                   type="button"
-                  onClick={() => setCurriculumRemarkModal({ open: false, regId: null })}
+                  onClick={() => setCurriculumRemarkModal({ open: false, regId: null, deptId: null })}
                   className="flex-1 py-2.5 border border-slate-300 text-slate-600 rounded-lg font-bold hover:bg-slate-50 cursor-pointer text-center"
                 >
                   Cancel

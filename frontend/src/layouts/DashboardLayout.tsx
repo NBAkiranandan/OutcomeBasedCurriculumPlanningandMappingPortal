@@ -154,8 +154,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
       case 'Faculty':
         return [
           { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
-          { id: 'course-file', name: 'Course File Viewer', icon: BookOpen },
-          { id: 'syllabus-view', name: 'Syllabus Viewer', icon: FileText },
           { id: 'builder', name: 'Curriculum Book', icon: BookMarked },
           { id: 'profile', name: 'Profile', icon: User },
         ];

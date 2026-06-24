@@ -6,7 +6,9 @@ import * as curriculumBookController from '../controllers/curriculumBookControll
 const router = express.Router();
 router.use(authenticateJWT);
 
-router.post('/export/pdf', authorizeRoles('HOD', 'Admin', 'Coordinator'), curriculumBookController.exportPdf);
-router.get('/export/docx', authorizeRoles('HOD', 'Admin', 'Coordinator'), curriculumBookController.exportDocx);
+router.get('/reviews', authorizeRoles('HOD', 'Admin', 'Faculty'), curriculumBookController.listReviewStatuses);
+router.put('/reviews/status', authorizeRoles('Admin', 'HOD'), curriculumBookController.updateReviewStatus);
+router.post('/export/pdf', authorizeRoles('HOD', 'Admin', 'Coordinator', 'Faculty'), curriculumBookController.exportPdf);
+router.get('/export/docx', authorizeRoles('HOD', 'Admin', 'Coordinator', 'Faculty'), curriculumBookController.exportDocx);
 
 export default router;

@@ -28,7 +28,7 @@ export const createMinorStream = async (req, res, next) => {
     const { streamCode, name, description, requiredCredits, status, departmentId, regulationId, courses } = req.body;
     let targetDeptId = departmentId;
     if (req.user.role === 'HOD') {
-      targetDeptId = req.user.departmentId;
+      targetDeptId = req.user.departmentId || departmentId;
     }
     
     const newStream = new MinorStream({
