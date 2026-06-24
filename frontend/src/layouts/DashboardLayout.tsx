@@ -38,7 +38,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -302,8 +301,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
             {/* Notifications bell */}
             <div className="relative">
               <button
-                onClick={() => setNotifOpen(!notifOpen)}
-                className="p-2 rounded-xl text-text-muted hover:bg-surface-hover hover:text-text-secondary transition-colors relative"
+                onClick={() => setActiveTab('notifications')}
+                className={`p-2 rounded-xl transition-colors relative ${activeTab === 'notifications' ? 'bg-primary-50 text-primary-600' : 'text-text-muted hover:bg-surface-hover hover:text-text-secondary'}`}
                 aria-label="Notifications"
               >
                 <Bell className="w-4 h-4" />
@@ -313,78 +312,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
                   </span>
                 )}
               </button>
-
-              {notifOpen && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-card-lg border border-border z-50 overflow-hidden animate-fadeIn">
-                  <div className="p-4 border-b border-border flex items-center justify-between">
-                    <h4 className="text-sm font-bold text-text-primary">Notifications</h4>
-                    <button onClick={() => setNotifOpen(false)} className="text-text-subtle hover:text-text-muted">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="p-2 space-y-1 max-h-72 overflow-y-auto">
-                    {notifications.length > 0 ? (
-                      notifications.map((n) => {
-                        const IconComponent = n.type === 'success' ? CheckCircle2 : n.type === 'warning' ? AlertTriangle : Info;
-                        const iconColor = n.type === 'success' ? 'text-success-600 bg-success-50 border-success-100' :
-                          n.type === 'warning' ? 'text-warning-600 bg-warning-50 border-warning-100' :
-                            'text-primary-600 bg-primary-50 border-primary-100';
-                        return (
-                          <div
-                            key={n._id}
-                            onClick={async () => {
-                              try {
-                                if (!n.isRead) {
-                                  await api.notifications.markRead(n._id);
-                                  fetchNotifications();
-                                }
-                                setNotifOpen(false);
-                                setActiveTab('notifications');
-                              } catch (err) {
-                                console.error('Error marking read', err);
-                              }
-                            }}
-                            className={`flex items-start gap-3 p-2.5 rounded-xl hover:bg-surface-hover cursor-pointer transition-colors relative border border-transparent hover:border-border-light ${!n.isRead ? 'bg-primary-50/10' : ''}`}
-                          >
-                            {!n.isRead && (
-                              <span className="absolute right-3 top-3.5 w-1.5 h-1.5 rounded-full bg-primary-650" />
-                            )}
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center border flex-shrink-0 ${iconColor}`}>
-                              <IconComponent className="w-4 h-4" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-bold text-text-primary truncate">{n.title}</p>
-                              <p className="text-[10px] text-text-subtle mt-0.5 line-clamp-2 leading-relaxed font-medium">{n.description}</p>
-                              <div className="flex items-center gap-1.5 mt-1.5">
-                                <span className="text-[9px] text-text-muted font-mono font-medium">{getRelativeTime(n.createdAt)}</span>
-                                <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600 border border-slate-200`}>
-                                  {n.category}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="text-center py-8 text-text-subtle font-medium text-xs flex flex-col items-center justify-center gap-2">
-                        <span className="text-2xl">🔔</span>
-                        <span>You have no notifications.</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3 border-t border-border bg-slate-50/50">
-                    <button
-                      onClick={() => {
-                        setNotifOpen(false);
-                        setActiveTab('notifications');
-                      }}
-                      className="w-full text-xs text-primary-600 font-semibold text-center hover:underline bg-transparent border-0 cursor-pointer"
-                    >
-                      View all notifications
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
 
             <div className="w-px h-6 bg-border" />
@@ -401,11 +328,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
       </div>
 
 
-
-      {/* Backdrop overlay for notifications dropdown on mobile */}
-      {notifOpen && (
-        <div className="fixed inset-0 z-10" onClick={() => setNotifOpen(false)} />
-      )}
 
       {/* Global Change Password Modal */}
       <ChangePasswordModal />

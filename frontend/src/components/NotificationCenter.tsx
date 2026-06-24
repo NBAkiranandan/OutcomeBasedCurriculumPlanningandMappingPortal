@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { Bell, Search, Check, CheckSquare, ChevronLeft, ChevronRight, AlertTriangle, Info, CheckCircle2 } from 'lucide-react';
+import { Bell, Search, Check, CheckSquare, ChevronLeft, ChevronRight, AlertTriangle, Info, CheckCircle2, Trash2 } from 'lucide-react';
 
 export const NotificationCenter: React.FC = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -73,6 +73,17 @@ export const NotificationCenter: React.FC = () => {
       loadNotifications();
     } catch (err) {
       console.error('[NotificationCenter] Failed to mark read:', err);
+    }
+  };
+
+  // Delete notification
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this notification?')) return;
+    try {
+      await api.notifications.delete(id);
+      loadNotifications();
+    } catch (err) {
+      console.error('[NotificationCenter] Failed to delete notification:', err);
     }
   };
 
@@ -260,6 +271,13 @@ export const NotificationCenter: React.FC = () => {
                             <span>Mark as read</span>
                           </button>
                         )}
+                        <button
+                          onClick={() => handleDelete(noti._id)}
+                          className={`hidden group-hover:inline-flex items-center gap-1 text-[10px] text-danger-650 hover:text-danger-750 font-bold hover:underline bg-transparent border-0 cursor-pointer ${noti.isRead ? 'ml-auto' : 'ml-3'}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete</span>
+                        </button>
                       </div>
                     </div>
                   </div>
