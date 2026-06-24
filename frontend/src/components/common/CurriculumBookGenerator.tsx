@@ -64,40 +64,42 @@ export const CurriculumBookGenerator: React.FC = () => {
       if (!selectedDepartment || !selectedRegulation || !selectedProgram) return;
       setLoading(true);
       try {
+      try {
         const progRes = await api.programs.list();
         const fullProg = progRes.programs.find((p: any) => p._id === selectedProgram._id);
         setProgramDetails(fullProg);
+      } catch (err) { console.error('Failed to load program', err); }
+
+      try {
         const peoRes = await api.peoPso.getByDept(selectedDepartment._id);
         if (peoRes.peoPso) setPeoPso(peoRes.peoPso);
+      } catch (err) { console.error('Failed to load peoPso', err); }
+
+      try {
         const verRes = await api.courses.listByReg(selectedRegulation._id);
         const allVersions = verRes.versions || [];
-        const deptFilteredVersions = allVersions.filter((v: any) => {
-          if (!v.courseId) return false;
-          let matchesOfferedFor = false;
-          if (v.offeredFor && Array.isArray(v.offeredFor) && v.offeredFor.length > 0) {
-            matchesOfferedFor = v.offeredFor.some((branch: string) => {
-              return String(branch).trim().toUpperCase() === String(selectedDepartment?.code || '').trim().toUpperCase();
-            });
-          }
-          if (matchesOfferedFor) return true;
-          
-          const deptIdStr = String(v.courseId?.departmentId?._id || v.courseId?.departmentId || '');
-          const selDeptIdStr = String(selectedDepartment?._id || '');
-          return deptIdStr === selDeptIdStr;
-        });
         setCourseVersions(allVersions);
+      } catch (err) { console.error('Failed to load courses', err); }
+
+      try {
         const prereqRes = await api.prerequisites.list({ regulationId: selectedRegulation._id });
         setPrereqLinks(prereqRes.links || []);
+      } catch (err) { console.error('Failed to load prerequisites', err); }
+
+      try {
         const minorRes = await api.minorStreams.list({ departmentId: selectedDepartment._id, regulationId: selectedRegulation._id });
         setMinorStreams(minorRes.streams || []);
-        try {
-          const pbRes = await api.minorDegrees.getAllPublished({ regulationId: selectedRegulation._id });
-          setPublishedMinorDegrees(pbRes.publishedMinorDegrees || {});
-        } catch (e) { console.error('Failed to load published minor degrees', e); }
-        try {
-          const catRes = await api.courseCategories.list();
-          setDbCategories(catRes.categories || []);
-        } catch (e) { console.error('Failed to load DB course categories', e); }
+      } catch (err) { console.error('Failed to load minor streams', err); }
+
+      try {
+        const pbRes = await api.minorDegrees.getAllPublished({ regulationId: selectedRegulation._id });
+        setPublishedMinorDegrees(pbRes.publishedMinorDegrees || {});
+      } catch (e) { console.error('Failed to load published minor degrees', e); }
+
+      try {
+        const catRes = await api.courseCategories.list();
+        setDbCategories(catRes.categories || []);
+      } catch (e) { console.error('Failed to load DB course categories', e); }
       } catch (err) {
         console.error('Failed to load handbook generator data', err);
       } finally {
