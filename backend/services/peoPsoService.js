@@ -18,10 +18,10 @@ const defaultPOs = [
 
 export const getPeoPsoByDept = async (departmentId, regulationId) => {
   const query = { departmentId, isDeleted: false };
-  if (regulationId && regulationId !== 'undefined') {
+  if (regulationId && regulationId !== 'undefined' && regulationId !== 'null') {
     query.regulationId = regulationId;
   } else {
-    query.regulationId = { $exists: false };
+    query.regulationId = null;
   }
 
   let record = await PeoPso.findOne(query);
@@ -42,10 +42,10 @@ export const getPeoPsoByDept = async (departmentId, regulationId) => {
 
 export const updatePeoPso = async (departmentId, data, operatorUser, regulationId) => {
   const query = { departmentId, isDeleted: false };
-  if (regulationId && regulationId !== 'undefined') {
+  if (regulationId && regulationId !== 'undefined' && regulationId !== 'null') {
     query.regulationId = regulationId;
   } else {
-    query.regulationId = { $exists: false };
+    query.regulationId = null;
   }
 
   const updateFields = {

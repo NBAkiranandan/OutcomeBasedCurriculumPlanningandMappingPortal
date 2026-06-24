@@ -131,6 +131,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   const [courseCategories, setCourseCategories] = useState<any[]>([]);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [editCategoryData, setEditCategoryData] = useState<any>(null);
+  const [bulkCategoryModalOpen, setBulkCategoryModalOpen] = useState(false);
+  const [bulkCategoryText, setBulkCategoryText] = useState('');
+  const [bulkCategoryLoading, setBulkCategoryLoading] = useState(false);
 
   // Profile password reset
   const [profilePass, setProfilePass] = useState({ current: '', newPass: '', confirm: '' });
@@ -341,6 +344,39 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       setCourseCategories(catRes.categories || []);
     } catch (err: any) {
       alert(err.message || 'Failed to save course category.');
+    }
+  };
+
+  const handleBulkCategorySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bulkCategoryText.trim()) return;
+    setBulkCategoryLoading(true);
+    try {
+      const lines = bulkCategoryText.split('\n').filter(l => l.trim().length > 0);
+      for (const line of lines) {
+        const parts = line.split(/[,\t]+/).map(p => p.trim());
+        if (parts.length >= 2) {
+          const code = parts[0].toUpperCase();
+          const name = parts[1];
+          const ugc = parts.length > 2 ? parts.slice(2).join(',').trim() : '-';
+          
+          const exists = courseCategories.find(c => c.code === code);
+          if (exists) {
+            await api.courseCategories.update(exists._id, { code, name, ugc });
+          } else {
+            await api.courseCategories.create({ code, name, ugc });
+          }
+        }
+      }
+      setBulkCategoryModalOpen(false);
+      setBulkCategoryText('');
+      alert(`Successfully processed ${lines.length} categories.`);
+      const catRes = await api.courseCategories.list();
+      setCourseCategories(catRes.categories || []);
+    } catch (err: any) {
+      alert(err.message || 'Bulk import failed.');
+    } finally {
+      setBulkCategoryLoading(false);
     }
   };
 
@@ -1845,16 +1881,28 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
               <h1 className="text-xl font-extrabold text-slate-800">Course Categories (Types)</h1>
               <p className="text-xs text-slate-500 mt-1">Manage standard and custom course types and their UGC credits.</p>
             </div>
-            <button
-              onClick={() => {
-                setEditCategoryData({ code: '', name: '', ugc: '-' });
-                setCategoryModalOpen(true);
-              }}
-              className="flex items-center gap-2 px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-sm font-bold transition-all shadow-sm cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              Add Category
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setBulkCategoryText('');
+                  setBulkCategoryModalOpen(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold transition-all shadow-sm cursor-pointer"
+              >
+                <Upload className="w-4 h-4" />
+                Bulk Import
+              </button>
+              <button
+                onClick={() => {
+                  setEditCategoryData({ code: '', name: '', ugc: '-' });
+                  setCategoryModalOpen(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-sm font-bold transition-all shadow-sm cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                Add Category
+              </button>
+            </div>
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -1960,6 +2008,50 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                       className="flex-1 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg font-bold shadow cursor-pointer transition-all"
                     >
                       Save Category
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Bulk Import Modal */}
+          {bulkCategoryModalOpen && (
+            <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-fadeIn">
+              <div className="bg-white w-[600px] rounded-2xl shadow-2xl border border-slate-200">
+                <div className="p-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                  <h3 className="text-base font-bold text-slate-800 flex items-center gap-1.5">
+                    <Upload className="w-5 h-5 text-blue-600" />
+                    <span>Bulk Import Course Categories</span>
+                  </h3>
+                  <button onClick={() => setBulkCategoryModalOpen(false)} className="text-slate-400 hover:text-slate-700 text-lg font-bold cursor-pointer">✕</button>
+                </div>
+                <form onSubmit={handleBulkCategorySubmit} className="p-6 space-y-4 text-xs font-bold text-slate-500">
+                  <div className="space-y-1">
+                    <span>Paste Categories (Comma or Tab separated: Code, Name, UGC Credits)</span>
+                    <textarea
+                      value={bulkCategoryText}
+                      onChange={(e) => setBulkCategoryText(e.target.value)}
+                      placeholder="PC, Professional Core Courses, 40-50&#10;PE, Professional Elective Courses, 18-24&#10;OE, Open Elective Courses, 12-18"
+                      className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-medium outline-none focus:ring-1 focus:ring-blue-600 bg-white min-h-[200px]"
+                      required
+                    />
+                  </div>
+                  <div className="flex gap-3 pt-3">
+                    <button
+                      type="button"
+                      onClick={() => setBulkCategoryModalOpen(false)}
+                      disabled={bulkCategoryLoading}
+                      className="flex-1 py-2.5 border border-slate-300 text-slate-600 rounded-lg font-bold hover:bg-slate-50 cursor-pointer disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={bulkCategoryLoading}
+                      className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow cursor-pointer transition-all disabled:opacity-50"
+                    >
+                      {bulkCategoryLoading ? 'Importing...' : 'Import Categories'}
                     </button>
                   </div>
                 </form>
