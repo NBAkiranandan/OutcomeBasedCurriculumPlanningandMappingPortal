@@ -3,13 +3,13 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/obcpmp?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+2.6.0';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://nbakiranandan8055_db_user:Akira8055@cluster1.99bdnnp.mongodb.net/obcpmp?retryWrites=true&w=majority&appName=Cluster1';
 
 export const connectDB = async () => {
   try {
     const conn = await mongoose.connect(MONGO_URI);
     console.log(`[Database] MongoDB Connected: ${conn.connection.host}`);
-    
+
     // Drop legacy departmentId_1 unique index on peopsos if it exists
     try {
       const db = conn.connection.db;
@@ -27,7 +27,7 @@ export const connectDB = async () => {
     }
   } catch (error) {
     console.error(`[Database Error] Connection failed: ${error.message}`);
-    console.warn('[Database Warning] Make sure MongoDB is running locally or set MONGO_URI in a .env file.');
+    console.warn('[Database Warning] Make sure MONGO_URI is correctly set in .env and the Atlas cluster is accessible.');
     // In production, we'd exit. In development/testing, we can log and allow server to start so mock responses can work if needed.
     process.exit(1);
   }
