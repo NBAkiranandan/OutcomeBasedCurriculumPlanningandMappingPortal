@@ -259,7 +259,7 @@ export const CurriculumBookGenerator: React.FC = () => {
             <tr key={v._id}>
               <td>{v.courseId?.code || '-'}</td>
               <td className="text-left">{v.courseId?.title || '-'}</td>
-              <td>{v.level || (v.knowledgeLevel?.includes('Advanced') ? 'AC' : v.knowledgeLevel?.includes('Intermediate') ? 'IC' : 'FC')}</td>
+              <td>{(() => { const l = (v.level || v.courseLevel || v.knowledgeLevel || '').toLowerCase(); if (l.includes('ic') || l.includes('intermediate')) return 'IC'; if (l.includes('ac') || l.includes('advanced')) return 'AC'; if (l.includes('fc') || l.includes('foundation')) return 'FC'; return '-'; })()}</td>
               <td>{fmtC(v.credits?.L)}</td>
               <td>{fmtC(v.credits?.T)}</td>
               <td>{fmtC(v.credits?.P)}</td>
@@ -467,7 +467,7 @@ export const CurriculumBookGenerator: React.FC = () => {
             {(['FC', 'IC', 'AC'] as const).map((levelKey) => {
               const levelLabel = levelKey === 'FC' ? 'Foundation Courses (FC)' : levelKey === 'IC' ? 'Intermediate-Level Courses (IC)' : 'Advanced Courses (AC)';
               const levelRows = courseVersions.filter((v: any) => {
-                const lvl = (v.courseLevel || v.level || v.knowledgeLevel || '');
+                const lvl = (v.level || v.courseLevel || v.knowledgeLevel || '');
                 if (levelKey === 'FC') return lvl.includes('FC') || lvl.toLowerCase().includes('foundation') || (!lvl);
                 if (levelKey === 'IC') return lvl.includes('IC') || lvl.toLowerCase().includes('intermediate');
                 return lvl.includes('AC') || lvl.toLowerCase().includes('advanced');
@@ -518,7 +518,7 @@ export const CurriculumBookGenerator: React.FC = () => {
                       const bgColor = levelKey === 'FC' ? '#d4edda' : levelKey === 'IC' ? '#f8d7da' : '#fff3cd';
                       const levelRows = courseVersions.filter((v: any) => {
                         if (['MSC', 'MSC/UEC', 'UEC'].includes(v.category)) return false;
-                        const lvl = (v.courseLevel || v.level || v.knowledgeLevel || '');
+                        const lvl = (v.level || v.courseLevel || v.knowledgeLevel || '');
                         if (levelKey === 'FC') return lvl.includes('FC') || lvl.toLowerCase().includes('foundation') || !lvl;
                         if (levelKey === 'IC') return lvl.includes('IC') || lvl.toLowerCase().includes('intermediate');
                         return lvl.includes('AC') || lvl.toLowerCase().includes('advanced');
@@ -568,7 +568,7 @@ export const CurriculumBookGenerator: React.FC = () => {
                   <div className="pdf-abbrev-col">
                     <p className="pdf-abbrev-level-title">Foundation Level Courses:</p>
                     {courseVersions
-                      .filter((v: any) => { const l = (v.level || v.knowledgeLevel || ''); return l.includes('FC') || l.toLowerCase().includes('foundation') || !l; })
+                      .filter((v: any) => { const l = (v.level || v.courseLevel || v.knowledgeLevel || ''); return l.includes('FC') || l.toLowerCase().includes('foundation') || !l; })
                       .map((v: any) => v.courseId?.code
                         ? <p key={v._id} style={{ margin: '2px 0', fontSize: '13px' }}><strong>{v.courseId.keyword || v.courseId.code}</strong> - {v.courseId.title}</p>
                         : null)}
@@ -576,7 +576,7 @@ export const CurriculumBookGenerator: React.FC = () => {
                   <div className="pdf-abbrev-col">
                     <p className="pdf-abbrev-level-title">Intermediate Level Courses:</p>
                     {courseVersions
-                      .filter((v: any) => { const l = (v.level || v.knowledgeLevel || ''); return l.includes('IC') || l.toLowerCase().includes('intermediate'); })
+                      .filter((v: any) => { const l = (v.level || v.courseLevel || v.knowledgeLevel || ''); return l.includes('IC') || l.toLowerCase().includes('intermediate'); })
                       .map((v: any) => v.courseId?.code
                         ? <p key={v._id} style={{ margin: '2px 0', fontSize: '13px' }}><strong>{v.courseId.keyword || v.courseId.code}</strong> - {v.courseId.title}</p>
                         : null)}
@@ -586,7 +586,7 @@ export const CurriculumBookGenerator: React.FC = () => {
                   <p className="pdf-abbrev-level-title">Advanced Level Courses:</p>
                   <div className="pdf-abbrev-columns">
                     {courseVersions
-                      .filter((v: any) => { const l = (v.level || v.knowledgeLevel || ''); return l.includes('AC') || l.toLowerCase().includes('advanced'); })
+                      .filter((v: any) => { const l = (v.level || v.courseLevel || v.knowledgeLevel || ''); return l.includes('AC') || l.toLowerCase().includes('advanced'); })
                       .map((v: any) => v.courseId?.code
                         ? <p key={v._id} style={{ margin: '2px 0', fontSize: '13px' }}><strong>{v.courseId.keyword || v.courseId.code}</strong> - {v.courseId.title}</p>
                         : null)}
@@ -836,7 +836,9 @@ export const CurriculumBookGenerator: React.FC = () => {
                               {(minor.courses || []).map((c: any) => {
                                 const v = courseVersions.find(ver => ver.courseId?.code === c.courseCode);
                                 const category = v?.category || c.category || '-';
-                                const level = v?.courseLevel || v?.level || c.level || 'IC';
+                                const rawLevel = v?.level || v?.courseLevel || v?.knowledgeLevel || c.level || 'IC';
+                                const lc = rawLevel.toLowerCase();
+                                const level = (lc.includes('ic') || lc.includes('intermediate')) ? 'IC' : (lc.includes('ac') || lc.includes('advanced')) ? 'AC' : (lc.includes('fc') || lc.includes('foundation')) ? 'FC' : '-';
                                 const L = v?.credits?.L || 0;
                                 const T = v?.credits?.T || 0;
                                 const P = v?.credits?.P || 0;
@@ -924,18 +926,61 @@ export const CurriculumBookGenerator: React.FC = () => {
             <div className="page-break"></div>
 
             <PdfPage>
-              <h3 className="pdf-section-title">Semester-wise Course Structure</h3>
+              <h3 className="pdf-section-title" style={{ textAlign: 'center' }}>Suggestive Semester-wise Curriculum</h3>
               {Array.from({ length: pdfSemesterCount }).map((_, semIdx) => {
                 const semNum = semIdx + 1;
+                const romanSem = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'][semIdx] || semNum;
                 const semCourses = courseVersions.filter((v) => v.semester === semNum);
                 if (semCourses.length === 0) return null;
                 return (
-                  <div key={semNum} className="pdf-table-block">
-                    <h3 className="pdf-section-title">Semester - {semNum}</h3>
-                    <table className="pdf-grid-table">
-                      <thead><tr><th>Course code</th><th>Course Title</th><th>Category</th><th>Course Credits (L T P S)</th><th>Total Credits</th></tr></thead>
+                  <div key={semNum} className="pdf-table-block" style={{ marginBottom: '24px' }}>
+                    <h3 className="pdf-section-title" style={{ textAlign: 'center', fontSize: '16px', marginBottom: '12px' }}>{romanSem} SEMESTER</h3>
+                    <table className="pdf-grid-table" style={{ textAlign: 'center' }}>
+                      <thead>
+                        <tr>
+                          <th rowSpan={2} style={{ width: '10%' }}>Course<br/>code</th>
+                          <th rowSpan={2} style={{ width: '30%' }}>Course Title</th>
+                          <th colSpan={2}>Course</th>
+                          <th colSpan={5}>Credits</th>
+                          <th rowSpan={2} style={{ width: '8%' }}>Total<br/>Hours</th>
+                        </tr>
+                        <tr>
+                          <th style={{ width: '8%' }}>Category</th>
+                          <th style={{ width: '8%' }}>Level</th>
+                          <th style={{ width: '5%' }}>L</th>
+                          <th style={{ width: '5%' }}>T</th>
+                          <th style={{ width: '5%' }}>P</th>
+                          <th style={{ width: '5%' }}>S</th>
+                          <th style={{ width: '6%' }}>Total</th>
+                        </tr>
+                      </thead>
                       <tbody>
-                        {semCourses.map((v) => <tr key={v._id}><td>{v.courseId?.code || '-'}</td><td className="text-left">{v.courseId?.title || '-'}</td><td>{v.category}</td><td>{getCourseCreditsText(v)}</td><td>{v.credits?.C || 0}</td></tr>)}
+                        {semCourses.map((v) => {
+                          const h = (v.credits?.L || 0) + (v.credits?.T || 0) + ((v.credits?.P || 0) * 2) + ((v.credits?.S || 0) * 2);
+                          return (
+                            <tr key={v._id}>
+                              <td>{v.courseId?.code || '-'}</td>
+                              <td className="text-left">{v.courseId?.title || '-'}</td>
+                              <td>{v.category || '-'}</td>
+                              <td>{(() => { const l = (v.level || v.courseLevel || v.knowledgeLevel || '').toLowerCase(); if (l.includes('ic') || l.includes('intermediate')) return 'IC'; if (l.includes('ac') || l.includes('advanced')) return 'AC'; if (l.includes('fc') || l.includes('foundation')) return 'FC'; return '-'; })()}</td>
+                              <td>{v.credits?.L || ''}</td>
+                              <td>{v.credits?.T || ''}</td>
+                              <td>{v.credits?.P || ''}</td>
+                              <td>{v.credits?.S || ''}</td>
+                              <td>{v.credits?.C || 0}</td>
+                              <td>{h || ''}</td>
+                            </tr>
+                          );
+                        })}
+                        <tr style={{ fontWeight: 'bold' }}>
+                          <td colSpan={4} style={{ textAlign: 'right', paddingRight: '16px' }}>Total</td>
+                          <td>{semCourses.reduce((sum, v) => sum + (v.credits?.L || 0), 0) || ''}</td>
+                          <td>{semCourses.reduce((sum, v) => sum + (v.credits?.T || 0), 0) || ''}</td>
+                          <td>{semCourses.reduce((sum, v) => sum + (v.credits?.P || 0), 0) || ''}</td>
+                          <td>{semCourses.reduce((sum, v) => sum + (v.credits?.S || 0), 0) || ''}</td>
+                          <td>{semCourses.reduce((sum, v) => sum + (v.credits?.C || 0), 0)}</td>
+                          <td>{semCourses.reduce((sum, v) => sum + ((v.credits?.L || 0) + (v.credits?.T || 0) + ((v.credits?.P || 0) * 2) + ((v.credits?.S || 0) * 2)), 0)}</td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>

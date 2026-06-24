@@ -124,7 +124,7 @@ export const DocumentEditor: React.FC<{ readOnly?: boolean }> = ({ readOnly = fa
                             <td className="border border-slate-200 px-3 py-2 text-center">{course.P}</td>
                             <td className="border border-slate-200 px-3 py-2 text-center">{course.credits}</td>
                             <td className="border border-slate-200 px-3 py-2 text-center uppercase">{course.category}</td>
-                            <td className="border border-slate-200 px-3 py-2 text-center">{(course as any).courseLevel || '-'}</td>
+                            <td className="border border-slate-200 px-3 py-2 text-center">{(() => { const l = ((course as any).courseLevel || (course as any).level || (course as any).knowledgeLevel || '').toLowerCase(); if (l.includes('ic') || l.includes('intermediate')) return 'IC'; if (l.includes('ac') || l.includes('advanced')) return 'AC'; if (l.includes('fc') || l.includes('foundation')) return 'FC'; return '-'; })()}</td>
                           </tr>
                         ))}
                         {semester.courses.length > 0 && (

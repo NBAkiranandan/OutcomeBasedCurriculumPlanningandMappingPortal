@@ -1261,8 +1261,11 @@ export const updateReviewStatus = async (req, res, next) => {
       existingReviews.push(nextEntry);
     }
 
-    regulation.curriculumBookReviews = existingReviews;
-    await regulation.save();
+    await Regulation.updateOne(
+      { _id: regulation._id },
+      { $set: { curriculumBookReviews: existingReviews } },
+      { runValidators: false }
+    );
 
     await AuditLog.create({
       userId: req.user.id,
