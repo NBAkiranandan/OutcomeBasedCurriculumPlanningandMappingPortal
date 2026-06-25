@@ -1,20 +1,21 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DocumentNavigator } from './DocumentNavigator';
 import { DocumentEditor } from './DocumentEditor';
 import { exportToPDF, exportToWord } from './ExportUtils';
 import { useCurriculumBuilderStore } from './documentStore';
-import { Download, FileText, FileDown, ZoomIn, ZoomOut, Save } from 'lucide-react';
+import { Download, FileText, FileDown, ZoomIn, ZoomOut, Save, Maximize2, Minimize2 } from 'lucide-react';
 import { useContextStore } from '../../../store/contextStore';
 import { api } from '../../../services/api';
 
 export const CurriculumBuilder: React.FC<{ readOnly?: boolean }> = ({ readOnly = false }) => {
   const store = useCurriculumBuilderStore();
   const { selectedRegulation, selectedDepartment, selectedProgram } = useContextStore();
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     const syncData = async () => {
       if (selectedRegulation) {
-        await store.loadCurriculum(selectedRegulation._id);
+        await store.loadCurriculum(selectedRegulation._id, selectedDepartment?._id);
         store.setField('regulation', selectedRegulation.code);
         store.setField('academicYear', `${selectedRegulation.academicYear}-${selectedRegulation.academicYear + 1}`);
       }
@@ -42,7 +43,7 @@ export const CurriculumBuilder: React.FC<{ readOnly?: boolean }> = ({ readOnly =
   const saveText = timeAgo === 0 ? 'Saved just now' : `Saved ${timeAgo}m ago`;
 
   return (
-    <div className="h-full flex flex-col bg-slate-100 overflow-hidden">
+    <div className={`${isFullscreen ? 'fixed inset-0 z-[100] w-full h-full' : 'h-full'} flex flex-col bg-slate-100 overflow-hidden transition-all duration-300`}>
       {/* Top Bar */}
       <div className="bg-white border-b border-slate-200 px-6 py-3 flex justify-between items-center shrink-0 z-30 shadow-sm">
         <div className="flex items-center gap-6">
@@ -67,6 +68,13 @@ export const CurriculumBuilder: React.FC<{ readOnly?: boolean }> = ({ readOnly =
           </div>
           
           <div className="flex gap-2 border-l border-slate-200 pl-6">
+            <button 
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              className="flex items-center gap-2 px-3 py-2 bg-slate-50 text-slate-700 font-bold text-sm border border-slate-300 rounded-lg hover:bg-slate-100 hover:text-blue-700 transition-colors"
+              title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+            >
+              {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </button>
             <button 
               onClick={handleDownloadWord}
               className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-700 font-bold text-sm border border-slate-300 rounded-lg hover:bg-slate-100 hover:text-blue-700 transition-colors"

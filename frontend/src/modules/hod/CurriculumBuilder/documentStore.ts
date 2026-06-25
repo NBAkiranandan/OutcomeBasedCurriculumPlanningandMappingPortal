@@ -17,6 +17,7 @@ export interface CourseData {
 export interface SemesterData {
   semester: number;
   courses: CourseData[];
+  notes?: string;
 }
 
 export interface CurriculumBuilderState {
@@ -48,7 +49,7 @@ export interface CurriculumBuilderState {
 
   // Actions
   setField: (field: keyof CurriculumBuilderState, value: any) => void;
-  loadCurriculum: (regulationId: string) => Promise<void>;
+  loadCurriculum: (regulationId: string, departmentId?: string) => Promise<void>;
   updatePeo: (index: number, value: string) => void;
   addPeo: () => void;
   removePeo: (index: number) => void;
@@ -58,6 +59,7 @@ export interface CurriculumBuilderState {
   addCourseToSemester: (semesterNum: number, course: CourseData) => void;
   removeCourseFromSemester: (semesterNum: number, courseId: string) => void;
   reorderCourseInSemester: (semesterNum: number, oldIndex: number, newIndex: number) => void;
+  updateSemesterNotes: (semesterNum: number, notes: string) => void;
   savePeoPso: () => void;
   
   setActiveSection: (id: string) => void;
@@ -98,11 +100,11 @@ export const useCurriculumBuilderStore = create<CurriculumBuilderState>((set) =>
   error: null,
 
   setField: (field, value) => set({ [field]: value, lastSaved: new Date() }),
-  loadCurriculum: async (regulationId) => {
+  loadCurriculum: async (regulationId, departmentId) => {
     set({ isLoading: true, error: null });
 
     try {
-      const data = await api.curriculum.getFull(regulationId);
+      const data = await api.curriculum.getFull(regulationId, departmentId);
       const semesters = (data.semesters || []).map((semester: any) => ({
         semester: semester.semester,
         courses: (semester.courses || []).map((course: any) => ({
@@ -205,7 +207,7 @@ export const useCurriculumBuilderStore = create<CurriculumBuilderState>((set) =>
         const semIndex = sems.findIndex(s => s.semester === semesterNum);
         if (semIndex >= 0) {
           if (!sems[semIndex].courses.some(c => c._id === course._id)) {
-            sems[semIndex].courses.push(course);
+            sems[semIndex] = { ...sems[semIndex], courses: [...sems[semIndex].courses, course] };
           }
         }
         return { semesters: sems, lastSaved: new Date(), courseSelectorOpen: false, targetSemesterForCourse: null, isSaving: false };
@@ -230,7 +232,7 @@ export const useCurriculumBuilderStore = create<CurriculumBuilderState>((set) =>
             const sems = [...state.semesters];
             const semIndex = sems.findIndex(s => s.semester === semesterNum);
             if (semIndex >= 0) {
-              sems[semIndex].courses = sems[semIndex].courses.filter(c => c._id !== courseId);
+              sems[semIndex] = { ...sems[semIndex], courses: sems[semIndex].courses.filter(c => c._id !== courseId) };
             }
             return { semesters: sems, lastSaved: new Date(), isSaving: false };
           });
@@ -255,7 +257,16 @@ export const useCurriculumBuilderStore = create<CurriculumBuilderState>((set) =>
       const courses = Array.from(sems[semIndex].courses);
       const [removed] = courses.splice(oldIndex, 1);
       courses.splice(newIndex, 0, removed);
-      sems[semIndex].courses = courses;
+      sems[semIndex] = { ...sems[semIndex], courses };
+    }
+    return { semesters: sems, lastSaved: new Date() };
+  }),
+
+  updateSemesterNotes: (semesterNum, notes) => set((state) => {
+    const sems = [...state.semesters];
+    const semIndex = sems.findIndex(s => s.semester === semesterNum);
+    if (semIndex >= 0) {
+      sems[semIndex] = { ...sems[semIndex], notes };
     }
     return { semesters: sems, lastSaved: new Date() };
   }),
