@@ -181,26 +181,16 @@ export const HodSyllabusEditor: React.FC<HodSyllabusEditorProps> = ({ courseVers
       }
     }
 
-    // 4. CO-PSO Mapping (Required)
+    // 4. CO-PSO Mapping (Optional in Real World)
     let coPsoPassed = true;
-    let coPsoDetails = 'All COs mapped to PSOs';
-    if (coCount === 0) {
-      coPsoPassed = false;
-      coPsoDetails = 'No COs defined';
-      errors.push('Complete CO–PSO mapping is required. No COs defined.');
-    } else {
-      const unmappedPSOs: string[] = [];
-      v.courseOutcomes.forEach((co: any) => {
+    let coPsoDetails = 'PSO mapping is optional';
+    if (coCount > 0) {
+      const mappedCOs = v.courseOutcomes.filter((co: any) => {
         const mapping = v.coPsoMappings?.find((m: any) => m.coCode === co.coCode);
-        const hasMapping = mapping && mapping.pso && Object.keys(mapping.pso).some(key => mapping.pso[key] > 0);
-        if (!hasMapping) {
-          coPsoPassed = false;
-          unmappedPSOs.push(co.coCode);
-        }
+        return mapping && mapping.pso && Object.keys(mapping.pso).some(key => mapping.pso[key] > 0);
       });
-      if (!coPsoPassed) {
-        coPsoDetails = `Unmapped COs: ${unmappedPSOs.join(', ')}`;
-        errors.push(`Every CO must map to at least one PSO. Unmapped: ${unmappedPSOs.join(', ')}`);
+      if (mappedCOs.length > 0) {
+        coPsoDetails = `${mappedCOs.length}/${coCount} COs mapped to PSOs`;
       }
     }
 
@@ -3163,7 +3153,7 @@ export const HodSyllabusEditor: React.FC<HodSyllabusEditorProps> = ({ courseVers
                 <div className="divide-y divide-slate-100 text-xs font-bold text-slate-500 font-sans">
                   
                   {/* Change Password */}
-                  <div className="py-4 first:pt-0 flex justify-between items-center">
+                  <div className="py-4 first:pt-0 last:pb-0 flex justify-between items-center">
                     <div className="space-y-0.5 text-left">
                       <h4 className="font-bold text-slate-800">Change Password</h4>
                       <p className="text-slate-500 font-medium font-sans">Update your account login credentials</p>
@@ -3173,17 +3163,6 @@ export const HodSyllabusEditor: React.FC<HodSyllabusEditorProps> = ({ courseVers
                       className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded-lg font-bold shadow-sm cursor-pointer"
                     >
                       Reset Password
-                    </button>
-                  </div>
-
-                  {/* Two Factor Authentication */}
-                  <div className="py-4 last:pb-0 flex justify-between items-center">
-                    <div className="space-y-0.5 text-left">
-                      <h4 className="font-bold text-slate-800">Two Factor Authentication (2FA)</h4>
-                      <p className="text-slate-500 font-medium font-sans">Add an extra layer of security to your ERP account</p>
-                    </div>
-                    <button className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded-lg font-bold shadow-sm cursor-pointer">
-                      Enable 2FA
                     </button>
                   </div>
                 </div>

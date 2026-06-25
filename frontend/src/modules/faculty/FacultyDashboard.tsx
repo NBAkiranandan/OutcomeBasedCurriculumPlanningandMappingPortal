@@ -88,14 +88,13 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ activeTab, s
           v.regulationId?._id === selectedRegulation._id || v.regulationId === selectedRegulation._id
         );
         
-        // Faculty should see only assigned, approved courses
-        const approved = regVersions.filter((v: any) => v.status === 'Approved');
-        setApprovedCourses(approved);
-        setFinalizedCount(approved.length);
+        // Faculty should see assigned courses
+        setApprovedCourses(regVersions);
+        setFinalizedCount(regVersions.length);
         
-        if (approved.length > 0 && (!selectedCourseId || !approved.some((v: any) => v._id === selectedCourseId))) {
-          setSelectedCourseId(approved[0]._id);
-          setSelectedCourseCode(approved[0].courseId?.code);
+        if (regVersions.length > 0 && (!selectedCourseId || !regVersions.some((v: any) => v._id === selectedCourseId))) {
+          setSelectedCourseId(regVersions[0]._id);
+          setSelectedCourseCode(regVersions[0].courseId?.code);
         }
 
         // Fetch regulation-scoped PEOs, PSOs and POs from the same source HOD edits.
@@ -601,7 +600,7 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ activeTab, s
             <div className="divide-y divide-slate-100 text-xs font-bold text-slate-500 font-sans">
               
               {/* Change Password */}
-              <div className="py-4 first:pt-0 flex justify-between items-center">
+              <div className="py-4 first:pt-0 last:pb-0 flex justify-between items-center">
                 <div className="space-y-0.5 text-left">
                   <h4 className="font-bold text-slate-800">Change Password</h4>
                   <p className="text-slate-500 font-medium font-sans">Update your account login credentials</p>
@@ -611,17 +610,6 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ activeTab, s
                   className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded-lg font-bold shadow-sm cursor-pointer"
                 >
                   Reset Password
-                </button>
-              </div>
-
-              {/* Two Factor Authentication */}
-              <div className="py-4 last:pb-0 flex justify-between items-center">
-                <div className="space-y-0.5 text-left">
-                  <h4 className="font-bold text-slate-800">Two Factor Authentication (2FA)</h4>
-                  <p className="text-slate-500 font-medium font-sans">Add an extra layer of security to your ERP account</p>
-                </div>
-                <button className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded-lg font-bold shadow-sm cursor-pointer">
-                  Enable 2FA
                 </button>
               </div>
             </div>

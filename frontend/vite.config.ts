@@ -4,6 +4,7 @@ import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  clearScreen: false,
   plugins: [react()],
   resolve: {
     alias: {

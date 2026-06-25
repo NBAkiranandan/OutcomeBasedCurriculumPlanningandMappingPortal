@@ -7,13 +7,16 @@ export const exportToPDF = async (elementId: string, filename: string) => {
   const element = document.getElementById(elementId);
   if (!element) return;
   
-  // Create a clone to fix the width to A4 size for screenshot
   const clone = element.cloneNode(true) as HTMLElement;
   clone.style.width = '210mm';
   clone.style.height = 'auto';
   clone.style.position = 'absolute';
-  clone.style.top = '-9999px';
-  clone.style.left = '-9999px';
+  clone.style.top = '0';
+  clone.style.left = '0';
+  clone.style.zIndex = '-9999';
+  clone.style.opacity = '0';
+  clone.style.transform = 'none';
+  clone.style.marginBottom = '0';
   document.body.appendChild(clone);
 
   try {
