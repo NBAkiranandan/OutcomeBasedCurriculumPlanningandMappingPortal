@@ -620,7 +620,6 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
               }),
               new Paragraph({ children: [new TextRun({ text: `Course Code: ${activeVersion.courseId?.code || '—'}` })] }),
               new Paragraph({ children: [new TextRun({ text: `LTPSC: ${activeVersion.credits?.L || 0}-${activeVersion.credits?.T || 0}-${activeVersion.credits?.P || 0}-${activeVersion.credits?.S || 0}-${activeVersion.credits?.C || 0}` })] }),
-              new Paragraph({ children: [new TextRun({ text: `Course Level: ${activeVersion.level || 'Foundation'} | Knowledge Level: ${activeVersion.knowledgeLevel || '—'}` })] }),
 
               ...(activeVersion.prerequisites?.length > 0 ? [
                 new Paragraph({ children: [new TextRun({ text: `Prerequisites: ${activeVersion.prerequisites.join(', ')}` })] }),
@@ -3564,7 +3563,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
                 <div className="divide-y divide-slate-100 text-xs font-bold text-slate-500 font-sans">
                   
                   {/* Change Password */}
-                  <div className="py-4 first:pt-0 flex justify-between items-center">
+                  <div className="py-4 first:pt-0 last:pb-0 flex justify-between items-center">
                     <div className="space-y-0.5 text-left">
                       <h4 className="font-bold text-slate-800">Change Password</h4>
                       <p className="text-slate-500 font-medium font-sans">Update your account login credentials</p>
@@ -3574,17 +3573,6 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
                       className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded-lg font-bold shadow-sm cursor-pointer"
                     >
                       Reset Password
-                    </button>
-                  </div>
-
-                  {/* Two Factor Authentication */}
-                  <div className="py-4 last:pb-0 flex justify-between items-center">
-                    <div className="space-y-0.5 text-left">
-                      <h4 className="font-bold text-slate-800">Two Factor Authentication (2FA)</h4>
-                      <p className="text-slate-500 font-medium font-sans">Add an extra layer of security to your ERP account</p>
-                    </div>
-                    <button className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded-lg font-bold shadow-sm cursor-pointer">
-                      Enable 2FA
                     </button>
                   </div>
                 </div>
