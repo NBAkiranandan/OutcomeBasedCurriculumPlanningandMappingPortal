@@ -13,7 +13,8 @@ const resolveAssignmentVersion = async ({ courseId, regulationId, semester }) =>
   return CourseVersion.findOne(filter)
     .populate({ path: 'courseId', populate: { path: 'departmentId' } })
     .populate('regulationId')
-    .populate('assignedCoordinator', '-password');
+    .populate('assignedCoordinator', '-password')
+    .lean();
 };
 
 export const getAssignments = async (req, res, next) => {
@@ -72,7 +73,7 @@ export const getMyAssignedCourseVersions = async (req, res, next) => {
       if (seenVersionIds.has(versionId)) continue;
       seenVersionIds.add(versionId);
 
-      const versionObj = version.toObject();
+      const versionObj = { ...version };
       versionObj.assignment = assignment;
       versions.push(versionObj);
     }

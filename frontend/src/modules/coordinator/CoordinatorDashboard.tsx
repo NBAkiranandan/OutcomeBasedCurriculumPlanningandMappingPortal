@@ -179,26 +179,16 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
       }
     }
 
-    // 4. CO-PSO Mapping (Required)
+    // 4. CO-PSO Mapping (Optional in Real World)
     let coPsoPassed = true;
-    let coPsoDetails = 'All COs mapped to PSOs';
-    if (coCount === 0) {
-      coPsoPassed = false;
-      coPsoDetails = 'No COs defined';
-      errors.push('Complete CO–PSO mapping is required. No COs defined.');
-    } else {
-      const unmappedPSOs: string[] = [];
-      v.courseOutcomes.forEach((co: any) => {
+    let coPsoDetails = 'PSO mapping is optional';
+    if (coCount > 0) {
+      const mappedCOs = v.courseOutcomes.filter((co: any) => {
         const mapping = v.coPsoMappings?.find((m: any) => m.coCode === co.coCode);
-        const hasMapping = mapping && mapping.pso && Object.keys(mapping.pso).some(key => mapping.pso[key] > 0);
-        if (!hasMapping) {
-          coPsoPassed = false;
-          unmappedPSOs.push(co.coCode);
-        }
+        return mapping && mapping.pso && Object.keys(mapping.pso).some(key => mapping.pso[key] > 0);
       });
-      if (!coPsoPassed) {
-        coPsoDetails = `Unmapped COs: ${unmappedPSOs.join(', ')}`;
-        errors.push(`Every CO must map to at least one PSO. Unmapped: ${unmappedPSOs.join(', ')}`);
+      if (mappedCOs.length > 0) {
+        coPsoDetails = `${mappedCOs.length}/${coCount} COs mapped to PSOs`;
       }
     }
 
