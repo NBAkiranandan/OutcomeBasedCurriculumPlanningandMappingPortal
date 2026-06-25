@@ -4,6 +4,127 @@ import { CourseSelectorModal } from './CourseSelectorModal';
 import { api } from '../../../services/api';
 import { useContextStore } from '../../../store/contextStore';
 
+const SemesterSection = React.memo(({ semester, readOnly, onAddCourse, semesterCredits }: { semester: any, readOnly: boolean, onAddCourse: (sem: number) => void, semesterCredits: number }) => {
+  const store = useCurriculumBuilderStore();
+  const [showNotes, setShowNotes] = useState(!!semester.notes);
+  const [showComments, setShowComments] = useState(false);
+
+  return (
+    <section className="mb-10 page-break-inside-avoid">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-lg font-bold uppercase">Semester {semester.semester}</h2>
+          <p className="text-sm text-slate-500">{semester.courses.length} courses</p>
+        </div>
+        {!readOnly && (
+          <div className="flex items-center gap-2 print:hidden">
+            <button 
+              onClick={() => setShowNotes(!showNotes)}
+              className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-bold uppercase text-slate-700 hover:bg-slate-50"
+            >
+              {showNotes ? 'Hide Guidelines' : 'Add Guidelines'}
+            </button>
+            <button 
+              onClick={() => setShowComments(!showComments)}
+              className="rounded-full border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold uppercase text-amber-700 hover:bg-amber-100"
+            >
+              Review / Comment
+            </button>
+            <button 
+              onClick={() => onAddCourse(semester.semester)}
+              className="rounded-full border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold uppercase text-blue-700 hover:bg-blue-100"
+            >
+              Add Course
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="overflow-x-auto rounded-3xl border border-slate-200 shadow-sm mb-4">
+        <table className="min-w-full border-collapse text-sm">
+          <thead>
+            <tr className="bg-slate-100 text-slate-700">
+              <th className="border border-slate-200 px-3 py-3 text-left">S.No</th>
+              <th className="border border-slate-200 px-3 py-3 text-left">Course Code</th>
+              <th className="border border-slate-200 px-3 py-3 text-left">Course Name</th>
+              <th className="border border-slate-200 px-3 py-3 text-center">L</th>
+              <th className="border border-slate-200 px-3 py-3 text-center">T</th>
+              <th className="border border-slate-200 px-3 py-3 text-center">P</th>
+              <th className="border border-slate-200 px-3 py-3 text-center">C</th>
+              <th className="border border-slate-200 px-3 py-3 text-center">Category</th>
+              <th className="border border-slate-200 px-3 py-3 text-center">Level</th>
+            </tr>
+          </thead>
+          <tbody>
+            {semester.courses.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="border border-slate-200 p-6 text-center text-slate-500">No courses assigned to this semester yet.</td>
+              </tr>
+            ) : semester.courses.map((course: any, index: number) => (
+              <tr key={course._id || `${semester.semester}-${index}`} className="even:bg-slate-50">
+                <td className="border border-slate-200 px-3 py-2 text-center">{index + 1}</td>
+                <td className="border border-slate-200 px-3 py-2 font-semibold">{course.code}</td>
+                <td className="border border-slate-200 px-3 py-2">{course.title}</td>
+                <td className="border border-slate-200 px-3 py-2 text-center">{course.L}</td>
+                <td className="border border-slate-200 px-3 py-2 text-center">{course.T}</td>
+                <td className="border border-slate-200 px-3 py-2 text-center">{course.P}</td>
+                <td className="border border-slate-200 px-3 py-2 text-center">{course.credits}</td>
+                <td className="border border-slate-200 px-3 py-2 text-center uppercase">{course.category}</td>
+                <td className="border border-slate-200 px-3 py-2 text-center">{(() => { const l = ((course as any).courseLevel || (course as any).level || (course as any).knowledgeLevel || '').toLowerCase(); if (l.includes('ic') || l.includes('intermediate')) return 'IC'; if (l.includes('ac') || l.includes('advanced')) return 'AC'; if (l.includes('fc') || l.includes('foundation')) return 'FC'; return '-'; })()}</td>
+              </tr>
+            ))}
+            {semester.courses.length > 0 && (
+              <tr className="bg-slate-100 font-semibold">
+                <td colSpan={3} className="border border-slate-200 px-3 py-3 text-right">Semester Total</td>
+                <td className="border border-slate-200 px-3 py-3 text-center">{semester.courses.reduce((sum: any, course: any) => sum + (course.L || 0), 0)}</td>
+                <td className="border border-slate-200 px-3 py-3 text-center">{semester.courses.reduce((sum: any, course: any) => sum + (course.T || 0), 0)}</td>
+                <td className="border border-slate-200 px-3 py-3 text-center">{semester.courses.reduce((sum: any, course: any) => sum + (course.P || 0), 0)}</td>
+                <td className="border border-slate-200 px-3 py-3 text-center">{semesterCredits}</td>
+                <td colSpan={2} className="border border-slate-200 px-3 py-3"></td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {showNotes && (
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-inner mb-4">
+          <div className="text-xs font-bold uppercase text-slate-500 mb-2">Semester Guidelines / Notes</div>
+          {readOnly ? (
+            <div className="whitespace-pre-wrap text-sm text-slate-700 min-h-[40px]">
+              {semester.notes || <span className="text-slate-400 italic">No guidelines provided.</span>}
+            </div>
+          ) : (
+            <textarea
+              className="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none min-h-[80px]"
+              placeholder="Add formatting using markdown (e.g., **bold**, - list items)..."
+              value={semester.notes || ''}
+              onChange={(e) => store.updateSemesterNotes(semester.semester, e.target.value)}
+            />
+          )}
+        </div>
+      )}
+
+      {showComments && !readOnly && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 shadow-sm mb-4 print:hidden">
+          <div className="text-xs font-bold uppercase text-amber-700 mb-2">Reviewer Comments</div>
+          <div className="text-sm text-amber-900 mb-3 bg-white p-3 rounded-xl border border-amber-100">
+            <span className="font-bold">Admin:</span> Please ensure the credit limits match the AICTE guidelines for Semester {semester.semester}.
+          </div>
+          <div className="flex gap-2">
+            <input 
+              type="text" 
+              className="flex-1 rounded-xl border border-amber-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" 
+              placeholder="Reply or add a comment..."
+            />
+            <button className="bg-amber-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-amber-700">Post</button>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+});
+
 // We will dynamically extract categories from the courses to ensure no category is missing.
 export const DocumentEditor: React.FC<{ readOnly?: boolean }> = ({ readOnly = false }) => {
   const store = useCurriculumBuilderStore();
@@ -80,67 +201,13 @@ export const DocumentEditor: React.FC<{ readOnly?: boolean }> = ({ readOnly = fa
             store.semesters.map((semester) => {
               const semesterCredits = semester.courses.reduce((sum, course) => sum + (course.credits || 0), 0);
               return (
-                <section key={semester.semester} className="mb-10 page-break-inside-avoid">
-                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                      <h2 className="text-lg font-bold uppercase">Semester {semester.semester}</h2>
-                      <p className="text-sm text-slate-500">{semester.courses.length} courses</p>
-                    </div>
-                    {!readOnly && (
-                      <button 
-                        onClick={() => store.openCourseSelector(semester.semester)}
-                        className="print:hidden rounded-full border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold uppercase text-blue-700 hover:bg-blue-100"
-                      >Add Course</button>
-                    )}
-                  </div>
-
-                  <div className="overflow-x-auto rounded-3xl border border-slate-200 shadow-sm">
-                    <table className="min-w-full border-collapse text-sm">
-                      <thead>
-                        <tr className="bg-slate-100 text-slate-700">
-                          <th className="border border-slate-200 px-3 py-3 text-left">S.No</th>
-                          <th className="border border-slate-200 px-3 py-3 text-left">Course Code</th>
-                          <th className="border border-slate-200 px-3 py-3 text-left">Course Name</th>
-                          <th className="border border-slate-200 px-3 py-3 text-center">L</th>
-                          <th className="border border-slate-200 px-3 py-3 text-center">T</th>
-                          <th className="border border-slate-200 px-3 py-3 text-center">P</th>
-                          <th className="border border-slate-200 px-3 py-3 text-center">C</th>
-                          <th className="border border-slate-200 px-3 py-3 text-center">Category</th>
-                          <th className="border border-slate-200 px-3 py-3 text-center">Level</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {semester.courses.length === 0 ? (
-                          <tr>
-                            <td colSpan={9} className="border border-slate-200 p-6 text-center text-slate-500">No courses assigned to this semester yet.</td>
-                          </tr>
-                        ) : semester.courses.map((course, index) => (
-                          <tr key={course._id || `${semester.semester}-${index}`} className="even:bg-slate-50">
-                            <td className="border border-slate-200 px-3 py-2 text-center">{index + 1}</td>
-                            <td className="border border-slate-200 px-3 py-2 font-semibold">{course.code}</td>
-                            <td className="border border-slate-200 px-3 py-2">{course.title}</td>
-                            <td className="border border-slate-200 px-3 py-2 text-center">{course.L}</td>
-                            <td className="border border-slate-200 px-3 py-2 text-center">{course.T}</td>
-                            <td className="border border-slate-200 px-3 py-2 text-center">{course.P}</td>
-                            <td className="border border-slate-200 px-3 py-2 text-center">{course.credits}</td>
-                            <td className="border border-slate-200 px-3 py-2 text-center uppercase">{course.category}</td>
-                            <td className="border border-slate-200 px-3 py-2 text-center">{(() => { const l = ((course as any).courseLevel || (course as any).level || (course as any).knowledgeLevel || '').toLowerCase(); if (l.includes('ic') || l.includes('intermediate')) return 'IC'; if (l.includes('ac') || l.includes('advanced')) return 'AC'; if (l.includes('fc') || l.includes('foundation')) return 'FC'; return '-'; })()}</td>
-                          </tr>
-                        ))}
-                        {semester.courses.length > 0 && (
-                          <tr className="bg-slate-100 font-semibold">
-                            <td colSpan={3} className="border border-slate-200 px-3 py-3 text-right">Semester Total</td>
-                            <td className="border border-slate-200 px-3 py-3 text-center">{semester.courses.reduce((sum, course) => sum + (course.L || 0), 0)}</td>
-                            <td className="border border-slate-200 px-3 py-3 text-center">{semester.courses.reduce((sum, course) => sum + (course.T || 0), 0)}</td>
-                            <td className="border border-slate-200 px-3 py-3 text-center">{semester.courses.reduce((sum, course) => sum + (course.P || 0), 0)}</td>
-                            <td className="border border-slate-200 px-3 py-3 text-center">{semesterCredits}</td>
-                            <td colSpan={2} className="border border-slate-200 px-3 py-3"></td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </section>
+                <SemesterSection 
+                  key={semester.semester} 
+                  semester={semester} 
+                  readOnly={readOnly} 
+                  onAddCourse={store.openCourseSelector} 
+                  semesterCredits={semesterCredits} 
+                />
               );
             })
           )}
