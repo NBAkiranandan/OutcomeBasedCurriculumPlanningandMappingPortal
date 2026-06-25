@@ -283,10 +283,20 @@ const formatCommonTo = (items = [], fallback) => {
 };
 
 const getCourseLevelCode = (version) => {
-  const raw = `${version.level || version.knowledgeLevel || ''}`.toLowerCase();
-  if (raw === 'advanced' || raw === 'ac') return 'AC';
-  if (raw === 'intermediate' || raw === 'ic') return 'IC';
-  return 'FC'; // Foundation / default
+  // First, parse the `courseLevel` string (e.g., "Intermediate Courses - IC")
+  const courseLevelRaw = `${version.courseLevel || version.knowledgeLevel || ''}`.toLowerCase();
+  if (courseLevelRaw.includes('advanced') || courseLevelRaw.includes(' ac') || courseLevelRaw.endsWith('-ac') || courseLevelRaw === 'ac') return 'AC';
+  if (courseLevelRaw.includes('intermediate') || courseLevelRaw.includes(' ic') || courseLevelRaw.endsWith('-ic') || courseLevelRaw === 'ic') return 'IC';
+  if (courseLevelRaw.includes('foundation') || courseLevelRaw.includes(' fc') || courseLevelRaw.endsWith('-fc') || courseLevelRaw === 'fc') return 'FC';
+
+  // Fallback: use the `level` enum field
+  const levelRaw = `${version.level || ''}`.toLowerCase();
+  if (levelRaw === 'advanced') return 'AC';
+  if (levelRaw === 'intermediate') return 'IC';
+  if (levelRaw === 'foundation') return 'FC';
+
+  // Default to Foundation (FC)
+  return 'FC';
 };
 
 const getCategoryCreditTotal = (categoryTotals, code) => categoryTotals[code] || 0;

@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
-import CourseVersion from './backend/models/CourseVersion.js';
-import Regulation from './backend/models/Regulation.js';
+import CourseVersion from './models/CourseVersion.js';
+import Regulation from './models/Regulation.js';
 import dotenv from 'dotenv';
 
 dotenv.config({ path: './backend/.env' });
