@@ -15,6 +15,7 @@ import html2canvas from 'html2canvas';
 import adityaLogo from '../../assets/aditya-logo.png';
 import { RichTextEditor } from '../../components/common/RichTextEditor';
 import { PdfCoursePage, PdfCoursePageStyles } from '../../components/common/PdfCoursePage';
+import SearchableSelect from '../../components/common/SearchableSelect';
 
 const escapeHtml = (value = ''): string => String(value)
   .replace(/&/g, '&amp;')
@@ -1835,19 +1836,16 @@ export const HodSyllabusEditor: React.FC<HodSyllabusEditorProps> = ({ courseVers
                           />
                         </td>
                         <td className="p-3">
-                          <select
+                          <SearchableSelect
+                            name="bloomLevel"
                             value={co.bloomLevel}
                             onChange={(e) => {
                               const list = [...activeVersion.courseOutcomes];
                               list[idx].bloomLevel = e.target.value;
                               setActiveVersion({ ...activeVersion, courseOutcomes: list });
                             }}
-                            className="bg-white border border-slate-350 rounded p-1.5 w-full font-semibold outline-none"
-                          >
-                            {bloomLevels.map(b => (
-                              <option key={b} value={b}>{b}</option>
-                            ))}
-                          </select>
+                            options={bloomLevels.map(b => ({ value: b, label: b }))}
+                          />
                         </td>
                         <td className="p-3 pr-4 text-right">
                           <button 
@@ -2248,14 +2246,15 @@ export const HodSyllabusEditor: React.FC<HodSyllabusEditorProps> = ({ courseVers
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1">
                               <span>Material Type *</span>
-                              <select
+                              <SearchableSelect
+                                name="type"
                                 value={refForm.type}
                                 onChange={(e) => setRefForm({ ...refForm, type: e.target.value as any })}
-                                className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 bg-white font-semibold outline-none focus:ring-1 focus:ring-blue-600"
-                              >
-                                <option value="Textbook">Prescribed Textbook</option>
-                                <option value="Reference">Reference Book</option>
-                              </select>
+                                options={[
+                                  { value: 'Textbook', label: 'Prescribed Textbook' },
+                                  { value: 'Reference', label: 'Reference Book' }
+                                ]}
+                              />
                             </div>
                             <div className="space-y-1">
                               <span>Book Title *</span>

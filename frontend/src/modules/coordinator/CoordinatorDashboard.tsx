@@ -1524,15 +1524,16 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
             <div>
               <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Assigned Syllabus Workspace</h2>
               <div className="flex items-center gap-3 mt-1">
-                <select
+                <SearchableSelect
+                  name="activeVersionId"
                   value={activeVersion?._id || ''}
                   onChange={(e) => loadCourseVersion(e.target.value)}
-                  className="bg-slate-100 border border-slate-300 font-extrabold text-xs text-blue-700 px-3 py-2 rounded-lg outline-none focus:ring-1 focus:ring-blue-600"
-                >
-                  {assignedVersions.map((v) => (
-                    <option key={v._id} value={v._id}>{v.courseId?.code} — {v.courseId?.title}</option>
-                  ))}
-                </select>
+                  placeholder="Select a course syllabus..."
+                  options={assignedVersions.map((v) => ({
+                    value: v._id,
+                    label: `${v.courseId?.code} — ${v.courseId?.title}`
+                  }))}
+                />
                 <span className={`px-2.5 py-1 text-[10px] rounded-lg font-bold border ${
                   activeVersion?.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
                   activeVersion?.status === 'Pending HOD' ? 'bg-amber-50 text-amber-700 border-amber-100' :

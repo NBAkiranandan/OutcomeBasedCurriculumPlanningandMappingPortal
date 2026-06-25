@@ -10,6 +10,7 @@ import {
   Download, Eye, KeyRound, Bell, Settings, ArrowLeft, Upload, FileSpreadsheet, Printer, Search, Copy, Lock, Unlock,
   User, Briefcase, Mail, Cpu, Building2, Phone
 } from 'lucide-react';
+import SearchableSelect from '../../components/common/SearchableSelect';
 import { PDFDocument, rgb } from 'pdf-lib';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import Papa from 'papaparse';
@@ -2301,22 +2302,17 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
               </h3>
               <form onSubmit={handleSaveCourseAssignment} className="space-y-3 text-xs font-bold text-slate-500">
                 <div className="space-y-1">
-                  <span>Faculty</span>
-                  <select
+                  <SearchableSelect
+                    name="facultyId"
                     value={assignmentForm.facultyId}
                     onChange={(e) => setAssignmentForm({ ...assignmentForm, facultyId: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 outline-none bg-white font-semibold focus:ring-1 focus:ring-teal-700"
-                    required
-                  >
-                    <option value="">Select faculty</option>
-                    {faculty.map((f: any) => (
-                      <option key={f._id} value={f._id}>{f.name} ({f.email})</option>
-                    ))}
-                  </select>
+                    placeholder="Select faculty"
+                    options={faculty.map((f: any) => ({ value: f._id, label: `${f.name} (${f.email})` }))}
+                  />
                 </div>
                 <div className="space-y-1">
-                  <span>Course</span>
-                  <select
+                  <SearchableSelect
+                    name="courseId"
                     value={assignmentForm.courseId}
                     onChange={(e) => {
                       const selectedVersion = versions.find((v: any) => (v.courseId?._id || v.courseId) === e.target.value);
@@ -2327,16 +2323,12 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                         regulationId: selectedVersion?.regulationId?._id || selectedVersion?.regulationId || selectedRegulation?._id || ''
                       });
                     }}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 outline-none bg-white font-semibold focus:ring-1 focus:ring-teal-700"
-                    required
-                  >
-                    <option value="">Select course</option>
-                    {versions.map((v: any) => (
-                      <option key={v._id} value={v.courseId?._id || v.courseId}>
-                        {v.courseId?.code} - {v.courseId?.title}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="Select course"
+                    options={versions.map((v: any) => ({
+                      value: v.courseId?._id || v.courseId,
+                      label: `${v.courseId?.code} - ${v.courseId?.title}`
+                    }))}
+                  />
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-1">
@@ -3824,16 +3816,13 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
               <div className="space-y-1">
                 <span>Course Coordinator</span>
-                <select
+                <SearchableSelect
+                  name="coordinatorId"
                   value={newCourseData.coordinatorId}
                   onChange={(e) => setNewCourseData({ ...newCourseData, coordinatorId: e.target.value })}
-                  className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none bg-white"
-                >
-                  <option value="">-- Choose Coordinator --</option>
-                  {faculty.map(f => (
-                    <option key={f._id} value={f._id}>{f.name}</option>
-                  ))}
-                </select>
+                  placeholder="Select Coordinator"
+                  options={faculty.map((f: any) => ({ value: f._id, label: f.name }))}
+                />
               </div>
 
               <div className="space-y-1">
@@ -4298,16 +4287,13 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
 
               <div className="space-y-1">
                 <span>Course Coordinator</span>
-                <select
+                <SearchableSelect
+                  name="coordinatorId"
                   value={editCourseData.coordinatorId}
                   onChange={(e) => setEditCourseData({ ...editCourseData, coordinatorId: e.target.value })}
-                  className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none bg-white"
-                >
-                  <option value="">-- Choose Coordinator --</option>
-                  {faculty.map(f => (
-                    <option key={f._id} value={f._id}>{f.name}</option>
-                  ))}
-                </select>
+                  placeholder="Select Coordinator"
+                  options={faculty.map((f: any) => ({ value: f._id, label: f.name }))}
+                />
               </div>
 
               <div className="space-y-1">
@@ -4557,33 +4543,25 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
             </div>
             <form onSubmit={handleAddPrereq} className="p-6 space-y-4 text-xs font-bold text-slate-500">
               <div className="space-y-1">
-                <span>Select Prerequisite Course (Source) *</span>
-                <select
+                <label className="text-xs font-bold text-slate-500">Prerequisite Course (Source) *</label>
+                <SearchableSelect
+                  name="sourceCourseId"
                   value={newPrereqData.sourceCourseId}
                   onChange={(e) => setNewPrereqData({ ...newPrereqData, sourceCourseId: e.target.value })}
-                  className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 bg-white font-semibold focus:ring-1 focus:ring-teal-700"
-                  required
-                >
-                  <option value="">-- Choose Prerequisite Course --</option>
-                  {courses.map(course => (
-                    <option key={course._id} value={course._id}>{course.code} - {course.title}</option>
-                  ))}
-                </select>
+                  placeholder="Select Prerequisite Course"
+                  options={courses.map((c: any) => ({ value: c._id, label: `${c.code} - ${c.title}` }))}
+                />
               </div>
 
               <div className="space-y-1">
-                <span>Select Dependent Course (Target) *</span>
-                <select
+                <label className="text-xs font-bold text-slate-500">Dependent Course *</label>
+                <SearchableSelect
+                  name="targetCourseId"
                   value={newPrereqData.targetCourseId}
                   onChange={(e) => setNewPrereqData({ ...newPrereqData, targetCourseId: e.target.value })}
-                  className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 bg-white font-semibold focus:ring-1 focus:ring-teal-700"
-                  required
-                >
-                  <option value="">-- Choose Dependent Course --</option>
-                  {courses.map(course => (
-                    <option key={course._id} value={course._id}>{course.code} - {course.title}</option>
-                  ))}
-                </select>
+                  placeholder="Select Dependent Course"
+                  options={courses.map((c: any) => ({ value: c._id, label: `${c.code} - ${c.title}` }))}
+                />
               </div>
 
               <div className="flex gap-3 pt-3">

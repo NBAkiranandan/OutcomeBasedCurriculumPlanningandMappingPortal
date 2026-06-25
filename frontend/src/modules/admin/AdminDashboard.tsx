@@ -3,6 +3,7 @@ import Papa from 'papaparse';
 import { useAuthStore } from '../../store/authStore';
 import { api } from '../../services/api';
 import { useUIStore } from '../../store/uiStore';
+import SearchableSelect from '../../components/common/SearchableSelect';
 import {
   Building, Settings, FileSpreadsheet, Shield, Plus,
   RotateCw, Layers, CheckCircle2, AlertCircle, Calendar,
@@ -145,7 +146,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
     hasOtherActive: false
   });
 
-  // Lifecycle history accordion â€” reg._id => expanded
+  // Lifecycle history accordion — reg._id => expanded
   const [expandedHistory, setExpandedHistory] = useState<Record<string, boolean>>({});
 
   // Load backend data
@@ -660,7 +661,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
 
       // Header branding
       page.drawText('ADITYA UNIVERSITY', { x: 50, y: height - 60, size: 20, color: rgb(0.04, 0.1, 0.28) });
-      page.drawText('Accreditation Governance Portal â€” OBE Syllabus Scheme', { x: 50, y: height - 80, size: 10, color: rgb(0.4, 0.4, 0.4) });
+      page.drawText('Accreditation Governance Portal — OBE Syllabus Scheme', { x: 50, y: height - 80, size: 10, color: rgb(0.4, 0.4, 0.4) });
 
       // Report Title
       page.drawText(reportName.toUpperCase(), { x: 50, y: height - 130, size: 15, color: rgb(0.11, 0.3, 0.85) });
@@ -789,7 +790,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
       {activeTab === 'dashboard' && (
         <div className="space-y-6">
 
-          {/* â”€â”€ Welcome Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+          {/* ————————————————————————————————————————————— */}
           <div className="bg-white rounded-2xl border border-border shadow-card p-6 flex flex-col sm:flex-row items-start gap-5">
             <div className="w-14 h-14 rounded-2xl bg-primary-600 text-white flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0">
               {(() => {
@@ -800,7 +801,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
             <div className="flex-1 min-w-0">
               <div className="flex justify-between items-start flex-wrap gap-3">
                 <div>
-                  <p className="text-[10px] font-semibold text-text-subtle uppercase tracking-widest">Aditya University Â· OBE Portal</p>
+                  <p className="text-[10px] font-semibold text-text-subtle uppercase tracking-widest">Aditya University · OBE Portal</p>
                   <h1 className="text-xl font-bold text-text-primary mt-0.5">Welcome back, {user?.name || 'Administrator'}</h1>
                 </div>
                 <button
@@ -814,7 +815,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
               <div className="flex flex-wrap items-center gap-2 mt-3">
                 <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-violet-50 text-violet-700 border border-violet-100 text-[11px] font-semibold">System Administrator</span>
                 <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 text-[11px] font-semibold">Office of Academic Governance</span>
-                <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-success-50 text-success-700 border border-success-100 text-[11px] font-semibold">AU Main Campus Â· Administration</span>
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-success-50 text-success-700 border border-success-100 text-[11px] font-semibold">AU Main Campus · Administration</span>
               </div>
               <p className="text-sm text-text-muted mt-3 leading-relaxed">
                 Managing {stats.programs} programs, {stats.departments} departments, and {stats.regulations} active regulation contexts with accreditation audit tracking.
@@ -822,7 +823,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
             </div>
           </div>
 
-          {/* â”€â”€ KPI Stat Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+          {/* ————————————————————————————————————————————— */}
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
             {[
               { label: 'Total Programs', sub: 'Active academic programs', count: stats.programs, icon: Layers, bg: 'bg-blue-50', iconCl: 'text-blue-600', border: 'border-blue-100' },
@@ -1245,7 +1246,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
               <h1 className="text-xl font-extrabold text-slate-800">Regulation Lifecycle Management</h1>
-              <p className="text-xs text-slate-500 mt-1">Control the full lifecycle of academic regulations â€” Draft â†’ Active â†’ Locked â†’ Archived.</p>
+              <p className="text-xs text-slate-500 mt-1">Control the full lifecycle of academic regulations — Draft → Active → Locked → Archived.</p>
             </div>
             <div className="flex gap-2">
               <button
@@ -1262,10 +1263,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
           <div className="bg-gradient-to-r from-slate-50 to-white border border-slate-200 rounded-2xl p-4 flex flex-wrap gap-4 items-center">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status Legend:</span>
             {[
-              { label: 'DRAFT', color: 'bg-amber-100 text-amber-700 border-amber-200', desc: 'In preparation â€” editable by Admin & HOD' },
+              { label: 'DRAFT', color: 'bg-amber-100 text-amber-700 border-amber-200', desc: 'In preparation — editable by Admin & HOD' },
               { label: 'ACTIVE', color: 'bg-emerald-100 text-emerald-700 border-emerald-200', desc: 'Official regulation in use' },
-              { label: 'LOCKED', color: 'bg-red-100 text-red-700 border-red-200', desc: 'Read-only â€” Admin can unlock' },
-              { label: 'ARCHIVED', color: 'bg-slate-200 text-slate-600 border-slate-300', desc: 'Historical record â€” permanent read-only' },
+              { label: 'LOCKED', color: 'bg-red-100 text-red-700 border-red-200', desc: 'Read-only — Admin can unlock' },
+              { label: 'ARCHIVED', color: 'bg-slate-200 text-slate-600 border-slate-300', desc: 'Historical record — permanent read-only' },
             ].map(s => (
               <div key={s.label} className="flex items-center gap-2">
                 <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${s.color}`}>{s.label}</span>
@@ -1332,7 +1333,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
 
                       {/* Regulation Code */}
                       <h3 className="text-2xl font-extrabold text-slate-800 mt-2 leading-tight">{reg.code}</h3>
-                      <p className="text-[11px] text-slate-500 font-semibold mt-0.5">{reg.programId?.name || 'â€”'}</p>
+                      <p className="text-[11px] text-slate-500 font-semibold mt-0.5">{reg.programId?.name || '—'}</p>
 
                       {/* Metadata */}
                       <div className="grid grid-cols-2 gap-2 mt-3 text-[10px] font-medium text-slate-500">
@@ -1344,7 +1345,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
 
                       {/* Action Buttons */}
                       <div className="mt-4 flex flex-wrap gap-1.5">
-                        {/* DRAFT â†’ ACTIVE */}
+                        {/* DRAFT → ACTIVE */}
                         {(!reg.status || reg.status === 'DRAFT') && (
                           <button
                             id={`reg-activate-${reg._id}`}
@@ -1354,7 +1355,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                             <CheckCircle2 className="w-3 h-3" /> Activate
                           </button>
                         )}
-                        {/* ACTIVE â†’ LOCKED */}
+                        {/* ACTIVE → LOCKED */}
                         {reg.status === 'ACTIVE' && (
                           <button
                             id={`reg-lock-${reg._id}`}
@@ -1364,7 +1365,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                             <Lock className="w-3 h-3" /> Lock
                           </button>
                         )}
-                        {/* ACTIVE â†’ ARCHIVED */}
+                        {/* ACTIVE → ARCHIVED */}
                         {reg.status === 'ACTIVE' && (
                           <button
                             id={`reg-archive-${reg._id}`}
@@ -1374,7 +1375,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                             <Layers className="w-3 h-3" /> Archive
                           </button>
                         )}
-                        {/* LOCKED â†’ ACTIVE (Unlock) */}
+                        {/* LOCKED → ACTIVE (Unlock) */}
                         {reg.status === 'LOCKED' && (
                           <button
                             id={`reg-unlock-${reg._id}`}
@@ -1384,7 +1385,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                             <Unlock className="w-3 h-3" /> Unlock
                           </button>
                         )}
-                        {/* LOCKED â†’ ARCHIVED */}
+                        {/* LOCKED → ARCHIVED */}
                         {reg.status === 'LOCKED' && (
                           <button
                             id={`reg-lock-archive-${reg._id}`}
@@ -1394,7 +1395,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                             <Layers className="w-3 h-3" /> Archive
                           </button>
                         )}
-                        {/* ARCHIVED â†’ DRAFT (Restore to Draft) */}
+                        {/* ARCHIVED → DRAFT (Restore to Draft) */}
                         {reg.status === 'ARCHIVED' && (
                           <button
                             id={`reg-restore-draft-${reg._id}`}
@@ -1425,7 +1426,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                                     <span className={`px-1.5 py-0.5 rounded font-bold border shrink-0 ${hCfg.color}`}>{h.status}</span>
                                     <div>
                                       <span className="font-semibold text-slate-600">{h.changedByName || 'System'}</span>
-                                      <span className="text-slate-400"> Â· {new Date(h.changedAt).toLocaleDateString()} {new Date(h.changedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                      <span className="text-slate-400"> · {new Date(h.changedAt).toLocaleDateString()} {new Date(h.changedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                       {h.notes && <p className="text-slate-400 italic">{h.notes}</p>}
                                     </div>
                                   </div>
@@ -1547,7 +1548,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                     {/* Auto-lock previous active prompt */}
                     {lifecycleModal.hasOtherActive && target === 'ACTIVE' && (
                       <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
-                        <p className="text-[11px] font-semibold text-amber-800">âš  Another regulation is currently ACTIVE.</p>
+                        <p className="text-[11px] font-semibold text-amber-800">⚠ Another regulation is currently ACTIVE.</p>
                         <label className="flex items-center gap-2 mt-2 cursor-pointer">
                           <input
                             type="checkbox"
@@ -2591,7 +2592,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 <Layers className="w-5 h-5 text-blue-600" />
                 <span>{programModal.mode === 'add' ? 'Add Academic Program' : 'Edit Academic Program'}</span>
               </h3>
-              <button onClick={() => setProgramModal({ open: false, mode: 'add', data: { outcomes: [] } })} className="text-slate-400 hover:text-slate-700">âœ•</button>
+              <button onClick={() => setProgramModal({ open: false, mode: 'add', data: { outcomes: [] } })} className="text-slate-400 hover:text-slate-700">✕</button>
             </div>
             <form onSubmit={handleProgramSubmit} className="p-6 space-y-4 text-xs font-bold text-slate-500 overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
@@ -2729,7 +2730,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 <Building className="w-5 h-5 text-blue-600" />
                 <span>{deptModal.mode === 'add' ? 'Add Academic Department' : 'Edit Academic Department'}</span>
               </h3>
-              <button onClick={() => setDeptModal({ open: false, mode: 'add', data: {} })} className="text-slate-400 hover:text-slate-700">âœ•</button>
+              <button onClick={() => setDeptModal({ open: false, mode: 'add', data: {} })} className="text-slate-400 hover:text-slate-700">✕</button>
             </div>
             <form onSubmit={handleDeptSubmit} className="p-6 space-y-4 text-xs font-bold text-slate-500">
               <div className="grid grid-cols-2 gap-4">
@@ -2881,7 +2882,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 <FileText className="w-5 h-5 text-emerald-600" />
                 <span>{regModal.mode === 'add' ? 'Add Regulation Scheme' : 'Edit Regulation Scheme'}</span>
               </h3>
-              <button onClick={() => setRegModal({ open: false, mode: 'add', data: {} })} className="text-slate-400 hover:text-slate-700">âœ•</button>
+              <button onClick={() => setRegModal({ open: false, mode: 'add', data: {} })} className="text-slate-400 hover:text-slate-700">✕</button>
             </div>
             <form onSubmit={handleRegSubmit} className="p-6 space-y-4 text-xs font-bold text-slate-500">
               <div className="space-y-1">
@@ -3000,7 +3001,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 <UserPlus className="w-5 h-5 text-blue-600" />
                 <span>{userModal.mode === 'add' ? 'Register New User account' : 'Modify User Details'}</span>
               </h3>
-              <button onClick={() => setUserModal({ open: false, mode: 'add', data: {} })} className="text-slate-400 hover:text-slate-700">âœ•</button>
+              <button onClick={() => setUserModal({ open: false, mode: 'add', data: {} })} className="text-slate-400 hover:text-slate-700">✕</button>
             </div>
             <form onSubmit={handleUserSubmit} className="p-6 space-y-4 text-xs font-bold text-slate-500">
               <div className="grid grid-cols-2 gap-4">
@@ -3033,7 +3034,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                   <span className="uppercase text-[10px]">Password</span>
                   <input
                     type="password"
-                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                    placeholder="••••••••"
                     value={userModal.data.password}
                     onChange={(e) => setUserModal({ ...userModal, data: { ...userModal.data, password: e.target.value } })}
                     className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none focus:ring-1 focus:ring-blue-500 bg-white"
@@ -3058,31 +3059,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 </div>
                 <div className="space-y-1">
                   <span className="uppercase text-[10px]">Department Access</span>
-                  <select
+                  <SearchableSelect
+                    name="departmentId"
                     value={userModal.data.departmentId}
                     onChange={(e) => setUserModal({ ...userModal, data: { ...userModal.data, departmentId: e.target.value } })}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                  >
-                    <option value="">None (Admin Only)</option>
-                    {departments.map(d => (
-                      <option key={d._id} value={d._id}>{d.name}</option>
-                    ))}
-                  </select>
+                    placeholder="None (Admin Only)"
+                    options={[{ value: '', label: 'None (Admin Only)' }, ...departments.map(d => ({ value: d._id, label: d.name }))]}
+                  />
                 </div>
               </div>
 
               <div className="space-y-1">
                 <span className="uppercase text-[10px]">Program Access Context</span>
-                <select
+                <SearchableSelect
+                  name="programId"
                   value={userModal.data.programId}
                   onChange={(e) => setUserModal({ ...userModal, data: { ...userModal.data, programId: e.target.value } })}
-                  className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                >
-                  <option value="">None</option>
-                  {programs.map(p => (
-                    <option key={p._id} value={p._id}>{p.name}</option>
-                  ))}
-                </select>
+                  placeholder="Universal Context (All Programs)"
+                  options={[{ value: '', label: 'Universal Context (All Programs)' }, ...programs.filter(p => !userModal.data.departmentId || p.departmentId?._id === userModal.data.departmentId || p.departmentId === userModal.data.departmentId).map(p => ({ value: p._id, label: p.name }))]}
+                />
               </div>
 
               <div className="flex gap-3 pt-3">
