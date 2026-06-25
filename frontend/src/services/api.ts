@@ -198,9 +198,18 @@ export const api = {
     }
   },
   curriculum: {
-    getFull: (regulationId: string) => apiRequest(`/api/curriculum/${regulationId}`),
-    getSummary: (regulationId: string) => apiRequest(`/api/curriculum/${regulationId}/summary`),
-    getSemester: (regulationId: string, sem: number) => apiRequest(`/api/curriculum/${regulationId}/semester/${sem}`)
+    getFull: (regulationId: string, departmentId?: string) => {
+      const qs = departmentId ? `?departmentId=${departmentId}` : '';
+      return apiRequest(`/api/curriculum/${regulationId}${qs}`);
+    },
+    getSummary: (regulationId: string, departmentId?: string) => {
+      const qs = departmentId ? `?departmentId=${departmentId}` : '';
+      return apiRequest(`/api/curriculum/${regulationId}/summary${qs}`);
+    },
+    getSemester: (regulationId: string, sem: number, departmentId?: string) => {
+      const qs = departmentId ? `?departmentId=${departmentId}` : '';
+      return apiRequest(`/api/curriculum/${regulationId}/semester/${sem}${qs}`);
+    }
   },
   minorStreams: {
     list: (params: any = {}) => {

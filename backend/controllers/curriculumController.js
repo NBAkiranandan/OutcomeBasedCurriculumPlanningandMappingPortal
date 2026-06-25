@@ -54,30 +54,35 @@ const buildCategorySummary = (versions) => {
 export const getCurriculumByRegulation = async (req, res, next) => {
   try {
     const { regulationId } = req.params;
+    const { departmentId } = req.query;
     const regulation = await Regulation.findOne({ _id: regulationId, isDeleted: { $ne: true } }).populate('programId');
     if (!regulation) {
       return res.status(404).json({ message: 'Regulation not found.' });
     }
 
+    const matchQuery = departmentId ? { departmentId } : {};
+
     const versions = await CourseVersion.find({ regulationId, isDeleted: { $ne: true } })
-      .populate({ path: 'courseId', populate: { path: 'departmentId' } })
+      .populate({ path: 'courseId', match: matchQuery, populate: { path: 'departmentId' } })
       .sort({ semester: 1, 'courseId.code': 1 });
 
+    const filteredVersions = departmentId ? versions.filter(v => v.courseId) : versions;
+
     const semesters = Array.from({ length: regulation.semesterCount }, (_, index) => ({ semester: index + 1, courses: [] }));
-    versions.forEach((version) => {
+    filteredVersions.forEach((version) => {
       const semesterIndex = Math.max(0, Math.min(regulation.semesterCount - 1, (version.semester || 1) - 1));
       semesters[semesterIndex].courses.push(formatVersion(version));
     });
 
-    const department = versions[0]?.courseId?.departmentId
+    const department = filteredVersions[0]?.courseId?.departmentId
       ? {
-          _id: versions[0].courseId.departmentId._id,
-          name: versions[0].courseId.departmentId.name,
-          code: versions[0].courseId.departmentId.code
+          _id: filteredVersions[0].courseId.departmentId._id,
+          name: filteredVersions[0].courseId.departmentId.name,
+          code: filteredVersions[0].courseId.departmentId.code
         }
       : null;
 
-    const totalCredits = versions.reduce((sum, version) => sum + (version.credits?.C || 0), 0);
+    const totalCredits = filteredVersions.reduce((sum, version) => sum + (version.credits?.C || 0), 0);
 
     return res.status(200).json({
       regulation: {
@@ -92,7 +97,7 @@ export const getCurriculumByRegulation = async (req, res, next) => {
       department,
       semesters,
       totalCredits,
-      courseCount: versions.length
+      courseCount: filteredVersions.length
     });
   } catch (error) {
     return next(error);
@@ -102,13 +107,19 @@ export const getCurriculumByRegulation = async (req, res, next) => {
 export const getCurriculumSummary = async (req, res, next) => {
   try {
     const { regulationId } = req.params;
+    const { departmentId } = req.query;
     const regulation = await Regulation.findOne({ _id: regulationId, isDeleted: { $ne: true } }).populate('programId');
     if (!regulation) {
       return res.status(404).json({ message: 'Regulation not found.' });
     }
 
-    const versions = await CourseVersion.find({ regulationId, isDeleted: { $ne: true } }).sort({ semester: 1, 'courseId.code': 1 });
-    const semesterSummaries = buildCategorySummary(versions);
+    const matchQuery = departmentId ? { departmentId } : {};
+    const versions = await CourseVersion.find({ regulationId, isDeleted: { $ne: true } })
+      .populate({ path: 'courseId', match: matchQuery })
+      .sort({ semester: 1, 'courseId.code': 1 });
+
+    const filteredVersions = departmentId ? versions.filter(v => v.courseId) : versions;
+    const semesterSummaries = buildCategorySummary(filteredVersions);
     const cumulativeTotals = semesterSummaries.reduce((acc, sem) => {
       Object.entries(sem.categoryCredits).forEach(([category, credits]) => {
         acc[category] = (acc[category] || 0) + credits;
@@ -137,17 +148,20 @@ export const getCurriculumSummary = async (req, res, next) => {
 export const getSemesterCourses = async (req, res, next) => {
   try {
     const { regulationId, semester } = req.params;
+    const { departmentId } = req.query;
     const regulation = await Regulation.findOne({ _id: regulationId, isDeleted: { $ne: true } });
     if (!regulation) {
       return res.status(404).json({ message: 'Regulation not found.' });
     }
 
+    const matchQuery = departmentId ? { departmentId } : {};
     const semesterNumber = Number(semester);
     const versions = await CourseVersion.find({ regulationId, semester: semesterNumber, isDeleted: { $ne: true } })
-      .populate({ path: 'courseId', populate: { path: 'departmentId' } })
+      .populate({ path: 'courseId', match: matchQuery, populate: { path: 'departmentId' } })
       .sort({ 'courseId.code': 1 });
 
-    const courses = versions.map(formatVersion);
+    const filteredVersions = departmentId ? versions.filter(v => v.courseId) : versions;
+    const courses = filteredVersions.map(formatVersion);
     return res.status(200).json({ semester: semesterNumber, courses });
   } catch (error) {
     return next(error);

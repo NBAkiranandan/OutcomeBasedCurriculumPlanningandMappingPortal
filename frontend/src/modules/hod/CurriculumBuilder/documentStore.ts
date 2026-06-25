@@ -49,7 +49,7 @@ export interface CurriculumBuilderState {
 
   // Actions
   setField: (field: keyof CurriculumBuilderState, value: any) => void;
-  loadCurriculum: (regulationId: string) => Promise<void>;
+  loadCurriculum: (regulationId: string, departmentId?: string) => Promise<void>;
   updatePeo: (index: number, value: string) => void;
   addPeo: () => void;
   removePeo: (index: number) => void;
@@ -100,11 +100,11 @@ export const useCurriculumBuilderStore = create<CurriculumBuilderState>((set) =>
   error: null,
 
   setField: (field, value) => set({ [field]: value, lastSaved: new Date() }),
-  loadCurriculum: async (regulationId) => {
+  loadCurriculum: async (regulationId, departmentId) => {
     set({ isLoading: true, error: null });
 
     try {
-      const data = await api.curriculum.getFull(regulationId);
+      const data = await api.curriculum.getFull(regulationId, departmentId);
       const semesters = (data.semesters || []).map((semester: any) => ({
         semester: semester.semester,
         courses: (semester.courses || []).map((course: any) => ({
