@@ -2032,7 +2032,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                                     <Eye className="w-3.5 h-3.5" />
                                     View
                                   </button>
-                                  </button>
                                   {review.status !== 'Published' && review.status !== 'Archived' && (
                                     <button
                                       onClick={() => handlePublishCurriculumBook(reg._id, dept._id)}

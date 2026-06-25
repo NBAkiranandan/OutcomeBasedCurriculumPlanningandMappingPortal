@@ -88,14 +88,13 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ activeTab, s
           v.regulationId?._id === selectedRegulation._id || v.regulationId === selectedRegulation._id
         );
         
-        // Faculty should see only assigned, approved courses
-        const approved = regVersions.filter((v: any) => v.status === 'Approved');
-        setApprovedCourses(approved);
-        setFinalizedCount(approved.length);
+        // Faculty should see assigned courses
+        setApprovedCourses(regVersions);
+        setFinalizedCount(regVersions.length);
         
-        if (approved.length > 0 && (!selectedCourseId || !approved.some((v: any) => v._id === selectedCourseId))) {
-          setSelectedCourseId(approved[0]._id);
-          setSelectedCourseCode(approved[0].courseId?.code);
+        if (regVersions.length > 0 && (!selectedCourseId || !regVersions.some((v: any) => v._id === selectedCourseId))) {
+          setSelectedCourseId(regVersions[0]._id);
+          setSelectedCourseCode(regVersions[0].courseId?.code);
         }
 
         // Fetch regulation-scoped PEOs, PSOs and POs from the same source HOD edits.
