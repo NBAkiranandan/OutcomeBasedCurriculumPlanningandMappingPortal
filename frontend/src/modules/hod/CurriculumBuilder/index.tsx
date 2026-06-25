@@ -15,7 +15,7 @@ export const CurriculumBuilder: React.FC<{ readOnly?: boolean }> = ({ readOnly =
   useEffect(() => {
     const syncData = async () => {
       if (selectedRegulation) {
-        await store.loadCurriculum(selectedRegulation._id);
+        await store.loadCurriculum(selectedRegulation._id, selectedDepartment?._id);
         store.setField('regulation', selectedRegulation.code);
         store.setField('academicYear', `${selectedRegulation.academicYear}-${selectedRegulation.academicYear + 1}`);
       }
