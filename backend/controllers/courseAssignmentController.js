@@ -67,7 +67,7 @@ export const getMyAssignedCourseVersions = async (req, res, next) => {
         semester: assignment.semester
       });
 
-      if (!version || version.status !== 'Approved') continue;
+      if (!version) continue;
       const versionId = String(version._id);
       if (seenVersionIds.has(versionId)) continue;
       seenVersionIds.add(versionId);
@@ -110,6 +110,34 @@ export const createAssignment = async (req, res, next) => {
       return res.status(400).json({ message: 'Course is not mapped to the selected regulation and semester.' });
     }
     
+    const existingAssignment = await CourseAssignment.findOne({
+      facultyId,
+      courseId,
+      academicYear,
+      semester,
+      section
+    });
+
+    if (existingAssignment) {
+      if (existingAssignment.isDeleted) {
+        existingAssignment.isDeleted = false;
+        existingAssignment.is_active = true;
+        existingAssignment.departmentId = targetDepartmentId;
+        existingAssignment.regulationId = courseVer.regulationId?._id || courseVer.regulationId;
+        existingAssignment.updated_by = req.user.id;
+        await existingAssignment.save();
+        
+        await AuditLog.create({
+          userId: req.user.id, userName: req.user.name, userEmail: req.user.email,
+          action: 'RESTORE_COURSE_ASSIGNMENT', details: `Restored previously deleted course assignment for faculty`, category: 'Academic'
+        });
+        
+        return res.status(200).json({ assignment: existingAssignment, message: 'Faculty assigned successfully.' });
+      } else {
+        return res.status(400).json({ message: 'This exact assignment already exists and is active.' });
+      }
+    }
+
     const newAssignment = new CourseAssignment({
       facultyId,
       courseId,

@@ -18,7 +18,6 @@ import {
 import Select from 'react-select';
 import { PDFDocument, rgb } from 'pdf-lib';
 import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, BorderStyle, WidthType } from 'docx';
-import CurriculumBuilder from '../hod/CurriculumBuilder';
 import { CurriculumBookGenerator } from '../../components/common/CurriculumBookGenerator';
 import { useContextStore } from '../../store/contextStore';
 
@@ -31,9 +30,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
   const { user } = useAuthStore();
   const { selectedRegulation, selectedDepartment, setSelectedProgram, setSelectedDepartment, setSelectedRegulation } = useContextStore();
   
-  // Curriculum Books & Builder Directory state
+  // Curriculum Books Directory state
   const [bookViewMode, setBookViewMode] = useState<'directory' | 'view'>('directory');
-  const [builderViewMode, setBuilderViewMode] = useState<'directory' | 'edit'>('directory');
   const [selectedDirProgram, setSelectedDirProgram] = useState<string | null>(null);
 
   // Global context & state
@@ -1964,24 +1962,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
               </button>
               <CurriculumBookGenerator />
             </div>
-          ) : builderViewMode === 'edit' ? (
-            <div className="space-y-4 animate-fadeIn">
-              <button
-                onClick={() => setBuilderViewMode('directory')}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 font-semibold cursor-pointer w-fit"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back to Directory
-              </button>
-              <div className="h-[calc(100vh-140px)]">
-                <CurriculumBuilder />
-              </div>
-            </div>
           ) : (
             <div className="space-y-6">
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                 <h2 className="text-xl font-extrabold text-slate-800">Curriculum Management Directory</h2>
-                <p className="text-sm text-slate-500 mt-1">Select a program to browse its departments and access the builder or generated curriculum books.</p>
+                <p className="text-sm text-slate-500 mt-1">Select a program to browse its departments and access generated curriculum books.</p>
 
                 {/* Program Selector */}
                 <div className="mt-6 flex flex-wrap gap-3">
@@ -2041,26 +2026,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                                       setSelectedDepartment(dept);
                                       setSelectedRegulation(reg);
                                       setBookViewMode('view');
-                                      setBuilderViewMode('directory');
                                     }}
                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors cursor-pointer"
                                   >
                                     <Eye className="w-3.5 h-3.5" />
                                     View
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      const prog = programs.find((p) => p._id === selectedDirProgram);
-                                      if (prog) setSelectedProgram(prog);
-                                      setSelectedDepartment(dept);
-                                      setSelectedRegulation(reg);
-                                      setBuilderViewMode('edit');
-                                      setBookViewMode('directory');
-                                    }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-100 transition-colors cursor-pointer"
-                                  >
-                                    <Edit3 className="w-3.5 h-3.5" />
-                                    Edit
                                   </button>
                                   {review.status !== 'Published' && review.status !== 'Archived' && (
                                     <button

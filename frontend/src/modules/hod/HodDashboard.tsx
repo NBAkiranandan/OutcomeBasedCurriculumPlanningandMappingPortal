@@ -1127,7 +1127,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
         prerequisites: editCourseData.prerequisites ? [editCourseData.prerequisites] : []
       });
 
-      if (editCourseData.coordinatorId && editCourseData.coordinatorId !== (approvalEditModal.version.coordinatorId?._id || approvalEditModal.version.coordinatorId)) {
+      if (editCourseData.coordinatorId && editCourseData.coordinatorId !== (approvalEditModal.version.assignedCoordinator?._id || approvalEditModal.version.assignedCoordinator)) {
         await api.courses.assign({
           courseVersionId: approvalEditModal.version._id,
           coordinatorId: editCourseData.coordinatorId
@@ -1888,7 +1888,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                                     description: v.description || '',
                                     offeredFor: v.offeredFor || ['CSE'],
                                     objectives: v.objectives?.length ? v.objectives : [''],
-                                    coordinatorId: v.coordinatorId?._id || v.coordinatorId || '',
+                                    coordinatorId: v.assignedCoordinator?._id || v.assignedCoordinator || '',
                                     prerequisites: v.prerequisites?.[0] || ''
                                   });
                                   setApprovalEditModal({ open: true, version: v });
@@ -2763,7 +2763,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                             description: v.description || '',
                             offeredFor: v.offeredFor || ['CSE'],
                             objectives: v.objectives?.length ? v.objectives : [''],
-                            coordinatorId: v.coordinatorId?._id || v.coordinatorId || '',
+                            coordinatorId: v.assignedCoordinator?._id || v.assignedCoordinator || '',
                             prerequisites: v.prerequisites?.[0] || ''
                           });
                           setApprovalEditModal({ open: true, version: v });
