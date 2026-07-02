@@ -11,6 +11,7 @@ const MinorDegreeSchema = new mongoose.Schema({
   currentCredits: { type: Number, default: 0 },
   eligibility: { type: String, default: '' },
   status: { type: String, enum: ['Draft', 'Published'], default: 'Draft' },
+  displayOrder: { type: Number, default: 0 },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   isDeleted: { type: Boolean, default: false },
   deletedAt: { type: Date }

@@ -19,6 +19,7 @@ export const CurriculumBookGenerator: React.FC = () => {
   const [prereqLinks, setPrereqLinks] = useState<any[]>([]);
   const [minorStreams, setMinorStreams] = useState<any[]>([]);
   const [publishedMinorDegrees, setPublishedMinorDegrees] = useState<any>({});
+  const [deptMinorDegrees, setDeptMinorDegrees] = useState<any[]>([]);
   const [dbCategories, setDbCategories] = useState<any[]>([]);
   // Export state
   const [pdfExporting, setPdfExporting] = useState(false);
@@ -95,6 +96,11 @@ export const CurriculumBookGenerator: React.FC = () => {
         const pbRes = await api.minorDegrees.getAllPublished({ regulationId: selectedRegulation._id });
         setPublishedMinorDegrees(pbRes.publishedMinorDegrees || {});
       } catch (e) { console.error('Failed to load published minor degrees', e); }
+
+      try {
+        const dmdRes = await api.minorDegrees.list({ departmentId: selectedDepartment._id, regulationId: selectedRegulation._id });
+        setDeptMinorDegrees(dmdRes.minorDegrees || []);
+      } catch (e) { console.error('Failed to load dept minor degrees', e); }
 
       try {
         const catRes = await api.courseCategories.list();
@@ -407,25 +413,21 @@ export const CurriculumBookGenerator: React.FC = () => {
                 <h3>{programDetails?.degree || 'B.Tech'} ({selectedDepartment?.code || 'CSE'}) Program Curriculum-{selectedRegulation?.academicYear || '2024'}</h3>
                 <p style={{ textAlign: 'center' }}>(Applicable for the batches admitted from the A.Y. {selectedRegulation?.academicYear || '2024'}-{String((selectedRegulation?.academicYear || 2024) + 1).slice(-2)})</p>
                 <h4>UG Programs Offered</h4>
+                <p style={{ fontWeight: 'bold', marginBottom: '4px' }}>B.Tech in</p>
                 <ul className="pdf-arrow-list">
-                  <li>B. Tech in ({selectedDepartment?.name || 'Computer Science and Engineering'})</li>
-                  <li>B. Tech in ({selectedDepartment?.name || 'Computer Science and Engineering'}) with
-                    <ul className="pdf-bullet-list">
-                      {minorStreams.length > 0
-                        ? minorStreams.map((stream) => <li key={stream._id}>Minor degree in {stream.name}</li>)
-                        : <>
-                          <li>Minor degree in Civil Engineering</li>
-                          <li>Minor degree in Electrical and Electronics Engineering</li>
-                          <li>Minor degree in Mechanical Engineering</li>
-                        </>
-                      }
-                    </ul>
-                  </li>
+                  <li>({selectedDepartment?.name || 'Computer Science and Engineering'})</li>
+                  {deptMinorDegrees.map((md: any) => (
+                    <li key={md._id}>
+                      ({selectedDepartment?.name || 'Computer Science and Engineering'}) with a Minor Degree in {md.minorName}
+                    </li>
+                  ))}
                 </ul>
-                <h4>Minor Streams offered in {programDetails?.degree || 'B.Tech'} ({selectedDepartment?.name || 'Computer Science and Engineering'})</h4>
+                <h4>Minor Streams offered in Undergraduate ({selectedDepartment?.name || 'Computer Science and Engineering'})</h4>
                 <ul className="pdf-bullet-list">
                   {minorStreams.length > 0
-                    ? minorStreams.map((stream) => <li key={stream._id}>Minor Stream in {stream.name}</li>)
+                    ? minorStreams.map((stream: any) => (
+                        <li key={stream._id}>{stream.name}</li>
+                      ))
                     : <li>Minor streams will be listed after configuration.</li>}
                 </ul>
               </div>
@@ -1000,7 +1002,65 @@ export const CurriculumBookGenerator: React.FC = () => {
               </PdfPage>
             )}
             {prereqLinks.length > 0 && <div className="page-break"></div>}
-            {courseVersions.map((v) => renderPdfSyllabusCourse(v))}
+            
+            {/* MINOR STREAM COURSE STRUCTURE TABLES */}
+            {minorStreams.length > 0 && minorStreams.map((stream: any) => (
+              <React.Fragment key={stream._id}>
+                <div className="page-break"></div>
+                <PdfPage>
+                  <h3 className="pdf-section-title" style={{ textAlign: 'center', marginBottom: '16px' }}>
+                    Course Structure for {stream.name} (Minor Stream)
+                  </h3>
+                  <table className="pdf-grid-table">
+                    <thead>
+                      <tr>
+                        <th>Course Code</th>
+                        <th>Course Title</th>
+                        <th>Level</th>
+                        <th>L</th>
+                        <th>T</th>
+                        <th>P</th>
+                        <th>Credits</th>
+                        <th>CIE</th>
+                        <th>SEE</th>
+                        <th>Total</th>
+                        <th>Prerequisite</th>
+                        <th>Sem</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stream.streamCourses && stream.streamCourses.length > 0 ? (
+                        stream.streamCourses
+                          .sort((a: any, b: any) => (a.courseOrder || 0) - (b.courseOrder || 0))
+                          .map((c: any) => (
+                            <tr key={c._id}>
+                              <td>{c.courseCode}</td>
+                              <td className="text-left" style={{ fontWeight: 'bold' }}>{c.courseName}</td>
+                              <td>{c.level || '-'}</td>
+                              <td>{c.L}</td>
+                              <td>{c.T}</td>
+                              <td>{c.P}</td>
+                              <td>{c.credits}</td>
+                              <td>{c.cie}</td>
+                              <td>{c.see}</td>
+                              <td>{c.total}</td>
+                              <td>{c.prerequisite || '-'}</td>
+                              <td>{c.semester || '-'}</td>
+                            </tr>
+                          ))
+                      ) : (
+                        <tr>
+                          <td colSpan={12} className="text-center italic text-slate-500">No courses defined for this stream yet.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </PdfPage>
+              </React.Fragment>
+            ))}
+            
+            {minorStreams.length > 0 && <div className="page-break"></div>}
+{courseVersions.map((v) => renderPdfSyllabusCourse(v))}
           </div>
         </div>
       </div>

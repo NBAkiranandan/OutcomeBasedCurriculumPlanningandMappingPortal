@@ -11,4 +11,9 @@ router.post('/', authorizeRoles('Admin', 'HOD'), minorStreamController.createMin
 router.put('/:id', authorizeRoles('Admin', 'HOD'), minorStreamController.updateMinorStream);
 router.delete('/:id', authorizeRoles('Admin', 'HOD'), minorStreamController.deleteMinorStream);
 
+// Minor Stream Courses CRUD (Admin, HOD)
+router.post('/:minorStreamId/courses', authorizeRoles('Admin', 'HOD'), minorStreamController.addStreamCourse);
+router.put('/courses/:id', authorizeRoles('Admin', 'HOD'), minorStreamController.updateStreamCourse);
+router.delete('/courses/:id', authorizeRoles('Admin', 'HOD'), minorStreamController.deleteStreamCourse);
+
 export default router;

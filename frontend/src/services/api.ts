@@ -218,7 +218,10 @@ export const api = {
     },
     create: (body: any) => apiRequest('/api/minor-streams', { method: 'POST', body: JSON.stringify(body) }),
     update: (id: string, body: any) => apiRequest(`/api/minor-streams/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
-    delete: (id: string) => apiRequest(`/api/minor-streams/${id}`, { method: 'DELETE' })
+    delete: (id: string) => apiRequest(`/api/minor-streams/${id}`, { method: 'DELETE' }),
+    addCourse: (minorStreamId: string, body: any) => apiRequest(`/api/minor-streams/${minorStreamId}/courses`, { method: 'POST', body: JSON.stringify(body) }),
+    updateCourse: (courseId: string, body: any) => apiRequest(`/api/minor-streams/courses/${courseId}`, { method: 'PUT', body: JSON.stringify(body) }),
+    deleteCourse: (courseId: string) => apiRequest(`/api/minor-streams/courses/${courseId}`, { method: 'DELETE' })
   },
   minorDegrees: {
     list: (params: any = {}) => {
@@ -234,6 +237,7 @@ export const api = {
     update: (id: string, body: any) => apiRequest(`/api/minor-degrees/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
     delete: (id: string) => apiRequest(`/api/minor-degrees/${id}`, { method: 'DELETE' }),
     publish: (id: string) => apiRequest(`/api/minor-degrees/${id}/publish`, { method: 'POST' }),
+    unpublish: (id: string) => apiRequest(`/api/minor-degrees/${id}/unpublish`, { method: 'POST' }),
     addCourse: (minorDegreeId: string, body: any) => apiRequest(`/api/minor-degrees/${minorDegreeId}/courses`, { method: 'POST', body: JSON.stringify(body) }),
     updateCourse: (courseId: string, body: any) => apiRequest(`/api/minor-degrees/courses/${courseId}`, { method: 'PUT', body: JSON.stringify(body) }),
     deleteCourse: (courseId: string) => apiRequest(`/api/minor-degrees/courses/${courseId}`, { method: 'DELETE' })

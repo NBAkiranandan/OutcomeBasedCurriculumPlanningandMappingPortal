@@ -92,7 +92,7 @@ export const getAllPublished = async (req, res, next) => {
 
 export const createMinorDegree = async (req, res, next) => {
   try {
-    const { minorName, regulationId, departmentId, description, requiredCredits, eligibility } = req.body;
+    const { minorName, regulationId, departmentId, description, requiredCredits, eligibility, displayOrder } = req.body;
 
     if (await isRegulationLocked(regulationId)) {
       return res.status(423).json({ message: 'Cannot create minor degree. Regulation is locked.' });
@@ -111,6 +111,7 @@ export const createMinorDegree = async (req, res, next) => {
       requiredCredits,
       eligibility,
       status: 'Draft',
+      displayOrder: displayOrder || 0,
       createdBy: req.user.id
     });
 
@@ -134,7 +135,7 @@ export const createMinorDegree = async (req, res, next) => {
 
 export const updateMinorDegree = async (req, res, next) => {
   try {
-    const { minorName, description, requiredCredits, eligibility } = req.body;
+    const { minorName, description, requiredCredits, eligibility, displayOrder } = req.body;
     const minor = await MinorDegree.findOne({ _id: req.params.id, isDeleted: { $ne: true } });
 
     if (!minor) return res.status(404).json({ message: 'Minor Degree not found' });
@@ -143,9 +144,10 @@ export const updateMinorDegree = async (req, res, next) => {
     }
 
     minor.minorName = minorName || minor.minorName;
-    minor.description = description !== undefined ? description : minor.description;
-    minor.requiredCredits = requiredCredits || minor.requiredCredits;
-    minor.eligibility = eligibility !== undefined ? eligibility : minor.eligibility;
+    if (description !== undefined) minor.description = description;
+    if (requiredCredits !== undefined) minor.requiredCredits = requiredCredits;
+    if (eligibility !== undefined) minor.eligibility = eligibility;
+    if (displayOrder !== undefined) minor.displayOrder = displayOrder;
     minor.status = 'Draft'; // Editing drops it back to Draft
 
     await minor.save();
@@ -224,6 +226,38 @@ export const publishMinorDegree = async (req, res, next) => {
     });
 
     return res.status(200).json({ message: 'Minor Degree published successfully', minorDegree: minor });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const unpublishMinorDegree = async (req, res, next) => {
+  try {
+    const minor = await MinorDegree.findOne({ _id: req.params.id, isDeleted: { $ne: true } });
+    if (!minor) return res.status(404).json({ message: 'Minor Degree not found.' });
+
+    // HOD validation
+    if (req.user.role === 'HOD' && minor.departmentId.toString() !== req.user.departmentId.toString()) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    if (await isRegulationLocked(minor.regulationId)) {
+      return res.status(423).json({ message: 'Cannot deactivate minor degree. Regulation is locked.' });
+    }
+
+    minor.status = 'Draft';
+    await minor.save();
+
+    await AuditLog.create({
+      userId: req.user.id,
+      userName: req.user.name,
+      userEmail: req.user.email,
+      action: 'UNPUBLISH_MINOR_DEGREE',
+      details: `Deactivated Minor Degree: ${minor.minorName}`,
+      category: 'Academic'
+    });
+
+    return res.status(200).json({ message: 'Minor Degree deactivated successfully', minorDegree: minor });
   } catch (error) {
     return next(error);
   }

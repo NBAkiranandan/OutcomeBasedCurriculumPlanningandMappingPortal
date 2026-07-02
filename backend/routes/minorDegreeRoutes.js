@@ -17,6 +17,7 @@ router.delete('/:id', authorizeRoles('Admin', 'HOD'), minorDegreeController.dele
 
 // Publish endpoint
 router.post('/:id/publish', authorizeRoles('Admin', 'HOD'), minorDegreeController.publishMinorDegree);
+router.post('/:id/unpublish', authorizeRoles('Admin', 'HOD'), minorDegreeController.unpublishMinorDegree);
 
 // Minor Degree Courses CRUD (Admin, HOD)
 router.post('/:minorDegreeId/courses', authorizeRoles('Admin', 'HOD'), minorDegreeController.addCourse);

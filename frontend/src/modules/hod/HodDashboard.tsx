@@ -38,7 +38,12 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   const [prereqs, setPrereqs] = useState<any[]>([]);
   const [minorStreamModalOpen, setMinorStreamModalOpen] = useState(false);
   const [editingMinorStream, setEditingMinorStream] = useState<any | null>(null);
-  const defaultMinorStreamData = { streamCode: '', name: '', description: '', requiredCredits: 18, status: 'Draft', courses: [] as string[] };
+  const defaultMinorStreamData = { streamCode: '', name: '', description: '', requiredCredits: 18, status: 'Draft', minorDegreeId: '', displayOrder: 0 };
+  const [minorStreamCoursesModalOpen, setMinorStreamCoursesModalOpen] = useState(false);
+  const [activeMinorStream, setActiveMinorStream] = useState<any | null>(null);
+  const defaultMinorStreamCourseData = { courseCode: '', courseName: '', credits: 3, semester: 'Semester 4', courseType: 'MSC', level: 1, L: 3, T: 0, P: 0, cie: 40, see: 60, total: 100, prerequisite: '-', courseOrder: 0 };
+  const [newMinorStreamCourseData, setNewMinorStreamCourseData] = useState(defaultMinorStreamCourseData);
+  const [editingMinorStreamCourse, setEditingMinorStreamCourse] = useState<any | null>(null);
   const [newMinorStreamData, setNewMinorStreamData] = useState(defaultMinorStreamData);
 
   const [addPrereqOpen, setAddPrereqOpen] = useState(false);
@@ -48,7 +53,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   const [minorDegrees, setMinorDegrees] = useState<any[]>([]);
   const [minorDegreeModalOpen, setMinorDegreeModalOpen] = useState(false);
   const [editingMinorDegree, setEditingMinorDegree] = useState<any | null>(null);
-  const defaultMinorDegreeData = { minorName: '', description: '', requiredCredits: 18, eligibility: '' };
+  const defaultMinorDegreeData = { minorName: '', description: '', requiredCredits: 18, eligibility: '', displayOrder: 0 };
   const [newMinorDegreeData, setNewMinorDegreeData] = useState(defaultMinorDegreeData);
   const [minorDegreeCoursesModalOpen, setMinorDegreeCoursesModalOpen] = useState(false);
   const [activeMinorDegree, setActiveMinorDegree] = useState<any | null>(null);
@@ -505,6 +510,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
         description: newMinorDegreeData.description,
         requiredCredits: newMinorDegreeData.requiredCredits,
         eligibility: newMinorDegreeData.eligibility,
+        displayOrder: newMinorDegreeData.displayOrder,
         regulationId: selectedRegulation._id,
         departmentId: selectedDepartment._id
       };
@@ -543,6 +549,48 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
       loadData();
     } catch (err: any) {
       alert(`Failed to publish: ${err.message}`);
+    }
+  };
+
+  const handleUnpublishMinorDegree = async (id: string) => {
+    if (!confirm('Are you sure you want to unpublish this Minor Degree? It will revert to Draft status and disappear from the Curriculum Book.')) return;
+    try {
+      await api.minorDegrees.unpublish(id);
+      alert('Minor Degree unpublished successfully!');
+      loadData();
+    } catch (err: any) {
+      alert(`Failed to unpublish: ${err.message}`);
+    }
+  };
+
+  const handleSaveMinorStreamCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeMinorStream) return;
+    try {
+      const payload = { ...newMinorStreamCourseData };
+      if (editingMinorStreamCourse) {
+        await api.minorStreams.updateCourse(editingMinorStreamCourse._id, payload);
+        alert('Stream Course updated successfully!');
+      } else {
+        await api.minorStreams.addCourse(activeMinorStream._id, payload);
+        alert('Stream Course added successfully!');
+      }
+      setEditingMinorStreamCourse(null);
+      setNewMinorStreamCourseData(defaultMinorStreamCourseData);
+      loadData();
+    } catch (err: any) {
+      alert(`Failed to save stream course: ${err.message}`);
+    }
+  };
+
+  const handleDeleteMinorStreamCourse = async (courseId: string) => {
+    if (!confirm('Are you sure you want to remove this course from the Minor Stream?')) return;
+    try {
+      await api.minorStreams.deleteCourse(courseId);
+      alert('Course removed from minor stream.');
+      loadData();
+    } catch (err: any) {
+      alert(`Failed to remove course: ${err.message}`);
     }
   };
 
@@ -596,7 +644,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
         description: newMinorStreamData.description,
         requiredCredits: newMinorStreamData.requiredCredits,
         status: newMinorStreamData.status,
-        courses: newMinorStreamData.courses,
+        minorDegreeId: newMinorStreamData.minorDegreeId || null,
+        displayOrder: newMinorStreamData.displayOrder || 0,
         regulationId: selectedRegulation._id,
         departmentId: selectedDepartment._id
       };
@@ -2876,7 +2925,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                             minorName: minor.minorName,
                             description: minor.description,
                             requiredCredits: minor.requiredCredits,
-                            eligibility: minor.eligibility
+                            eligibility: minor.eligibility,
+                            displayOrder: minor.displayOrder || 0
                           });
                           setMinorDegreeModalOpen(true);
                         }}
@@ -2892,6 +2942,15 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                           title="Publish"
                         >
                           <CheckCircle2 className="w-4 h-4" />
+                        </button>
+                      )}
+                      {minor.status === 'Published' && (
+                        <button
+                          onClick={() => handleUnpublishMinorDegree(minor._id)}
+                          className="p-1.5 text-amber-600 hover:bg-amber-50 rounded transition-colors"
+                          title="Unpublish (Deactivate)"
+                        >
+                          <RotateCw className="w-4 h-4" />
                         </button>
                       )}
                       <button
@@ -2979,7 +3038,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                             description: stream.description || '',
                             requiredCredits: stream.requiredCredits || 18,
                             status: stream.status || 'Draft',
-                            courses: stream.courses.map((c: any) => typeof c === 'object' ? c._id : c)
+                            minorDegreeId: stream.minorDegreeId?._id || stream.minorDegreeId || '',
+                            displayOrder: stream.displayOrder || 0
                           });
                           setMinorStreamModalOpen(true);
                         }}
@@ -4639,6 +4699,15 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                     onChange={e => setNewMinorDegreeData({ ...newMinorDegreeData, eligibility: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
                     placeholder="e.g. Minimum CGPA of 7.5"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Display Order</label>
+                  <input
+                    type="number"
+                    value={newMinorDegreeData.displayOrder}
+                    onChange={e => setNewMinorDegreeData({ ...newMinorDegreeData, displayOrder: Number(e.target.value) })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
               </div>
