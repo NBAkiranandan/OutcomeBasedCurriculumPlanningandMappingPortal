@@ -3047,7 +3047,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                   <span className="uppercase text-[10px]">User Role</span>
                   <select
                     value={userModal.data.role}
-                    onChange={(e) => setUserModal({ ...userModal, data: { ...userModal.data, role: e.target.value } })}
+                    onChange={(e) => {
+                      const newRole = e.target.value;
+                      if (newRole === 'Admin') {
+                        setUserModal({ ...userModal, data: { ...userModal.data, role: newRole, departmentId: '', programId: '' } });
+                      } else {
+                        setUserModal({ ...userModal, data: { ...userModal.data, role: newRole } });
+                      }
+                    }}
                     className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none focus:ring-1 focus:ring-blue-500 bg-white"
                     required
                   >
@@ -3065,6 +3072,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                     onChange={(e) => setUserModal({ ...userModal, data: { ...userModal.data, departmentId: e.target.value } })}
                     placeholder="None (Admin Only)"
                     options={[{ value: '', label: 'None (Admin Only)' }, ...departments.map(d => ({ value: d._id, label: d.name }))]}
+                    disabled={userModal.data.role === 'Admin'}
                   />
                 </div>
               </div>
@@ -3076,7 +3084,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                   value={userModal.data.programId}
                   onChange={(e) => setUserModal({ ...userModal, data: { ...userModal.data, programId: e.target.value } })}
                   placeholder="Universal Context (All Programs)"
-                  options={[{ value: '', label: 'Universal Context (All Programs)' }, ...programs.filter(p => !userModal.data.departmentId || p.departmentId?._id === userModal.data.departmentId || p.departmentId === userModal.data.departmentId).map(p => ({ value: p._id, label: p.name }))]}
+                  options={[{ value: '', label: 'Universal Context (All Programs)' }, ...programs.filter(p => !userModal.data.departmentId || p._id === (departments.find(d => d._id === userModal.data.departmentId)?.programId?._id || departments.find(d => d._id === userModal.data.departmentId)?.programId)).map(p => ({ value: p._id, label: p.name }))]}
+                  disabled={userModal.data.role === 'Admin'}
                 />
               </div>
 
