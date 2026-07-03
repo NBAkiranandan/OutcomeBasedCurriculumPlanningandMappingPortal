@@ -274,7 +274,12 @@ export const saveSyllabusDraft = async (versionId, updateData, operatorUser) => 
     'onlineResources',
     'objectives',
     'prerequisites',
-    'cieSee'
+    'cieSee',
+    'semester',
+    'category',
+    'level',
+    'credits',
+    'status'
   ];
 
   if (Array.isArray(updateData.syllabusUnits)) {

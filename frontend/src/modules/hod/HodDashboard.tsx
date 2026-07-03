@@ -8,7 +8,7 @@ import {
   CheckCircle2, RotateCw, AlertTriangle, FileText, ChevronRight,
   Sparkles, Save, Edit3, ArrowRightLeft, BookOpen, Trash2, Check, X,
   Download, Eye, KeyRound, Bell, Settings, ArrowLeft, Upload, FileSpreadsheet, Printer, Search, Copy, Lock, Unlock,
-  User, Briefcase, Mail, Cpu, Building2, Phone
+  User, Briefcase, Mail, Cpu, Building2, Phone, List
 } from 'lucide-react';
 import SearchableSelect from '../../components/common/SearchableSelect';
 import { PDFDocument, rgb } from 'pdf-lib';
@@ -642,7 +642,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
         streamCode: newMinorStreamData.streamCode,
         name: newMinorStreamData.name,
         description: newMinorStreamData.description,
-        requiredCredits: newMinorStreamData.requiredCredits,
+        courses: newMinorStreamData.courses,
         status: newMinorStreamData.status,
         minorDegreeId: newMinorStreamData.minorDegreeId || null,
         displayOrder: newMinorStreamData.displayOrder || 0,
@@ -4506,17 +4506,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <span>Required Credits *</span>
-                  <input
-                    type="number"
-                    value={newMinorStreamData.requiredCredits}
-                    onChange={(e) => setNewMinorStreamData({ ...newMinorStreamData, requiredCredits: Number(e.target.value) })}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none focus:ring-1 focus:ring-teal-700 bg-white"
-                    required
-                  />
-                </div>
+              <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-1">
                   <span>Status *</span>
                   <select
@@ -4536,9 +4526,9 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                 <div className="border border-slate-200 rounded-lg p-3 max-h-[200px] overflow-y-auto bg-slate-50 space-y-2">
                   {courses
                     .filter((c) => {
-                      // Only show courses that are assigned to this regulation under MSC/UEC category
+                      // Only show courses that are assigned to this regulation under MSC category
                       return versions.some(
-                        (v) => v.courseId?._id === c._id && ['MSC/UEC', 'MSC', 'UEC'].includes(v.category)
+                        (v) => v.courseId?._id === c._id && v.category?.toLowerCase().includes('msc')
                       );
                     })
                     .map((course) => {
@@ -4560,8 +4550,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                         </label>
                       );
                     })}
-                  {courses.filter(c => versions.some(v => v.courseId?._id === c._id && ['MSC/UEC', 'MSC', 'UEC'].includes(v.category))).length === 0 && (
-                    <p className="text-slate-400 italic text-center py-6 font-normal">No courses categorized as MSC/UEC available in this regulation.</p>
+                  {courses.filter(c => versions.some(v => v.courseId?._id === c._id && v.category?.toLowerCase().includes('msc'))).length === 0 && (
+                    <p className="text-slate-400 italic text-center py-6 font-normal">No courses categorized as MSC available in this regulation.</p>
                   )}
                 </div>
               </div>

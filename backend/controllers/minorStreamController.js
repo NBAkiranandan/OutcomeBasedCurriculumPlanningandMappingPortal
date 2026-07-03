@@ -34,7 +34,7 @@ export const getMinorStreams = async (req, res, next) => {
 
 export const createMinorStream = async (req, res, next) => {
   try {
-    const { streamCode, name, description, requiredCredits, status, departmentId, regulationId, minorDegreeId, displayOrder, syllabus, coPoMapping } = req.body;
+    const { streamCode, name, description, courses, status, departmentId, regulationId, minorDegreeId, displayOrder, syllabus, coPoMapping } = req.body;
     let targetDeptId = departmentId;
     if (req.user.role === 'HOD') {
       targetDeptId = req.user.departmentId || departmentId;
@@ -44,7 +44,7 @@ export const createMinorStream = async (req, res, next) => {
       streamCode,
       name,
       description,
-      requiredCredits: requiredCredits || 18,
+      courses: courses || [],
       status: status || 'Draft',
       departmentId: targetDeptId,
       regulationId,
@@ -75,7 +75,7 @@ export const createMinorStream = async (req, res, next) => {
 export const updateMinorStream = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { streamCode, name, description, requiredCredits, status, minorDegreeId, displayOrder, syllabus, coPoMapping } = req.body;
+    const { streamCode, name, description, courses, status, minorDegreeId, displayOrder, syllabus, coPoMapping } = req.body;
     
     const stream = await MinorStream.findOne({ _id: id, isDeleted: { $ne: true } });
     if (!stream) return res.status(404).json({ message: 'Minor stream not found.' });
@@ -87,7 +87,7 @@ export const updateMinorStream = async (req, res, next) => {
     if (streamCode !== undefined) stream.streamCode = streamCode;
     if (name !== undefined) stream.name = name;
     if (description !== undefined) stream.description = description;
-    if (requiredCredits !== undefined) stream.requiredCredits = requiredCredits;
+    if (courses !== undefined) stream.courses = courses;
     if (status !== undefined) stream.status = status;
     if (minorDegreeId !== undefined) stream.minorDegreeId = minorDegreeId;
     if (displayOrder !== undefined) stream.displayOrder = displayOrder;

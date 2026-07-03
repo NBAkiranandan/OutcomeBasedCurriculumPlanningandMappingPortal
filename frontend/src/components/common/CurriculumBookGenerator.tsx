@@ -519,7 +519,7 @@ export const CurriculumBookGenerator: React.FC = () => {
                     {(['FC', 'IC', 'AC'] as const).map((levelKey) => {
                       const bgColor = levelKey === 'FC' ? '#d4edda' : levelKey === 'IC' ? '#f8d7da' : '#fff3cd';
                       const levelRows = courseVersions.filter((v: any) => {
-                        if (['MSC', 'MSC/UEC', 'UEC'].includes(v.category)) return false;
+                        if (v.category && v.category.toLowerCase().includes('msc')) return false;
                         const lvl = (v.level || v.courseLevel || v.knowledgeLevel || '');
                         if (levelKey === 'FC') return lvl.includes('FC') || lvl.toLowerCase().includes('foundation') || !lvl;
                         if (levelKey === 'IC') return lvl.includes('IC') || lvl.toLowerCase().includes('intermediate');
@@ -570,7 +570,11 @@ export const CurriculumBookGenerator: React.FC = () => {
                   <div className="pdf-abbrev-col">
                     <p className="pdf-abbrev-level-title">Foundation Level Courses:</p>
                     {courseVersions
-                      .filter((v: any) => { const l = (v.level || v.courseLevel || v.knowledgeLevel || ''); return l.includes('FC') || l.toLowerCase().includes('foundation') || !l; })
+                      .filter((v: any) => {
+                        if (v.category && v.category.toLowerCase().includes('msc')) return false;
+                        const l = (v.level || v.courseLevel || v.knowledgeLevel || '');
+                        return l.includes('FC') || l.toLowerCase().includes('foundation') || !l;
+                      })
                       .map((v: any) => v.courseId?.code
                         ? <p key={v._id} style={{ margin: '2px 0', fontSize: '13px' }}><strong>{v.courseId.keyword || v.courseId.code}</strong> - {v.courseId.title}</p>
                         : null)}
@@ -578,7 +582,11 @@ export const CurriculumBookGenerator: React.FC = () => {
                   <div className="pdf-abbrev-col">
                     <p className="pdf-abbrev-level-title">Intermediate Level Courses:</p>
                     {courseVersions
-                      .filter((v: any) => { const l = (v.level || v.courseLevel || v.knowledgeLevel || ''); return l.includes('IC') || l.toLowerCase().includes('intermediate'); })
+                      .filter((v: any) => {
+                        if (v.category && v.category.toLowerCase().includes('msc')) return false;
+                        const l = (v.level || v.courseLevel || v.knowledgeLevel || '');
+                        return l.includes('IC') || l.toLowerCase().includes('intermediate');
+                      })
                       .map((v: any) => v.courseId?.code
                         ? <p key={v._id} style={{ margin: '2px 0', fontSize: '13px' }}><strong>{v.courseId.keyword || v.courseId.code}</strong> - {v.courseId.title}</p>
                         : null)}
@@ -588,7 +596,11 @@ export const CurriculumBookGenerator: React.FC = () => {
                   <p className="pdf-abbrev-level-title">Advanced Level Courses:</p>
                   <div className="pdf-abbrev-columns">
                     {courseVersions
-                      .filter((v: any) => { const l = (v.level || v.courseLevel || v.knowledgeLevel || ''); return l.includes('AC') || l.toLowerCase().includes('advanced'); })
+                      .filter((v: any) => {
+                        if (v.category && v.category.toLowerCase().includes('msc')) return false;
+                        const l = (v.level || v.courseLevel || v.knowledgeLevel || '');
+                        return l.includes('AC') || l.toLowerCase().includes('advanced');
+                      })
                       .map((v: any) => v.courseId?.code
                         ? <p key={v._id} style={{ margin: '2px 0', fontSize: '13px' }}><strong>{v.courseId.keyword || v.courseId.code}</strong> - {v.courseId.title}</p>
                         : null)}
@@ -1029,23 +1041,27 @@ export const CurriculumBookGenerator: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {stream.streamCourses && stream.streamCourses.length > 0 ? (
-                        stream.streamCourses
-                          .sort((a: any, b: any) => (a.courseOrder || 0) - (b.courseOrder || 0))
-                          .map((c: any) => (
-                            <tr key={c._id}>
-                              <td>{c.courseCode}</td>
-                              <td className="text-left" style={{ fontWeight: 'bold' }}>{c.courseName}</td>
-                              <td>{c.level || '-'}</td>
-                              <td>{c.L}</td>
-                              <td>{c.T}</td>
-                              <td>{c.P}</td>
-                              <td>{c.credits}</td>
-                              <td>{c.cie}</td>
-                              <td>{c.see}</td>
-                              <td>{c.total}</td>
-                              <td>{c.prerequisite || '-'}</td>
-                              <td>{c.semester || '-'}</td>
+                      {stream.courses && stream.courses.length > 0 ? (
+                        stream.courses
+                          .map((c: any) => {
+                            const version = courseVersions.find(v => v.courseId?._id === c._id || v.courseId === c._id);
+                            return { course: c, version };
+                          })
+                          .sort((a, b) => (a.version?.semester || 0) - (b.version?.semester || 0))
+                          .map(({ course, version }) => (
+                            <tr key={course._id}>
+                              <td>{course.code}</td>
+                              <td className="text-left" style={{ fontWeight: 'bold' }}>{course.title}</td>
+                              <td>{version?.level || '-'}</td>
+                              <td>{version?.credits?.L || 0}</td>
+                              <td>{version?.credits?.T || 0}</td>
+                              <td>{version?.credits?.P || 0}</td>
+                              <td>{version?.credits?.C || 0}</td>
+                              <td>{version?.cieSee?.cieMaxMarks || 40}</td>
+                              <td>{version?.cieSee?.seeMaxMarks || 60}</td>
+                              <td>{(version?.cieSee?.cieMaxMarks || 40) + (version?.cieSee?.seeMaxMarks || 60)}</td>
+                              <td>{version?.prerequisites && version.prerequisites.length > 0 ? version.prerequisites.join(', ') : '-'}</td>
+                              <td>{version?.semester || '-'}</td>
                             </tr>
                           ))
                       ) : (
