@@ -75,6 +75,7 @@ export const assignCoordinatorSchema = z.object({
 export const updateCourseVersionSchema = z.object({
   title: z.string().optional(),
   code: z.string().optional(),
+  keyword: z.string().optional(),
   regulationId: z.string().regex(/^[0-9a-fA-F]{24}$/).optional(),
   credits: z.object({
     L: z.number().min(0).max(10),
