@@ -38,7 +38,7 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
   const [prereqs, setPrereqs] = useState<any[]>([]);
   const [minorStreamModalOpen, setMinorStreamModalOpen] = useState(false);
   const [editingMinorStream, setEditingMinorStream] = useState<any | null>(null);
-  const defaultMinorStreamData = { streamCode: '', name: '', description: '', requiredCredits: 18, status: 'Draft', minorDegreeId: '', displayOrder: 0 };
+  const defaultMinorStreamData = { streamCode: '', name: '', description: '', requiredCredits: 18, status: 'Draft', minorDegreeId: '', displayOrder: 0, courses: [] as string[] };
   const [minorStreamCoursesModalOpen, setMinorStreamCoursesModalOpen] = useState(false);
   const [activeMinorStream, setActiveMinorStream] = useState<any | null>(null);
   const defaultMinorStreamCourseData = { courseCode: '', courseName: '', credits: 3, semester: 'Semester 4', courseType: 'MSC', level: 1, L: 3, T: 0, P: 0, cie: 40, see: 60, total: 100, prerequisite: '-', courseOrder: 0 };
@@ -3039,7 +3039,8 @@ export const HodDashboard: React.FC<{ activeTab: string; setActiveTab: (tab: str
                             requiredCredits: stream.requiredCredits || 18,
                             status: stream.status || 'Draft',
                             minorDegreeId: stream.minorDegreeId?._id || stream.minorDegreeId || '',
-                            displayOrder: stream.displayOrder || 0
+                            displayOrder: stream.displayOrder || 0,
+                            courses: stream.courses?.map((c: any) => c._id || c) || []
                           });
                           setMinorStreamModalOpen(true);
                         }}

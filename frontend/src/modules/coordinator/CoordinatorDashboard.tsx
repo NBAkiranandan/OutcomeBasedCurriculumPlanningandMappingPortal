@@ -14,6 +14,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import adityaLogo from '../../assets/aditya-logo.png';
 import { RichTextEditor } from '../../components/common/RichTextEditor';
+import SearchableSelect from '../../components/common/SearchableSelect';
 
 
 const formatTextbook = (t: any): string => {
@@ -686,6 +687,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
     if (!activeVersion) return null;
     return (
       <div
+        ref={accrPreviewRef}
         className="bg-white mx-auto shadow-[0_4px_24px_rgba(0,0,0,0.35)]"
         style={{
           width: '100%',
@@ -1527,7 +1529,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
                 <SearchableSelect
                   name="activeVersionId"
                   value={activeVersion?._id || ''}
-                  onChange={(e) => loadCourseVersion(e.target.value)}
+                  onChange={(e: any) => loadCourseVersion(e.target.value)}
                   placeholder="Select a course syllabus..."
                   options={assignedVersions.map((v) => ({
                     value: v._id,

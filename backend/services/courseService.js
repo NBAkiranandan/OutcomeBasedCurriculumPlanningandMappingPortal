@@ -106,7 +106,7 @@ export const createNewCourse = async (courseData, regulationId, semester, operat
     // Validate that the regulation belongs to the HOD's program/department context
     const Regulation = (await import('../models/Regulation.js')).default;
     const reg = await Regulation.findById(regulationId);
-    if (!reg || (reg.programId && reg.programId.toString() !== operatorUser.programId.toString())) {
+    if (!reg || (reg.programId && reg.programId.toString() !== operatorUser.programId?.toString())) {
       throw new Error('Unauthorized: You can only add courses to regulations of your own program.');
     }
   }

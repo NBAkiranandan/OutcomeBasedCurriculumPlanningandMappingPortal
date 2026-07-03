@@ -25,7 +25,7 @@ export const getCoursesByDept = async (req, res, next) => {
     const versions = await CourseVersion.find({ isDeleted: { $ne: true } }).populate('regulationId');
     
     const coursesWithMapping = courses.map(course => {
-      const courseVersions = versions.filter(v => v.courseId.toString() === course._id.toString());
+      const courseVersions = versions.filter(v => v.courseId?.toString() === course._id?.toString());
       const mappedRegulations = courseVersions.map(v => v.regulationId?.code).filter(Boolean);
       return {
         ...course.toObject(),
