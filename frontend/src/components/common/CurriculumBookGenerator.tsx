@@ -10,6 +10,16 @@ import {
 import adityaLogo from '../../assets/aditya-logo.png';
 import { PdfCoursePage, PdfCoursePageStyles } from './PdfCoursePage';
 import Xarrow, { Xwrapper } from 'react-xarrows';
+import { Course, CourseVersion } from '../../types';
+
+interface StreamCourseMapping {
+  course: Course;
+  version?: CourseVersion & {
+    level?: string;
+    courseLevel?: string;
+    knowledgeLevel?: string;
+  };
+}
 
 export const CurriculumBookGenerator: React.FC = () => {
   const { selectedProgram, selectedDepartment, selectedRegulation } = useContextStore();
@@ -1047,8 +1057,8 @@ export const CurriculumBookGenerator: React.FC = () => {
                             const version = courseVersions.find(v => v.courseId?._id === c._id || v.courseId === c._id);
                             return { course: c, version };
                           })
-                          .sort((a, b) => (a.version?.semester || 0) - (b.version?.semester || 0))
-                          .map(({ course, version }) => (
+                          .sort((a: StreamCourseMapping, b: StreamCourseMapping) => (a.version?.semester || 0) - (b.version?.semester || 0))
+                          .map(({ course, version }: StreamCourseMapping) => (
                             <tr key={course._id}>
                               <td>{course.code}</td>
                               <td className="text-left" style={{ fontWeight: 'bold' }}>{course.title}</td>

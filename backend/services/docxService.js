@@ -132,65 +132,74 @@ export const generateSyllabusDocx = async (version) => {
           new Paragraph({ text: "", spacing: { before: 200, after: 200 } }),
           
           // Section 2: Mapping
-          new Paragraph({
-            heading: HeadingLevel.HEADING_2,
-            children: [new TextRun({ text: "CO-PO & CO-PSO Mapping Matrix", bold: true, color: "1e3a8a" })]
-          }),
-          
-          new Table({
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            rows: [
-              new TableRow({
-                children: [
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "CO/PO", bold: true })] })] }),
-                  ...Array.from({ length: 12 }, (_, i) => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `PO${i+1}`, bold: true })] })] })),
-                  ...Array.from({ length: 3 }, (_, i) => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `PSO${i+1}`, bold: true })] })] }))
-                ]
-              }),
-              ...(version.courseOutcomes || []).map(co => {
-                const poMap = (version.coPoMappings || []).find(m => m.coCode === co.coCode)?.po || {};
-                const psoMap = (version.coPsoMappings || []).find(m => m.coCode === co.coCode)?.pso || {};
-                return new TableRow({
+          ...((version.enableCOPO !== false || version.enableCOPSO !== false) ? [
+            new Paragraph({
+              heading: HeadingLevel.HEADING_2,
+              children: [new TextRun({ text: "CO-PO & CO-PSO Mapping Matrix", bold: true, color: "1e3a8a" })]
+            }),
+            
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows: [
+                new TableRow({
                   children: [
-                    new TableCell({ children: [new Paragraph({ text: co.coCode })] }),
-                    ...Array.from({ length: 12 }, (_, i) => {
-                      const v = poMap instanceof Map ? poMap.get(`PO${i+1}`) : poMap[`PO${i+1}`];
-                      return new TableCell({ children: [new Paragraph({ text: v !== undefined ? String(v) : "-" })] });
-                    }),
-                    ...Array.from({ length: 3 }, (_, i) => {
-                      const v = psoMap instanceof Map ? psoMap.get(`PSO${i+1}`) : psoMap[`PSO${i+1}`];
-                      return new TableCell({ children: [new Paragraph({ text: v !== undefined ? String(v) : "-" })] });
-                    })
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "CO" + (version.enableCOPO !== false ? "/PO" : "") + (version.enableCOPSO !== false ? "/PSO" : ""), bold: true })] })] }),
+                    ...(version.enableCOPO !== false ? Array.from({ length: 12 }, (_, i) => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `PO${i+1}`, bold: true })] })] })) : []),
+                    ...(version.enableCOPSO !== false ? Array.from({ length: 3 }, (_, i) => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `PSO${i+1}`, bold: true })] })] })) : [])
                   ]
-                });
-              })
-            ]
-          }),
+                }),
+                ...(version.courseOutcomes || []).map(co => {
+                  const poMap = (version.coPoMappings || []).find(m => m.coCode === co.coCode)?.po || {};
+                  const psoMap = (version.coPsoMappings || []).find(m => m.coCode === co.coCode)?.pso || {};
+                  return new TableRow({
+                    children: [
+                      new TableCell({ children: [new Paragraph({ text: co.coCode })] }),
+                      ...(version.enableCOPO !== false ? Array.from({ length: 12 }, (_, i) => {
+                        const val = poMap instanceof Map ? poMap.get(`PO${i+1}`) : poMap[`PO${i+1}`];
+                        return new TableCell({ children: [new Paragraph({ text: val !== undefined ? String(val) : "-" })] });
+                      }) : []),
+                      ...(version.enableCOPSO !== false ? Array.from({ length: 3 }, (_, i) => {
+                        const val = psoMap instanceof Map ? psoMap.get(`PSO${i+1}`) : psoMap[`PSO${i+1}`];
+                        return new TableCell({ children: [new Paragraph({ text: val !== undefined ? String(val) : "-" })] });
+                      }) : [])
+                    ]
+                  });
+                })
+              ]
+            }),
+            new Paragraph({ text: "", spacing: { before: 200, after: 200 } })
+          ] : []),
           
-          new Paragraph({ text: "", spacing: { before: 200, after: 200 } }),
-          
-          // Section 3: Unit-wise Syllabus
+          // Section 3: Unit-wise Syllabus / Custom Content
           new Paragraph({
             heading: HeadingLevel.HEADING_2,
-            children: [new TextRun({ text: "Unit-wise Syllabus", bold: true, color: "1e3a8a" })]
+            children: [new TextRun({ text: version.syllabusFormat === 'CUSTOM_CONTENT' ? "Custom Syllabus Content" : "Unit-wise Syllabus", bold: true, color: "1e3a8a" })]
           }),
           
-          ...(version.syllabusUnits || []).map(unit => {
-            const unitContent = htmlToPlainText(unit.richTextContent || unit.description || '');
-            return [
-              new Paragraph({
-                heading: HeadingLevel.HEADING_3,
-                spacing: { before: 100, bottom: 50 },
-                children: [
-                  new TextRun({ text: `UNIT - ${unit.unitNumber}`, bold: true })
-                ]
-              }),
-              new Paragraph({
-                spacing: { bottom: 100 },
-                children: [new TextRun({ text: unitContent || 'Syllabus content not entered.' })]
-              })
-            ].filter(Boolean);
-          }).flat(),
+          ...(version.syllabusFormat === 'CUSTOM_CONTENT'
+            ? [
+                new Paragraph({
+                  spacing: { bottom: 100 },
+                  children: [new TextRun({ text: htmlToPlainText(version.customSyllabusContent || '') || 'Syllabus content not entered.' })]
+                })
+              ]
+            : (version.syllabusUnits || []).map(unit => {
+                const unitContent = htmlToPlainText(unit.richTextContent || unit.description || '');
+                return [
+                  new Paragraph({
+                    heading: HeadingLevel.HEADING_3,
+                    spacing: { before: 100, bottom: 50 },
+                    children: [
+                      new TextRun({ text: `UNIT - ${unit.unitNumber}`, bold: true })
+                    ]
+                  }),
+                  new Paragraph({
+                    spacing: { bottom: 100 },
+                    children: [new TextRun({ text: unitContent || 'Syllabus content not entered.' })]
+                  })
+                ].filter(Boolean);
+              }).flat()
+          ),
           
           new Paragraph({ text: "", spacing: { before: 200, after: 200 } }),
           

@@ -123,6 +123,24 @@ const CourseVersionSchema = new mongoose.Schema({
     quiz: { type: Number, default: 0 },
     lab: { type: Number, default: 0 }
   },
+  
+  syllabusFormat: { 
+    type: String, 
+    enum: ['UNIT_BASED', 'CUSTOM_CONTENT'], 
+    default: 'UNIT_BASED' 
+  },
+  customSyllabusContent: { 
+    type: String, 
+    default: null 
+  },
+  enableCOPO: { 
+    type: Boolean, 
+    default: true 
+  },
+  enableCOPSO: { 
+    type: Boolean, 
+    default: true 
+  },
 
   comments: { type: String, default: '' }, // Review/Return comments from HOD/Admin
   isDeleted: { type: Boolean, default: false },

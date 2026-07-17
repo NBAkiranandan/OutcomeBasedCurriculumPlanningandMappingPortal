@@ -279,7 +279,11 @@ export const saveSyllabusDraft = async (versionId, updateData, operatorUser) => 
     'category',
     'level',
     'credits',
-    'status'
+    'status',
+    'syllabusFormat',
+    'customSyllabusContent',
+    'enableCOPO',
+    'enableCOPSO'
   ];
 
   if (Array.isArray(updateData.syllabusUnits)) {

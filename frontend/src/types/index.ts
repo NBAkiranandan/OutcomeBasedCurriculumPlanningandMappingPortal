@@ -146,6 +146,10 @@ export interface CourseVersion {
     seeBreakup?: string;
   };
   comments?: string;
+  syllabusFormat?: 'UNIT_BASED' | 'CUSTOM_CONTENT';
+  customSyllabusContent?: string | null;
+  enableCOPO?: boolean;
+  enableCOPSO?: boolean;
 }
 
 export interface ObjectiveOutcome {

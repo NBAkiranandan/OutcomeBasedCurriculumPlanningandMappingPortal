@@ -331,7 +331,7 @@ export const PdfCoursePage: React.FC<PdfCoursePageProps> = ({
         </div>
       )}
 
-      {outcomes.length > 0 && (
+      {outcomes.length > 0 && courseVersion?.enableCOPO !== false && (
         <div className="obcp-pdf-section">
           <p className="obcp-pdf-section-title">Mapping of Course Outcomes with Program Outcomes:</p>
           <table className="obcp-pdf-matrix">
@@ -356,7 +356,7 @@ export const PdfCoursePage: React.FC<PdfCoursePageProps> = ({
         </div>
       )}
 
-      {outcomes.length > 0 && visiblePsoColumns.length > 0 && (
+      {outcomes.length > 0 && courseVersion?.enableCOPSO !== false && visiblePsoColumns.length > 0 && (
         <div className="obcp-pdf-section">
           <p className="obcp-pdf-section-title">Mapping of Course Outcomes with Program Specific Outcomes:</p>
           <table className="obcp-pdf-matrix">
@@ -381,12 +381,19 @@ export const PdfCoursePage: React.FC<PdfCoursePageProps> = ({
         </div>
       )}
 
-      {units.map((unit: any, index: number) => (
-        <div className="obcp-pdf-unit" key={unit.unitNumber || index}>
-          <p className="obcp-pdf-unit-title">UNIT - {romanNumerals[index] || index + 1}</p>
-          <div className="obcp-pdf-unit-content" dangerouslySetInnerHTML={{ __html: getUnitRichText(unit) }} />
+      {courseVersion?.syllabusFormat === 'CUSTOM_CONTENT' ? (
+        <div className="obcp-pdf-unit">
+          <p className="obcp-pdf-unit-title">Custom Syllabus Content:</p>
+          <div className="obcp-pdf-unit-content" dangerouslySetInnerHTML={{ __html: courseVersion.customSyllabusContent || '' }} />
         </div>
-      ))}
+      ) : (
+        units.map((unit: any, index: number) => (
+          <div className="obcp-pdf-unit" key={unit.unitNumber || index}>
+            <p className="obcp-pdf-unit-title">UNIT - {romanNumerals[index] || index + 1}</p>
+            <div className="obcp-pdf-unit-content" dangerouslySetInnerHTML={{ __html: getUnitRichText(unit) }} />
+          </div>
+        ))
+      )}
 
       {textbooks.length > 0 && (
         <div className="obcp-pdf-unit">

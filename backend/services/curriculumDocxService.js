@@ -408,30 +408,47 @@ const buildCourseSection = (v) => {
     items.push(...emptyPara(1));
 
     // CO-PO table
-    items.push(...buildMappingTable('Mapping of Course Outcomes with Program Outcomes:', outcomes, v.coPoMappings || [], poColumns, 'po'));
+    if (v.enableCOPO !== false) {
+      items.push(...buildMappingTable('Mapping of Course Outcomes with Program Outcomes:', outcomes, v.coPoMappings || [], poColumns, 'po'));
+    }
 
     // CO-PSO table
-    if (psoColumns.length) {
+    if (v.enableCOPSO !== false && psoColumns.length) {
       items.push(...buildMappingTable('Mapping of Course Outcomes with Program Specific Outcomes:', outcomes, v.coPsoMappings || [], psoColumns, 'pso'));
     }
   }
 
-  // Syllabus Units
-  units.forEach((unit, i) => {
-    const unitContent = stripHtml(unit.htmlContent || unit.richTextContent || unit.description || '');
+  // Syllabus Units vs Custom Content
+  if (v.syllabusFormat === 'CUSTOM_CONTENT') {
+    const customContent = stripHtml(v.customSyllabusContent || '');
     items.push(
       new Paragraph({
-        children: [boldRun(`UNIT – ${ROMAN[i] || i + 1}`, { size: pt(10), allCaps: true })],
+        children: [boldRun('Custom Syllabus Content', { size: pt(10), allCaps: true })],
         spacing: { before: convertMillimetersToTwip(4), after: convertMillimetersToTwip(2) },
       }),
     );
-    if (unit.title) items.push(new Paragraph({ children: [boldRun(unit.title, { size: pt(9) })], spacing: { after: convertMillimetersToTwip(1) } }));
-    if (unitContent) {
-      unitContent.split(/\n+/).filter(Boolean).forEach(line => {
+    if (customContent) {
+      customContent.split(/\n+/).filter(Boolean).forEach(line => {
         items.push(new Paragraph({ children: [textRun(line, { size: pt(9) })], spacing: { after: convertMillimetersToTwip(1) } }));
       });
     }
-  });
+  } else {
+    units.forEach((unit, i) => {
+      const unitContent = stripHtml(unit.htmlContent || unit.richTextContent || unit.description || '');
+      items.push(
+        new Paragraph({
+          children: [boldRun(`UNIT – ${ROMAN[i] || i + 1}`, { size: pt(10), allCaps: true })],
+          spacing: { before: convertMillimetersToTwip(4), after: convertMillimetersToTwip(2) },
+        }),
+      );
+      if (unit.title) items.push(new Paragraph({ children: [boldRun(unit.title, { size: pt(9) })], spacing: { after: convertMillimetersToTwip(1) } }));
+      if (unitContent) {
+        unitContent.split(/\n+/).filter(Boolean).forEach(line => {
+          items.push(new Paragraph({ children: [textRun(line, { size: pt(9) })], spacing: { after: convertMillimetersToTwip(1) } }));
+        });
+      }
+    });
+  }
 
   // References
   const buildRefList = (title, entries) => {

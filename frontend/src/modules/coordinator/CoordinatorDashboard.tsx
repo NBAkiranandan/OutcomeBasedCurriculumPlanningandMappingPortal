@@ -79,7 +79,7 @@ interface CoordinatorDashboardProps {
 
 export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ activeTab, setActiveTab }) => {
   const { user } = useAuthStore();
-  const { setChangePasswordModalOpen } = useUIStore();
+  const { setChangePasswordModalOpen, setActiveCourseVersion } = useUIStore();
   
   const [assignedVersions, setAssignedVersions] = useState<any[]>([]);
 
@@ -157,10 +157,12 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
       errors.push(`All Course Outcomes must be fully defined. Incomplete: ${incompleteCOs.join(', ')}`);
     }
 
-    // 3. CO-PO Mapping (Required)
+    // 3. CO-PO Mapping (Required if enabled)
     let coPoPassed = true;
     let coPoDetails = 'All COs mapped to POs';
-    if (coCount === 0) {
+    if (v.enableCOPO === false) {
+      coPoDetails = 'CO–PO mapping is disabled';
+    } else if (coCount === 0) {
       coPoPassed = false;
       coPoDetails = 'No COs defined';
       errors.push('Complete CO–PO mapping is required. No COs defined.');
@@ -180,10 +182,12 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
       }
     }
 
-    // 4. CO-PSO Mapping (Optional in Real World)
+    // 4. CO-PSO Mapping (Optional/Conditional)
     let coPsoPassed = true;
     let coPsoDetails = 'PSO mapping is optional';
-    if (coCount > 0) {
+    if (v.enableCOPSO === false) {
+      coPsoDetails = 'CO–PSO mapping is disabled';
+    } else if (coCount > 0) {
       const mappedCOs = v.courseOutcomes.filter((co: any) => {
         const mapping = v.coPsoMappings?.find((m: any) => m.coCode === co.coCode);
         return mapping && mapping.pso && Object.keys(mapping.pso).some(key => mapping.pso[key] > 0);
@@ -193,26 +197,38 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
       }
     }
 
-    // 5. Exactly 5 Syllabus Units (Required)
-    const unitCount = v.syllabusUnits?.length || 0;
-    const exactly5Units = unitCount === 5;
-    const allUnitsFilled = unitCount > 0 && v.syllabusUnits.every((u: any) => hasUnitRichText(u));
-    const syllabusPassed = exactly5Units && allUnitsFilled;
+    // 5. Syllabus Content (Required)
+    let syllabusPassed = true;
     let syllabusDetails = '';
-    if (syllabusPassed) {
-      syllabusDetails = '5 units fully defined';
-    } else if (unitCount !== 5) {
-      syllabusDetails = `Only ${unitCount} Units Added (Exactly 5 Required)`;
-      errors.push(`Exactly 5 syllabus units are mandatory (Current: ${unitCount}).`);
+    if (v.syllabusFormat === 'CUSTOM_CONTENT') {
+      const hasContent = !!(v.customSyllabusContent && htmlToPlainText(v.customSyllabusContent).trim().length > 0);
+      syllabusPassed = hasContent;
+      if (syllabusPassed) {
+        syllabusDetails = 'Custom syllabus content defined';
+      } else {
+        syllabusDetails = 'Custom syllabus content incomplete';
+        errors.push('Custom syllabus content is required.');
+      }
     } else {
-      const incompleteUnits: number[] = [];
-      v.syllabusUnits.forEach((u: any, idx: number) => {
-        if (!hasUnitRichText(u)) {
-          incompleteUnits.push(idx + 1);
-        }
-      });
-      syllabusDetails = `Unit ${incompleteUnits.join(', ')} incomplete`;
-      errors.push(`All syllabus units must be complete. Incomplete: Unit ${incompleteUnits.join(', ')}`);
+      const unitCount = v.syllabusUnits?.length || 0;
+      const exactly5Units = unitCount === 5;
+      const allUnitsFilled = unitCount > 0 && v.syllabusUnits.every((u: any) => hasUnitRichText(u));
+      syllabusPassed = exactly5Units && allUnitsFilled;
+      if (syllabusPassed) {
+        syllabusDetails = '5 units fully defined';
+      } else if (unitCount !== 5) {
+        syllabusDetails = `Only ${unitCount} Units Added (Exactly 5 Required)`;
+        errors.push(`Exactly 5 syllabus units are mandatory (Current: ${unitCount}).`);
+      } else {
+        const incompleteUnits: number[] = [];
+        v.syllabusUnits.forEach((u: any, idx: number) => {
+          if (!hasUnitRichText(u)) {
+            incompleteUnits.push(idx + 1);
+          }
+        });
+        syllabusDetails = `Unit ${incompleteUnits.join(', ')} incomplete`;
+        errors.push(`All syllabus units must be complete. Incomplete: Unit ${incompleteUnits.join(', ')}`);
+      }
     }
 
     // 6. At Least 1 Reference Material (Required)
@@ -232,9 +248,9 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
     const requiredChecklist = [
       { label: 'Course Details Completed', passed: courseDetailsPassed, details: courseDetailsDetails },
       { label: 'Minimum 5 COs Added', passed: cosPassed, details: cosDetails },
-      { label: 'CO-PO Mapping Complete', passed: coPoPassed, details: coPoDetails },
-      { label: 'CO-PSO Mapping Complete', passed: coPsoPassed, details: coPsoDetails },
-      { label: 'Exactly 5 Units Added', passed: syllabusPassed, details: syllabusDetails },
+      ...(v.enableCOPO !== false ? [{ label: 'CO-PO Mapping Complete', passed: coPoPassed, details: coPoDetails }] : []),
+      ...(v.enableCOPSO !== false ? [{ label: 'CO-PSO Mapping Complete', passed: coPsoPassed, details: coPsoDetails }] : []),
+      { label: v.syllabusFormat === 'CUSTOM_CONTENT' ? 'Custom Syllabus Added' : 'Exactly 5 Units Added', passed: syllabusPassed, details: syllabusDetails },
       { label: 'At Least 1 Reference Material Added', passed: refMaterialPassed, details: refMaterialDetails }
     ];
 
@@ -534,6 +550,25 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
 
   const [activeVersion, setActiveVersion] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setActiveCourseVersion(activeVersion);
+    return () => {
+      setActiveCourseVersion(null);
+    };
+  }, [activeVersion, setActiveCourseVersion]);
+
+  useEffect(() => {
+    if (activeVersion) {
+      if (activeTab === 'co-po' && activeVersion.enableCOPO === false) {
+        setActiveTab('course-details');
+      }
+      if (activeTab === 'co-pso' && activeVersion.enableCOPSO === false) {
+        setActiveTab('course-details');
+      }
+    }
+  }, [activeTab, activeVersion, setActiveTab]);
+
   const [previewOpen, setPreviewOpen] = useState(true); // smart preview panel toggle
   const syllabusUnitsSaveTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -2074,6 +2109,55 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
                 </div>
               </div>
 
+              <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
+                <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-2">
+                  <h3 className="text-[10px] font-extrabold uppercase tracking-wide text-slate-500">Syllabus & Mapping Configuration</h3>
+                  <span className="text-[10px] font-bold text-blue-700">Configure settings</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Syllabus Format Selector */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-slate-705">Syllabus Format</label>
+                    <select
+                      value={activeVersion.syllabusFormat || 'UNIT_BASED'}
+                      onChange={(e) => setActiveVersion({ ...activeVersion, syllabusFormat: e.target.value })}
+                      className="w-full border border-slate-300 rounded-lg p-2.5 text-xs outline-none bg-white font-semibold text-slate-700 focus:ring-1 focus:ring-blue-600 focus:border-blue-600"
+                    >
+                      <option value="UNIT_BASED">Unit Based (5 Units)</option>
+                      <option value="CUSTOM_CONTENT">Custom Content (Single Editor)</option>
+                    </select>
+                    <p className="text-[10px] text-slate-400 font-semibold leading-normal">
+                      Unit Based requires exactly 5 units. Custom Content provides a single rich-text editor.
+                    </p>
+                  </div>
+
+                  {/* CO Mappings Enable/Disable */}
+                  <div className="space-y-3">
+                    <label className="block text-xs font-bold text-slate-705">Outcome Mapping Configuration</label>
+                    <div className="space-y-2.5">
+                      <label className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={activeVersion.enableCOPO !== false}
+                          onChange={(e) => setActiveVersion({ ...activeVersion, enableCOPO: e.target.checked })}
+                          className="rounded border-slate-350 text-blue-600 focus:ring-blue-500 h-4 w-4"
+                        />
+                        <span>Enable CO-PO Mapping Matrix</span>
+                      </label>
+                      <label className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={activeVersion.enableCOPSO !== false}
+                          onChange={(e) => setActiveVersion({ ...activeVersion, enableCOPSO: e.target.checked })}
+                          className="rounded border-slate-350 text-blue-600 focus:ring-blue-500 h-4 w-4"
+                        />
+                        <span>Enable CO-PSO Mapping Matrix</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
 
               {/* Removed Course Objectives Configured by HOD */}
                
@@ -2490,10 +2574,12 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
                   >
                     <div className="flex items-center gap-2">
                       <FileText className="w-5 h-5 text-blue-600" />
-                      <span className="font-extrabold text-slate-800 text-xs uppercase tracking-wide">1. Syllabus Units (5 Units Mandatory)</span>
+                      <span className="font-extrabold text-slate-800 text-xs uppercase tracking-wide">
+                        {activeVersion.syllabusFormat === 'CUSTOM_CONTENT' ? '1. Custom Syllabus Content' : '1. Syllabus Units (5 Units Mandatory)'}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {activeVersion.syllabusUnits?.length < 5 && (
+                      {activeVersion.syllabusFormat !== 'CUSTOM_CONTENT' && activeVersion.syllabusUnits?.length < 5 && (
                         <span className="px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-200 rounded-full text-[9px] font-bold">
                           {activeVersion.syllabusUnits?.length || 0} / 5 Units
                         </span>
@@ -2504,22 +2590,46 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
 
                   {syllabusSections.units && (
                     <div className="p-6 space-y-6">
-                      <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-                        <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wide">Syllabus Builder (5 Units)</h3>
-                        {activeVersion.syllabusUnits?.length < 5 && (
-                          <button
-                            type="button"
-                            onClick={handleAddUnit}
-                            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow flex items-center gap-1.5 cursor-pointer"
-                          >
-                            <Plus className="w-4 h-4" />
-                            <span>Add Unit</span>
-                          </button>
-                        )}
-                      </div>
+                      {activeVersion.syllabusFormat === 'CUSTOM_CONTENT' ? (
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                            <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wide">Custom Syllabus Content</h3>
+                          </div>
+                          <div className="space-y-2 text-xs font-bold text-slate-500">
+                            <label className="text-xs uppercase tracking-wide">Custom Syllabus HTML Content</label>
+                            <RichTextEditor
+                              value={activeVersion.customSyllabusContent || ''}
+                              onChange={(html) => {
+                                const newVersion = { ...activeVersion, customSyllabusContent: html };
+                                setActiveVersion(newVersion);
+                                
+                                if (syllabusUnitsSaveTimeout.current) clearTimeout(syllabusUnitsSaveTimeout.current);
+                                syllabusUnitsSaveTimeout.current = setTimeout(() => {
+                                  saveDraftAutomatically(newVersion);
+                                }, 2000);
+                              }}
+                              minHeight={400}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                            <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wide">Syllabus Builder (5 Units)</h3>
+                            {activeVersion.syllabusUnits?.length < 5 && (
+                              <button
+                                type="button"
+                                onClick={handleAddUnit}
+                                className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow flex items-center gap-1.5 cursor-pointer"
+                              >
+                                <Plus className="w-4 h-4" />
+                                <span>Add Unit</span>
+                              </button>
+                            )}
+                          </div>
 
-                      <div className="space-y-4">
-                        {activeVersion.syllabusUnits?.map((unit: any, idx: number) => (
+                          <div className="space-y-4">
+                            {activeVersion.syllabusUnits?.map((unit: any, idx: number) => (
                           <div key={idx} className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-3 relative text-xs">
                             <button 
                               type="button"
@@ -2562,6 +2672,8 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
                           </div>
                         ))}
                       </div>
+                    </>
+                  )}
                     </div>
                   )}
                 </div>
@@ -3620,10 +3732,10 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
                   onClick={() => {
                     handleSaveDraft();
                     // Go to next logical tab
-                    const tabsOrder = [
-                      'course-details', 'cos', 'co-po', 'co-pso', 
-                      'syllabus', 'reports'
-                    ];
+                    const tabsOrder = ['course-details', 'cos'];
+                    if (activeVersion.enableCOPO !== false) tabsOrder.push('co-po');
+                    if (activeVersion.enableCOPSO !== false) tabsOrder.push('co-pso');
+                    tabsOrder.push('syllabus', 'reports');
                     const currentIdx = tabsOrder.indexOf(activeTab);
                     if (currentIdx !== -1 && currentIdx < tabsOrder.length - 1) {
                       setActiveTab(tabsOrder[currentIdx + 1]);

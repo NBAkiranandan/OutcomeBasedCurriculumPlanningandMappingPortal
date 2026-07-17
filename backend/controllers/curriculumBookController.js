@@ -384,7 +384,7 @@ const renderCoursePageHtml = (version, departmentName) => {
   const C = version.credits?.C ?? 0;
 
   // CO-PO Mapping table
-  const coPoTable = outcomes.length > 0 ? `
+  const coPoTable = (version.enableCOPO !== false && outcomes.length > 0) ? `
     <div class="cp-section">
       <p class="cp-section-label">Mapping of Course Outcomes with Program Outcomes:</p>
       <table class="cp-matrix">
@@ -406,7 +406,7 @@ const renderCoursePageHtml = (version, departmentName) => {
   ` : '';
 
   // CO-PSO Mapping table
-  const coPsoTable = outcomes.length > 0 && psoColumns.length > 0 ? `
+  const coPsoTable = (version.enableCOPSO !== false && outcomes.length > 0 && psoColumns.length > 0) ? `
     <div class="cp-section">
       <p class="cp-section-label">Mapping of Course Outcomes with Program Specific Outcomes:</p>
       <table class="cp-matrix">
@@ -427,8 +427,13 @@ const renderCoursePageHtml = (version, departmentName) => {
     </div>
   ` : '';
 
-  // Syllabus Units
-  const unitsHtml = (version.syllabusUnits || []).map((unit, i) => `
+  // Syllabus Units vs Custom Content
+  const unitsHtml = version.syllabusFormat === 'CUSTOM_CONTENT' ? `
+    <div class="cp-unit">
+      <p class="cp-unit-title">Custom Syllabus Content</p>
+      <div class="cp-unit-body">${version.customSyllabusContent || ''}</div>
+    </div>
+  ` : (version.syllabusUnits || []).map((unit, i) => `
     <div class="cp-unit">
       <p class="cp-unit-title">UNIT – ${ROMAN[i] || i + 1}</p>
       <div class="cp-unit-body">${getUnitHtml(unit)}</div>

@@ -99,6 +99,11 @@ export const updateCourseVersionSchema = z.object({
     bloomLevel: z.string()
   })).optional(),
 
+  syllabusFormat: z.enum(['UNIT_BASED', 'CUSTOM_CONTENT']).optional(),
+  customSyllabusContent: z.string().nullable().optional(),
+  enableCOPO: z.boolean().optional(),
+  enableCOPSO: z.boolean().optional(),
+
   coPoMappings: z.array(z.object({
     coCode: z.string(),
     po: z.record(z.number().min(0).max(3))

@@ -28,7 +28,7 @@ interface DashboardLayoutProps {
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, activeTab, setActiveTab }) => {
   const { user } = useAuthStore();
-  const { changePasswordModalOpen } = useUIStore();
+  const { changePasswordModalOpen, activeCourseVersion } = useUIStore();
   const {
     programs, departments, regulations,
     selectedProgram, selectedDepartment, selectedRegulation,
@@ -137,19 +137,27 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
           { id: 'prerequisites', name: 'Prerequisites Links', icon: ArrowRightLeft },
           { id: 'profile', name: 'Profile', icon: User },
         ];
-      case 'Coordinator':
-        return [
+      case 'Coordinator': {
+        const items = [
           { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
           { id: 'my-courses', name: 'My Courses', icon: BookOpen },
           { id: 'course-details', name: 'Course Details', icon: Layers },
           { id: 'cos', name: 'COs Management', icon: Sparkles },
-          { id: 'co-po', name: 'CO-PO Mapping', icon: FileSpreadsheet },
-          { id: 'co-pso', name: 'CO-PSO Mapping', icon: FileSpreadsheet },
+        ];
+        if (!activeCourseVersion || activeCourseVersion.enableCOPO !== false) {
+          items.push({ id: 'co-po', name: 'CO-PO Mapping', icon: FileSpreadsheet });
+        }
+        if (!activeCourseVersion || activeCourseVersion.enableCOPSO !== false) {
+          items.push({ id: 'co-pso', name: 'CO-PSO Mapping', icon: FileSpreadsheet });
+        }
+        items.push(
           { id: 'syllabus', name: 'Syllabus Management', icon: FileText },
           { id: 'reports', name: 'Reports', icon: FileText },
           { id: 'work-progress', name: 'Work Progress', icon: BarChart3 },
-          { id: 'profile', name: 'Profile', icon: User },
-        ];
+          { id: 'profile', name: 'Profile', icon: User }
+        );
+        return items;
+      }
       case 'Faculty':
         return [
           { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
