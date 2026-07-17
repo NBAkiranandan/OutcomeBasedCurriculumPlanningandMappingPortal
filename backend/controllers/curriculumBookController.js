@@ -430,7 +430,6 @@ const renderCoursePageHtml = (version, departmentName) => {
   // Syllabus Units vs Custom Content
   const unitsHtml = version.syllabusFormat === 'CUSTOM_CONTENT' ? `
     <div class="cp-unit">
-      <p class="cp-unit-title">Custom Syllabus Content</p>
       <div class="cp-unit-body">${version.customSyllabusContent || ''}</div>
     </div>
   ` : (version.syllabusUnits || []).map((unit, i) => `

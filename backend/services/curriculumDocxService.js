@@ -421,12 +421,6 @@ const buildCourseSection = (v) => {
   // Syllabus Units vs Custom Content
   if (v.syllabusFormat === 'CUSTOM_CONTENT') {
     const customContent = stripHtml(v.customSyllabusContent || '');
-    items.push(
-      new Paragraph({
-        children: [boldRun('Custom Syllabus Content', { size: pt(10), allCaps: true })],
-        spacing: { before: convertMillimetersToTwip(4), after: convertMillimetersToTwip(2) },
-      }),
-    );
     if (customContent) {
       customContent.split(/\n+/).filter(Boolean).forEach(line => {
         items.push(new Paragraph({ children: [textRun(line, { size: pt(9) })], spacing: { after: convertMillimetersToTwip(1) } }));

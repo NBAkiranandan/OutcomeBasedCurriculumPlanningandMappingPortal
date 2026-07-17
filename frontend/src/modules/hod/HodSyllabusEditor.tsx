@@ -233,18 +233,12 @@ export const HodSyllabusEditor: React.FC<HodSyllabusEditorProps> = ({ courseVers
       }
     }
 
-    // 6. At Least 1 Reference Material (Required)
+    // 6. Reference Materials (Optional)
     const textbookCount = v.textbooks?.filter((t: any) => formatTextbook(t)?.trim()).length || 0;
     const referenceCount = v.referenceMaterials?.filter((r: any) => formatTextbook(r)?.trim()).length || 0;
     const totalRefs = textbookCount + referenceCount;
-    const refMaterialPassed = totalRefs >= 1;
-    let refMaterialDetails = '';
-    if (refMaterialPassed) {
-      refMaterialDetails = `${totalRefs} reference material(s) configured`;
-    } else {
-      refMaterialDetails = 'No textbooks or reference books added';
-      errors.push('At least 1 Textbook or Reference Book is required.');
-    }
+    const refMaterialPassed = true;
+    const refMaterialDetails = `${totalRefs} reference material(s) configured`;
 
     // Checklist array
     const requiredChecklist = [
@@ -252,8 +246,11 @@ export const HodSyllabusEditor: React.FC<HodSyllabusEditorProps> = ({ courseVers
       { label: 'Minimum 5 COs Added', passed: cosPassed, details: cosDetails },
       ...(v.enableCOPO !== false ? [{ label: 'CO-PO Mapping Complete', passed: coPoPassed, details: coPoDetails }] : []),
       ...(v.enableCOPSO !== false ? [{ label: 'CO-PSO Mapping Complete', passed: coPsoPassed, details: coPsoDetails }] : []),
-      { label: v.syllabusFormat === 'CUSTOM_CONTENT' ? 'Custom Syllabus Added' : 'Exactly 5 Units Added', passed: syllabusPassed, details: syllabusDetails },
-      { label: 'At Least 1 Reference Material Added', passed: refMaterialPassed, details: refMaterialDetails }
+      { label: v.syllabusFormat === 'CUSTOM_CONTENT' ? 'Custom Syllabus Added' : 'Exactly 5 Units Added', passed: syllabusPassed, details: syllabusDetails }
+    ];
+
+    const optionalChecklist = [
+      { label: 'Reference Materials Added', passed: totalRefs >= 1, details: totalRefs >= 1 ? `${totalRefs} reference material(s) configured` : 'No textbooks or reference books added' }
     ];
 
     const completedRequired = requiredChecklist.filter(t => t.passed).length;
@@ -267,7 +264,7 @@ export const HodSyllabusEditor: React.FC<HodSyllabusEditorProps> = ({ courseVers
       errors,
       checklist: requiredChecklist,
       requiredChecklist,
-      optionalChecklist: [],
+      optionalChecklist,
       completionPercent
     };
   };
@@ -644,30 +641,38 @@ export const HodSyllabusEditor: React.FC<HodSyllabusEditorProps> = ({ courseVers
               new Paragraph({ children: [new TextRun({ text: 'Course Outcomes', bold: true })] }),
               ...(activeVersion.courseOutcomes || []).map((co: any) => new Paragraph({ children: [new TextRun({ text: `${co.coCode}: ${co.description || 'Not defined yet.'}` })] })),
               new Paragraph({ children: [] }),
-              new Paragraph({ children: [new TextRun({ text: 'CO-PO Mapping Matrix', bold: true })] }),
-              ...(activeVersion.courseOutcomes || []).map((co: any) => {
-                const mapping = activeVersion.coPoMappings?.find((m: any) => m.coCode === co.coCode) || { po: {} };
-                const values = Array.from({ length: 12 }, (_, i) => mapping.po?.[`PO${i + 1}`] || 0).join(', ');
-                return new Paragraph({ children: [new TextRun({ text: `${co.coCode}: [${values}]` })] });
-              }),
-              new Paragraph({ children: [] }),
-              new Paragraph({ children: [new TextRun({ text: 'CO-PSO Mapping Matrix', bold: true })] }),
-              ...(activeVersion.courseOutcomes || []).map((co: any) => {
-                const mapping = activeVersion.coPsoMappings?.find((m: any) => m.coCode === co.coCode) || { pso: {} };
-                const departmentOutcomes = activeVersion.courseId?.departmentId?.outcomes || user?.department?.outcomes || [];
-                const psoGroup = departmentOutcomes.find((o: any) => o.name === 'PSO');
-                const psoCodes = psoGroup?.items?.length > 0 ? psoGroup.items.map((i: any) => i.code) : ['PSO1', 'PSO2', 'PSO3'];
-                const values = psoCodes.map((pso: string) => `${pso}:${mapping.pso?.[pso] || 0}`).join(', ');
-                return new Paragraph({ children: [new TextRun({ text: `${co.coCode}: [${values}]` })] });
-              }),
-              new Paragraph({ children: [] }),
-              new Paragraph({ children: [new TextRun({ text: 'Syllabus Units', bold: true })] }),
-              ...(activeVersion.syllabusUnits || []).flatMap((unit: any, idx: number) => [
-                new Paragraph({ children: [new TextRun({ text: `Unit ${idx + 1} - ${unit.title || 'Untitled'} (${unit.hours || 10} Hours)`, bold: true })] }),
-                new Paragraph({ children: [new TextRun({ text: unit.description || 'No description provided.' })] }),
-                ...(unit.topics?.length > 0 ? [new Paragraph({ children: [new TextRun({ text: `Topics: ${unit.topics.join(', ')}`, italics: true })] })] : []),
-                ...(unit.practice ? [new Paragraph({ children: [new TextRun({ text: `Practice: ${unit.practice}` })] })] : []),
+              ...(activeVersion.enableCOPO !== false ? [
+                new Paragraph({ children: [new TextRun({ text: 'CO-PO Mapping Matrix', bold: true })] }),
+                ...(activeVersion.courseOutcomes || []).map((co: any) => {
+                  const mapping = activeVersion.coPoMappings?.find((m: any) => m.coCode === co.coCode) || { po: {} };
+                  const values = Array.from({ length: 12 }, (_, i) => mapping.po?.[`PO${i + 1}`] || 0).join(', ');
+                  return new Paragraph({ children: [new TextRun({ text: `${co.coCode}: [${values}]` })] });
+                }),
                 new Paragraph({ children: [] })
+              ] : []),
+              ...(activeVersion.enableCOPSO !== false ? [
+                new Paragraph({ children: [new TextRun({ text: 'CO-PSO Mapping Matrix', bold: true })] }),
+                ...(activeVersion.courseOutcomes || []).map((co: any) => {
+                  const mapping = activeVersion.coPsoMappings?.find((m: any) => m.coCode === co.coCode) || { pso: {} };
+                  const departmentOutcomes = activeVersion.courseId?.departmentId?.outcomes || user?.department?.outcomes || [];
+                  const psoGroup = departmentOutcomes.find((o: any) => o.name === 'PSO');
+                  const psoCodes = psoGroup?.items?.length > 0 ? psoGroup.items.map((i: any) => i.code) : ['PSO1', 'PSO2', 'PSO3'];
+                  const values = psoCodes.map((pso: string) => `${pso}:${mapping.pso?.[pso] || 0}`).join(', ');
+                  return new Paragraph({ children: [new TextRun({ text: `${co.coCode}: [${values}]` })] });
+                }),
+                new Paragraph({ children: [] })
+              ] : []),
+              ...(activeVersion.syllabusFormat === 'CUSTOM_CONTENT' ? [
+                new Paragraph({ children: [new TextRun({ text: htmlToPlainText(activeVersion.customSyllabusContent) || 'No custom syllabus content provided.' })] })
+              ] : [
+                new Paragraph({ children: [new TextRun({ text: 'Syllabus Units', bold: true })] }),
+                ...(activeVersion.syllabusUnits || []).flatMap((unit: any, idx: number) => [
+                  new Paragraph({ children: [new TextRun({ text: `Unit ${idx + 1} - ${unit.title || 'Untitled'} (${unit.hours || 10} Hours)`, bold: true })] }),
+                  new Paragraph({ children: [new TextRun({ text: unit.description || 'No description provided.' })] }),
+                  ...(unit.topics?.length > 0 ? [new Paragraph({ children: [new TextRun({ text: `Topics: ${unit.topics.join(', ')}`, italics: true })] })] : []),
+                  ...(unit.practice ? [new Paragraph({ children: [new TextRun({ text: `Practice: ${unit.practice}` })] })] : []),
+                  new Paragraph({ children: [] })
+                ])
               ]),
               new Paragraph({ children: [] }),
 
@@ -1106,7 +1111,11 @@ export const HodSyllabusEditor: React.FC<HodSyllabusEditorProps> = ({ courseVers
         onlineResources: activeVersion.onlineResources || [],
         objectives: activeVersion.objectives || [],
         prerequisites: activeVersion.prerequisites || [],
-        cieSee: activeVersion.cieSee
+        cieSee: activeVersion.cieSee,
+        enableCOPO: activeVersion.enableCOPO !== false,
+        enableCOPSO: activeVersion.enableCOPSO !== false,
+        syllabusFormat: activeVersion.syllabusFormat || 'UNIT_BASED',
+        customSyllabusContent: activeVersion.customSyllabusContent || ''
       };
 
 
@@ -2659,10 +2668,9 @@ export const HodSyllabusEditor: React.FC<HodSyllabusEditorProps> = ({ courseVers
                       {[
                         { label: 'Course Details Completed', passed: reportCheck('Course Details Completed') },
                         { label: 'Minimum 5 COs Added', passed: reportCheck('Minimum 5 COs Added') },
-                        { label: 'CO-PO Mapping Complete', passed: reportCheck('CO-PO Mapping Complete') },
-                        { label: 'CO-PSO Mapping Complete', passed: reportCheck('CO-PSO Mapping Complete') },
-                        { label: 'Exactly 5 Units Added', passed: reportCheck('Exactly 5 Units Added') },
-                        { label: 'At Least 1 Reference Material Added', passed: reportCheck('At Least 1 Reference Material Added') }
+                        ...(activeVersion.enableCOPO !== false ? [{ label: 'CO-PO Mapping Complete', passed: reportCheck('CO-PO Mapping Complete') }] : []),
+                        ...(activeVersion.enableCOPSO !== false ? [{ label: 'CO-PSO Mapping Complete', passed: reportCheck('CO-PSO Mapping Complete') }] : []),
+                        { label: activeVersion.syllabusFormat === 'CUSTOM_CONTENT' ? 'Custom Syllabus Added' : 'Exactly 5 Units Added', passed: reportCheck(activeVersion.syllabusFormat === 'CUSTOM_CONTENT' ? 'Custom Syllabus Added' : 'Exactly 5 Units Added') },
                       ].map((item, idx) => (
                         <div key={idx} className={`rounded-xl border px-3 py-2.5 text-xs font-semibold flex items-center justify-between ${item.passed ? 'bg-emerald-50/50 border-emerald-100 text-emerald-700' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
                           <span>{item.label}</span>

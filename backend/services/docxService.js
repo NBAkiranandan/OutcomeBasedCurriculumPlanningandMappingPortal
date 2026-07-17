@@ -171,11 +171,6 @@ export const generateSyllabusDocx = async (version) => {
           ] : []),
           
           // Section 3: Unit-wise Syllabus / Custom Content
-          new Paragraph({
-            heading: HeadingLevel.HEADING_2,
-            children: [new TextRun({ text: version.syllabusFormat === 'CUSTOM_CONTENT' ? "Custom Syllabus Content" : "Unit-wise Syllabus", bold: true, color: "1e3a8a" })]
-          }),
-          
           ...(version.syllabusFormat === 'CUSTOM_CONTENT'
             ? [
                 new Paragraph({
@@ -183,22 +178,28 @@ export const generateSyllabusDocx = async (version) => {
                   children: [new TextRun({ text: htmlToPlainText(version.customSyllabusContent || '') || 'Syllabus content not entered.' })]
                 })
               ]
-            : (version.syllabusUnits || []).map(unit => {
-                const unitContent = htmlToPlainText(unit.richTextContent || unit.description || '');
-                return [
-                  new Paragraph({
-                    heading: HeadingLevel.HEADING_3,
-                    spacing: { before: 100, bottom: 50 },
-                    children: [
-                      new TextRun({ text: `UNIT - ${unit.unitNumber}`, bold: true })
-                    ]
-                  }),
-                  new Paragraph({
-                    spacing: { bottom: 100 },
-                    children: [new TextRun({ text: unitContent || 'Syllabus content not entered.' })]
-                  })
-                ].filter(Boolean);
-              }).flat()
+            : [
+                new Paragraph({
+                  heading: HeadingLevel.HEADING_2,
+                  children: [new TextRun({ text: "Unit-wise Syllabus", bold: true, color: "1e3a8a" })]
+                }),
+                ...(version.syllabusUnits || []).map(unit => {
+                  const unitContent = htmlToPlainText(unit.richTextContent || unit.description || '');
+                  return [
+                    new Paragraph({
+                      heading: HeadingLevel.HEADING_3,
+                      spacing: { before: 100, bottom: 50 },
+                      children: [
+                        new TextRun({ text: `UNIT - ${unit.unitNumber}`, bold: true })
+                      ]
+                    }),
+                    new Paragraph({
+                      spacing: { bottom: 100 },
+                      children: [new TextRun({ text: unitContent || 'Syllabus content not entered.' })]
+                    })
+                  ];
+                }).flat()
+              ]
           ),
           
           new Paragraph({ text: "", spacing: { before: 200, after: 200 } }),

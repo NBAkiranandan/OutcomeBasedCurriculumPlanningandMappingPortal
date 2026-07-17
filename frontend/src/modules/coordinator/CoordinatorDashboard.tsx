@@ -231,18 +231,12 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
       }
     }
 
-    // 6. At Least 1 Reference Material (Required)
+    // 6. Reference Materials (Optional)
     const textbookCount = v.textbooks?.filter((t: any) => formatTextbook(t)?.trim()).length || 0;
     const referenceCount = v.referenceMaterials?.filter((r: any) => formatTextbook(r)?.trim()).length || 0;
     const totalRefs = textbookCount + referenceCount;
-    const refMaterialPassed = totalRefs >= 1;
-    let refMaterialDetails = '';
-    if (refMaterialPassed) {
-      refMaterialDetails = `${totalRefs} reference material(s) configured`;
-    } else {
-      refMaterialDetails = 'No textbooks or reference books added';
-      errors.push('At least 1 Textbook or Reference Book is required.');
-    }
+    const refMaterialPassed = true;
+    const refMaterialDetails = `${totalRefs} reference material(s) configured`;
 
     // Checklist array
     const requiredChecklist = [
@@ -250,8 +244,11 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
       { label: 'Minimum 5 COs Added', passed: cosPassed, details: cosDetails },
       ...(v.enableCOPO !== false ? [{ label: 'CO-PO Mapping Complete', passed: coPoPassed, details: coPoDetails }] : []),
       ...(v.enableCOPSO !== false ? [{ label: 'CO-PSO Mapping Complete', passed: coPsoPassed, details: coPsoDetails }] : []),
-      { label: v.syllabusFormat === 'CUSTOM_CONTENT' ? 'Custom Syllabus Added' : 'Exactly 5 Units Added', passed: syllabusPassed, details: syllabusDetails },
-      { label: 'At Least 1 Reference Material Added', passed: refMaterialPassed, details: refMaterialDetails }
+      { label: v.syllabusFormat === 'CUSTOM_CONTENT' ? 'Custom Syllabus Added' : 'Exactly 5 Units Added', passed: syllabusPassed, details: syllabusDetails }
+    ];
+
+    const optionalChecklist = [
+      { label: 'Reference Materials Added', passed: totalRefs >= 1, details: totalRefs >= 1 ? `${totalRefs} reference material(s) configured` : 'No textbooks or reference books added' }
     ];
 
     const completedRequired = requiredChecklist.filter(t => t.passed).length;
@@ -265,7 +262,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
       errors,
       checklist: requiredChecklist,
       requiredChecklist,
-      optionalChecklist: [],
+      optionalChecklist,
       completionPercent
     };
   };
@@ -655,25 +652,33 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
               new Paragraph({ children: [new TextRun({ text: 'Course Outcomes', bold: true })] }),
               ...(activeVersion.courseOutcomes || []).map((co: any) => new Paragraph({ children: [new TextRun({ text: `${co.coCode}: ${co.description || 'Not defined yet.'}` })] })),
               new Paragraph({ children: [] }),
-              new Paragraph({ children: [new TextRun({ text: 'CO-PO Mapping Matrix', bold: true })] }),
-              ...(activeVersion.courseOutcomes || []).map((co: any) => {
-                const mapping = activeVersion.coPoMappings?.find((m: any) => m.coCode === co.coCode) || { po: {} };
-                const values = poList.map((po: string) => mapping.po?.[po] || 0).join(', ');
-                return new Paragraph({ children: [new TextRun({ text: `${co.coCode}: [${values}]` })] });
-              }),
-              new Paragraph({ children: [] }),
-              new Paragraph({ children: [new TextRun({ text: 'CO-PSO Mapping Matrix', bold: true })] }),
-              ...(activeVersion.courseOutcomes || []).map((co: any) => {
-                const mapping = activeVersion.coPsoMappings?.find((m: any) => m.coCode === co.coCode) || { pso: {} };
-                const values = psoList.map((pso: string) => `${pso}:${mapping.pso?.[pso] || 0}`).join(', ');
-                return new Paragraph({ children: [new TextRun({ text: `${co.coCode}: [${values}]` })] });
-              }),
-              new Paragraph({ children: [] }),
-              new Paragraph({ children: [new TextRun({ text: 'Syllabus Units', bold: true })] }),
-              ...(activeVersion.syllabusUnits || []).flatMap((unit: any, idx: number) => [
-                new Paragraph({ children: [new TextRun({ text: `UNIT - ${idx + 1}`, bold: true })] }),
-                new Paragraph({ children: [new TextRun({ text: htmlToPlainText(getUnitRichText(unit)) || 'No syllabus content provided.' })] }),
+              ...(activeVersion.enableCOPO !== false ? [
+                new Paragraph({ children: [new TextRun({ text: 'CO-PO Mapping Matrix', bold: true })] }),
+                ...(activeVersion.courseOutcomes || []).map((co: any) => {
+                  const mapping = activeVersion.coPoMappings?.find((m: any) => m.coCode === co.coCode) || { po: {} };
+                  const values = poList.map((po: string) => mapping.po?.[po] || 0).join(', ');
+                  return new Paragraph({ children: [new TextRun({ text: `${co.coCode}: [${values}]` })] });
+                }),
                 new Paragraph({ children: [] })
+              ] : []),
+              ...(activeVersion.enableCOPSO !== false ? [
+                new Paragraph({ children: [new TextRun({ text: 'CO-PSO Mapping Matrix', bold: true })] }),
+                ...(activeVersion.courseOutcomes || []).map((co: any) => {
+                  const mapping = activeVersion.coPsoMappings?.find((m: any) => m.coCode === co.coCode) || { pso: {} };
+                  const values = psoList.map((pso: string) => `${pso}:${mapping.pso?.[pso] || 0}`).join(', ');
+                  return new Paragraph({ children: [new TextRun({ text: `${co.coCode}: [${values}]` })] });
+                }),
+                new Paragraph({ children: [] })
+              ] : []),
+              ...(activeVersion.syllabusFormat === 'CUSTOM_CONTENT' ? [
+                new Paragraph({ children: [new TextRun({ text: htmlToPlainText(activeVersion.customSyllabusContent) || 'No custom syllabus content provided.' })] })
+              ] : [
+                new Paragraph({ children: [new TextRun({ text: 'Syllabus Units', bold: true })] }),
+                ...(activeVersion.syllabusUnits || []).flatMap((unit: any, idx: number) => [
+                  new Paragraph({ children: [new TextRun({ text: `UNIT - ${idx + 1}`, bold: true })] }),
+                  new Paragraph({ children: [new TextRun({ text: htmlToPlainText(getUnitRichText(unit)) || 'No syllabus content provided.' })] }),
+                  new Paragraph({ children: [] })
+                ])
               ]),
               new Paragraph({ children: [] }),
 
@@ -820,7 +825,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
           </div>
         )}
 
-        {activeVersion.courseOutcomes && activeVersion.courseOutcomes.length > 0 && (
+        {activeVersion.courseOutcomes && activeVersion.courseOutcomes.length > 0 && activeVersion.enableCOPO !== false && (
           <div style={{ marginBottom: '12px' }}>
             <div style={{ fontWeight: 700, marginBottom: '4px' }}>Mapping of Course Outcomes with Program Outcomes:</div>
             <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: '9px' }}>
@@ -858,7 +863,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
           </div>
         )}
 
-        {activeVersion.courseOutcomes && activeVersion.courseOutcomes.length > 0 && activeVersion.coPsoMappings && activeVersion.coPsoMappings.length > 0 && (
+        {activeVersion.courseOutcomes && activeVersion.courseOutcomes.length > 0 && activeVersion.coPsoMappings && activeVersion.coPsoMappings.length > 0 && activeVersion.enableCOPSO !== false && (
           <div style={{ marginBottom: '14px' }}>
             <div style={{ fontWeight: 700, marginBottom: '4px' }}>Mapping of Course Outcomes with Program Specific Outcomes:</div>
             <table style={{ borderCollapse: 'collapse', fontSize: '9px' }}>
@@ -894,23 +899,32 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
           </div>
         )}
 
-        {activeVersion.syllabusUnits && activeVersion.syllabusUnits.length > 0 && (
+        {activeVersion.syllabusFormat === 'CUSTOM_CONTENT' ? (
           <div style={{ marginBottom: '12px' }}>
-            {(activeVersion.syllabusUnits || []).map((u: any, idx: number) => {
-              const romanNumerals = ['I','II','III','IV','V','VI','VII','VIII'];
-              return (
-                <div key={u.unitNumber || idx} style={{ marginBottom: '12px' }}>
-                  <div style={{ fontWeight: 700, marginBottom: '3px' }}>
-                    UNIT – {romanNumerals[idx] || idx + 1}
-                  </div>
-                  <div 
-                    style={{ textAlign: 'justify' }}
-                    dangerouslySetInnerHTML={{ __html: getUnitRichText(u) }}
-                  />
-                </div>
-              );
-            })}
+            <div 
+              style={{ textAlign: 'justify' }}
+              dangerouslySetInnerHTML={{ __html: activeVersion.customSyllabusContent || '' }}
+            />
           </div>
+        ) : (
+          activeVersion.syllabusUnits && activeVersion.syllabusUnits.length > 0 && (
+            <div style={{ marginBottom: '12px' }}>
+              {(activeVersion.syllabusUnits || []).map((u: any, idx: number) => {
+                const romanNumerals = ['I','II','III','IV','V','VI','VII','VIII'];
+                return (
+                  <div key={u.unitNumber || idx} style={{ marginBottom: '12px' }}>
+                    <div style={{ fontWeight: 700, marginBottom: '3px' }}>
+                      UNIT – {romanNumerals[idx] || idx + 1}
+                    </div>
+                    <div 
+                      style={{ textAlign: 'justify' }}
+                      dangerouslySetInnerHTML={{ __html: getUnitRichText(u) }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )
         )}
 
 
@@ -1104,7 +1118,11 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
         prerequisites: updatedVersion.prerequisites || [],
         cieSee: updatedVersion.cieSee,
         level: updatedVersion.level || 'Foundation',
-        knowledgeLevel: updatedVersion.knowledgeLevel || ''
+        knowledgeLevel: updatedVersion.knowledgeLevel || '',
+        enableCOPO: updatedVersion.enableCOPO !== false,
+        enableCOPSO: updatedVersion.enableCOPSO !== false,
+        syllabusFormat: updatedVersion.syllabusFormat || 'UNIT_BASED',
+        customSyllabusContent: updatedVersion.customSyllabusContent || ''
       };
       await api.courses.saveDraft(updatedVersion._id, coordinatorPayload);
       console.log('Auto-saved successfully');
@@ -1132,7 +1150,11 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
         prerequisites: activeVersion.prerequisites || [],
         cieSee: activeVersion.cieSee,
         level: activeVersion.level || 'Foundation',
-        knowledgeLevel: activeVersion.knowledgeLevel || ''
+        knowledgeLevel: activeVersion.knowledgeLevel || '',
+        enableCOPO: activeVersion.enableCOPO !== false,
+        enableCOPSO: activeVersion.enableCOPSO !== false,
+        syllabusFormat: activeVersion.syllabusFormat || 'UNIT_BASED',
+        customSyllabusContent: activeVersion.customSyllabusContent || ''
       };
 
 
@@ -3065,10 +3087,9 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({ acti
                       {[
                         { label: 'Course Details Completed', passed: reportCheck('Course Details Completed') },
                         { label: 'Minimum 5 COs Added', passed: reportCheck('Minimum 5 COs Added') },
-                        { label: 'CO-PO Mapping Complete', passed: reportCheck('CO-PO Mapping Complete') },
-                        { label: 'CO-PSO Mapping Complete', passed: reportCheck('CO-PSO Mapping Complete') },
-                        { label: 'Exactly 5 Units Added', passed: reportCheck('Exactly 5 Units Added') },
-                        { label: 'At Least 1 Reference Material Added', passed: reportCheck('At Least 1 Reference Material Added') }
+                        ...(activeVersion.enableCOPO !== false ? [{ label: 'CO-PO Mapping Complete', passed: reportCheck('CO-PO Mapping Complete') }] : []),
+                        ...(activeVersion.enableCOPSO !== false ? [{ label: 'CO-PSO Mapping Complete', passed: reportCheck('CO-PSO Mapping Complete') }] : []),
+                        { label: activeVersion.syllabusFormat === 'CUSTOM_CONTENT' ? 'Custom Syllabus Added' : 'Exactly 5 Units Added', passed: reportCheck(activeVersion.syllabusFormat === 'CUSTOM_CONTENT' ? 'Custom Syllabus Added' : 'Exactly 5 Units Added') },
                       ].map((item, idx) => (
                         <div key={idx} className={`rounded-xl border px-3 py-2.5 text-xs font-semibold flex items-center justify-between ${item.passed ? 'bg-emerald-50/50 border-emerald-100 text-emerald-700' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
                           <span>{item.label}</span>

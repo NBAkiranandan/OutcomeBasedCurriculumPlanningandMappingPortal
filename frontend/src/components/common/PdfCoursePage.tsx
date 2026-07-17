@@ -383,7 +383,6 @@ export const PdfCoursePage: React.FC<PdfCoursePageProps> = ({
 
       {courseVersion?.syllabusFormat === 'CUSTOM_CONTENT' ? (
         <div className="obcp-pdf-unit">
-          <p className="obcp-pdf-unit-title">Custom Syllabus Content:</p>
           <div className="obcp-pdf-unit-content" dangerouslySetInnerHTML={{ __html: courseVersion.customSyllabusContent || '' }} />
         </div>
       ) : (
