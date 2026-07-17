@@ -1057,8 +1057,8 @@ export const CurriculumBookGenerator: React.FC = () => {
                             const version = courseVersions.find(v => v.courseId?._id === c._id || v.courseId === c._id);
                             return { course: c, version };
                           })
-                          .sort((a: StreamCourseMapping, b: StreamCourseMapping) => (a.version?.semester || 0) - (b.version?.semester || 0))
-                          .map(({ course, version }: StreamCourseMapping) => (
+				.sort((a: StreamCourseMapping, b: StreamCourseMapping) => (a.version?.semester || 0) - (b.version?.semester || 0))
+.map(({ course, version }: StreamCourseMapping) => (
                             <tr key={course._id}>
                               <td>{course.code}</td>
                               <td className="text-left" style={{ fontWeight: 'bold' }}>{course.title}</td>
