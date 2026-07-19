@@ -13,6 +13,14 @@ import Program from '../models/Program.js';
 import PrerequisiteLink from '../models/PrerequisiteLink.js';
 import AuditLog from '../models/AuditLog.js';
 import { generateCurriculumDocx } from '../services/curriculumDocxService.js';
+import {
+  getDynamicCurriculumContext,
+  getCourseLevelCode,
+  getMappingValue as getMapValue,
+  deriveMappingColumns,
+  formatCommonTo,
+  getUecStream
+} from '../services/curriculumDataService.js';
 
 const STATUS_VALUES = ['Draft', 'Published', 'Archived'];
 const CURRICULUM_REVIEW_STATUSES = ['Draft', 'Submitted', 'Published', 'Archived', 'Unlocked'];
@@ -187,117 +195,7 @@ const snapshotFor = async (book) => {
   };
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  DYNAMIC CONTEXT LOADER
-// ─────────────────────────────────────────────────────────────────────────────
-const getDynamicCurriculumContext = async (book) => {
-  const regulationCode = book.regulation || '';
-  const regulation = await Regulation.findOne({ code: regulationCode })
-    .populate('programId').lean();
-
-  if (!regulation?._id) {
-    return { regulation: null, courses: [], minorStreams: [], peoPso: null };
-  }
-
-  const departmentId = String(book.departmentId?._id || book.departmentId || '');
-  const versions = await CourseVersion.find({ regulationId: regulation._id })
-    .populate({ path: 'courseId', populate: { path: 'departmentId' } })
-    .sort({ semester: 1, 'courseId.code': 1 })
-    .lean();
-
-  const courses = departmentId
-    ? versions.filter(version => {
-        const courseDeptId = String(version.courseId?.departmentId?._id || version.courseId?.departmentId || '');
-        return courseDeptId === departmentId || version.category === 'UEC';
-      })
-    : versions;
-
-  const minorStreams = departmentId
-    ? await MinorStream.find({ regulationId: regulation._id, departmentId })
-        .populate({
-          path: 'courses',
-          model: 'Course',
-          populate: { path: 'departmentId' }
-        })
-        .sort({ name: 1 }).lean()
-    : [];
-
-  const dbCategories = await CourseCategory.find().lean();
-  const prereqLinks = await PrerequisiteLink.find({ regulationId: regulation._id, isDeleted: { $ne: true } })
-    .populate('sourceCourseId')
-    .populate('targetCourseId')
-    .lean();
-
-  // Fetch ALL published Minor Degrees for this regulation
-  const MinorDegree = (await import('../models/MinorDegree.js')).default;
-  const MinorDegreeCourse = (await import('../models/MinorDegreeCourse.js')).default;
-  
-  const publishedMinors = await MinorDegree.find({ regulationId: regulation._id, status: 'Published', isDeleted: { $ne: true } })
-    .sort({ departmentName: 1, minorName: 1 })
-    .lean();
-
-  const publishedMinorDegrees = {};
-  for (let minor of publishedMinors) {
-    const courses = await MinorDegreeCourse.find({ minorDegreeId: minor._id, isDeleted: { $ne: true } })
-      .sort({ semester: 1 })
-      .lean();
-    minor.courses = courses;
-    
-    const dName = minor.departmentName || 'Unknown Department';
-    if (!publishedMinorDegrees[dName]) publishedMinorDegrees[dName] = [];
-    publishedMinorDegrees[dName].push(minor);
-  }
-
-  return { regulation, courses, courseVersions: versions, minorStreams, dbCategories, publishedMinorDegrees, prereqLinks };
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  HELPER RENDERERS
-// ─────────────────────────────────────────────────────────────────────────────
-const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
-
-const getMapValue = (mapping, key) => {
-  const source = mapping instanceof Map ? Object.fromEntries(mapping.entries()) : mapping || {};
-  const value = Number(source[key] || 0);
-  return Number.isFinite(value) && value > 0 ? value : '';
-};
-
-const deriveMappingColumns = (mappings = [], mapKey, prefix, fallbackCount) => {
-  const maxFromMappings = mappings.reduce((max, mapping) => {
-    const source = mapping?.[mapKey] instanceof Map ? Object.fromEntries(mapping[mapKey].entries()) : mapping?.[mapKey] || {};
-    Object.entries(source).forEach(([key, rawValue]) => {
-      const match = key.match(new RegExp(`^${prefix}(\\d+)$`, 'i'));
-      if (match && Number(rawValue || 0) > 0) max = Math.max(max, Number(match[1]));
-    });
-    return max;
-  }, 0);
-  const count = Math.max(fallbackCount, maxFromMappings);
-  return Array.from({ length: count }, (_, i) => `${prefix}${i + 1}`);
-};
-
-const formatCommonTo = (items = [], fallback) => {
-  const clean = items.map(item => String(item || '').trim()).filter(Boolean);
-  if (clean.length === 0) return `(For ${fallback})`;
-  if (clean.length === 1) return `(Common to ${clean[0]})`;
-  return `(Common to ${clean.slice(0, -1).join(', ')} & ${clean[clean.length - 1]})`;
-};
-
-const getCourseLevelCode = (version) => {
-  // First, parse the `courseLevel` string (e.g., "Intermediate Courses - IC")
-  const courseLevelRaw = `${version.courseLevel || version.knowledgeLevel || ''}`.toLowerCase();
-  if (courseLevelRaw.includes('advanced') || courseLevelRaw.includes(' ac') || courseLevelRaw.endsWith('-ac') || courseLevelRaw === 'ac') return 'AC';
-  if (courseLevelRaw.includes('intermediate') || courseLevelRaw.includes(' ic') || courseLevelRaw.endsWith('-ic') || courseLevelRaw === 'ic') return 'IC';
-  if (courseLevelRaw.includes('foundation') || courseLevelRaw.includes(' fc') || courseLevelRaw.endsWith('-fc') || courseLevelRaw === 'fc') return 'FC';
-
-  // Fallback: use the `level` enum field
-  const levelRaw = `${version.level || ''}`.toLowerCase();
-  if (levelRaw === 'advanced') return 'AC';
-  if (levelRaw === 'intermediate') return 'IC';
-  if (levelRaw === 'foundation') return 'FC';
-
-  // Default to Foundation (FC)
-  return 'FC';
-};
+// Shared utilities and database context loaded from curriculumDataService.js
 
 const getCategoryCreditTotal = (categoryTotals, code) => categoryTotals[code] || 0;
 

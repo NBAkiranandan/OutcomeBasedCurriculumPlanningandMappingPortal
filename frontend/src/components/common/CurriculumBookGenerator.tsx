@@ -32,7 +32,6 @@ export const CurriculumBookGenerator: React.FC = () => {
   const [deptMinorDegrees, setDeptMinorDegrees] = useState<any[]>([]);
   const [dbCategories, setDbCategories] = useState<any[]>([]);
   // Export state
-  const [pdfExporting, setPdfExporting] = useState(false);
   const [docxExporting, setDocxExporting] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
@@ -132,40 +131,6 @@ export const CurriculumBookGenerator: React.FC = () => {
 
   const handlePrintPreview = () => {
     window.print();
-  };
-
-  // PDF Export via Puppeteer backend
-  const handleExportPdf = async () => {
-    if (!selectedRegulation || !selectedDepartment) {
-      showToast('error', 'Please select a regulation and department first.');
-      return;
-    }
-    setPdfExporting(true);
-    try {
-      const printRoot = document.getElementById('curriculum-handbook-print-root');
-      if (!printRoot) throw new Error('PDF layout not found on page.');
-
-      const clonedRoot = printRoot.cloneNode(true) as HTMLElement;
-      // Strip out the non-printable buttons or toolbars if they exist inside the root, though they should be outside.
-
-      const htmlContent = clonedRoot.outerHTML;
-      let styles = '';
-      document.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => {
-        styles += el.outerHTML;
-      });
-
-      await (api.curriculumBooks as any).exportPdf({
-        htmlContent,
-        styles,
-        baseUrl: window.location.origin
-      });
-      showToast('success', 'PDF exported successfully!');
-    } catch (err: any) {
-      console.error('[PDF Export]', err);
-      showToast('error', err?.message || 'Failed to export PDF. Please try again.');
-    } finally {
-      setPdfExporting(false);
-    }
   };
 
   // DOCX Export via backend curriculumDocxService
@@ -321,7 +286,7 @@ export const CurriculumBookGenerator: React.FC = () => {
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between no-print">
         <div>
           <h1 className="text-xl font-extrabold text-slate-800">Curriculum Handbook Generator</h1>
-          <p className="text-xs text-slate-500 mt-1">Server-generated PDF (Puppeteer) and Word document from live curriculum data.</p>
+          <p className="text-xs text-slate-500 mt-1">Word document and print preview from live curriculum data.</p>
         </div>
         <div className="flex gap-2 items-center">
           {/* Print Preview — browser native */}
@@ -346,18 +311,7 @@ export const CurriculumBookGenerator: React.FC = () => {
               : <FileDown className="w-4 h-4" />}
             <span>{docxExporting ? 'Generating DOCX…' : 'Export DOCX'}</span>
           </button>
-          {/* PDF Export */}
-          <button
-            onClick={handleExportPdf}
-            disabled={pdfExporting || !selectedRegulation || !selectedDepartment}
-            id="curriculum-export-pdf-btn"
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {pdfExporting
-              ? <Loader2 className="w-4 h-4 animate-spin" />
-              : <Download className="w-4 h-4" />}
-            <span>{pdfExporting ? 'Generating PDF…' : 'Export PDF'}</span>
-          </button>
+
         </div>
       </div>
 

@@ -30,7 +30,7 @@ interface AdminDashboardProps {
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setActiveTab }) => {
   const { user } = useAuthStore();
   const { selectedRegulation, selectedDepartment, setSelectedProgram, setSelectedDepartment, setSelectedRegulation } = useContextStore();
-  
+
   // Curriculum Books Directory state
   const [bookViewMode, setBookViewMode] = useState<'directory' | 'view'>('directory');
   const [selectedDirProgram, setSelectedDirProgram] = useState<string | null>(null);
@@ -212,7 +212,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
         pending: pendingCount,
         published: publishedCount
       });
-      
+
       // Initialize selected directory program
       if (progRes.programs.length > 0) {
         setSelectedDirProgram(progRes.programs[0]._id);
@@ -384,7 +384,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
   const handleToggleReg = async (id: string) => {
     const reg = regulations.find(r => r._id === id);
     if (!reg) return;
-    
+
     setDeleteConfirmationModal({
       open: true,
       regId: id,
@@ -655,7 +655,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
       const pdfDoc = await PDFDocument.create();
       let page = pdfDoc.addPage([595.276, 841.89]); // A4 Size
       const { height } = page.getSize();
-      
+
       const targetDept = customDept || selectedDepartment;
       const targetReg = customReg || selectedRegulation;
 
@@ -706,7 +706,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
     try {
       const targetDept = customDept || selectedDepartment;
       const targetReg = customReg || selectedRegulation;
-      
+
       const doc = new Document({
         sections: [{
           properties: {},
@@ -1097,8 +1097,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                   <div className="flex justify-between items-start mb-3">
                     <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{prog.code}</span>
                     <span className={`px-2.5 py-0.5 rounded text-[9px] font-bold border ${prog.isActive !== false
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                        : 'bg-slate-100 text-slate-500 border-slate-200'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                      : 'bg-slate-100 text-slate-500 border-slate-200'
                       }`}>
                       {prog.isActive !== false ? 'Active' : 'Inactive'}
                     </span>
@@ -1110,7 +1110,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                     <div>Total Credits: <strong className="text-slate-700 block mt-0.5">{prog.totalCredits || 160}</strong></div>
                   </div>
                 </div>
-                
+
                 <div className="border-t border-slate-100 pt-4 mt-5 flex justify-end gap-2">
                   <button
                     onClick={async () => {
@@ -1209,8 +1209,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                     <td className="p-4 text-slate-500">{dept.facultyCount || 0} Members</td>
                     <td className="p-4">
                       <span className={`px-2.5 py-0.5 rounded text-[9px] font-bold border ${dept.isActive !== false
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                          : 'bg-slate-100 text-slate-500 border-slate-200'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                        : 'bg-slate-100 text-slate-500 border-slate-200'
                         }`}>
                         {dept.isActive !== false ? 'Active' : 'Inactive'}
                       </span>
@@ -1290,20 +1290,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 return (
                   <div
                     key={reg._id}
-                    className={`bg-white rounded-2xl border shadow-sm flex flex-col overflow-hidden transition-all ${
-                      reg.status === 'LOCKED' ? 'border-red-200' :
-                      reg.status === 'ACTIVE' ? 'border-emerald-200' :
-                      reg.status === 'ARCHIVED' ? 'border-slate-300 opacity-75' :
-                      'border-slate-200'
-                    }`}
+                    className={`bg-white rounded-2xl border shadow-sm flex flex-col overflow-hidden transition-all ${reg.status === 'LOCKED' ? 'border-red-200' :
+                        reg.status === 'ACTIVE' ? 'border-emerald-200' :
+                          reg.status === 'ARCHIVED' ? 'border-slate-300 opacity-75' :
+                            'border-slate-200'
+                      }`}
                   >
                     {/* Card Top Color Strip */}
-                    <div className={`h-1 w-full ${
-                      reg.status === 'LOCKED' ? 'bg-red-400' :
-                      reg.status === 'ACTIVE' ? 'bg-emerald-500' :
-                      reg.status === 'ARCHIVED' ? 'bg-slate-400' :
-                      'bg-amber-400'
-                    }`} />
+                    <div className={`h-1 w-full ${reg.status === 'LOCKED' ? 'bg-red-400' :
+                        reg.status === 'ACTIVE' ? 'bg-emerald-500' :
+                          reg.status === 'ARCHIVED' ? 'bg-slate-400' :
+                            'bg-amber-400'
+                      }`} />
 
                     <div className="p-5 flex-1 flex flex-col">
                       {/* Top Row: program label + status badge + actions */}
@@ -1517,12 +1515,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
               <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                 <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 overflow-hidden">
                   {/* Modal header strip */}
-                  <div className={`h-1.5 w-full ${
-                    target === 'ACTIVE' ? 'bg-emerald-500' :
-                    target === 'LOCKED' ? 'bg-red-500' :
-                    target === 'ARCHIVED' ? 'bg-slate-500' :
-                    'bg-amber-400'
-                  }`} />
+                  <div className={`h-1.5 w-full ${target === 'ACTIVE' ? 'bg-emerald-500' :
+                      target === 'LOCKED' ? 'bg-red-500' :
+                        target === 'ARCHIVED' ? 'bg-slate-500' :
+                          'bg-amber-400'
+                    }`} />
 
                   <div className="p-6">
                     <h2 className="text-lg font-extrabold text-slate-800">{titles[target]}</h2>
@@ -1586,12 +1583,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                         id="lifecycle-confirm-btn"
                         onClick={handleConfirmTransition}
                         disabled={lifecycleModal.loading}
-                        className={`flex-1 py-2.5 text-white rounded-xl text-xs font-extrabold uppercase transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                          target === 'ACTIVE' ? 'bg-emerald-600 hover:bg-emerald-700' :
-                          target === 'LOCKED' ? 'bg-red-600 hover:bg-red-700' :
-                          target === 'ARCHIVED' ? 'bg-slate-600 hover:bg-slate-700' :
-                          'bg-amber-500 hover:bg-amber-600'
-                        }`}
+                        className={`flex-1 py-2.5 text-white rounded-xl text-xs font-extrabold uppercase transition-all cursor-pointer flex items-center justify-center gap-2 ${target === 'ACTIVE' ? 'bg-emerald-600 hover:bg-emerald-700' :
+                            target === 'LOCKED' ? 'bg-red-600 hover:bg-red-700' :
+                              target === 'ARCHIVED' ? 'bg-slate-600 hover:bg-slate-700' :
+                                'bg-amber-500 hover:bg-amber-600'
+                          }`}
                       >
                         {lifecycleModal.loading ? (
                           <><RotateCw className="w-3.5 h-3.5 animate-spin" /> Processing...</>
@@ -1621,10 +1617,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 if (!poSelectedReg) return alert('Please select a regulation first.');
                 const reg = regulations.find(r => r._id === poSelectedReg);
                 if (reg) {
-                   api.regulations.update(poSelectedReg, { outcomes: reg.outcomes }).then(() => {
-                     alert('POs successfully saved to regulation!');
-                     loadData();
-                   }).catch((err: any) => alert(err.message));
+                  api.regulations.update(poSelectedReg, { outcomes: reg.outcomes }).then(() => {
+                    alert('POs successfully saved to regulation!');
+                    loadData();
+                  }).catch((err: any) => alert(err.message));
                 }
               }}
               className="flex items-center gap-1.5 px-4.5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow cursor-pointer"
@@ -1641,21 +1637,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
               <select
                 value={poSelectedReg}
                 onChange={(e) => {
-                   setPoSelectedReg(e.target.value);
-                   // Ensure PO abstraction exists
-                   const regIndex = regulations.findIndex(r => r._id === e.target.value);
-                   if (regIndex > -1) {
-                     const reg = regulations[regIndex];
-                     const poExists = reg.outcomes?.find((o: any) => o.name === 'PO');
-                     if (!poExists) {
-                       const newRegs = [...regulations];
-                       newRegs[regIndex] = {
-                         ...newRegs[regIndex],
-                         outcomes: [...(newRegs[regIndex].outcomes || []), { name: 'PO', isGlobal: true, isLocal: false, isMapped: false, items: [] }]
-                       };
-                       setRegulations(newRegs);
-                     }
-                   }
+                  setPoSelectedReg(e.target.value);
+                  // Ensure PO abstraction exists
+                  const regIndex = regulations.findIndex(r => r._id === e.target.value);
+                  if (regIndex > -1) {
+                    const reg = regulations[regIndex];
+                    const poExists = reg.outcomes?.find((o: any) => o.name === 'PO');
+                    if (!poExists) {
+                      const newRegs = [...regulations];
+                      newRegs[regIndex] = {
+                        ...newRegs[regIndex],
+                        outcomes: [...(newRegs[regIndex].outcomes || []), { name: 'PO', isGlobal: true, isLocal: false, isMapped: false, items: [] }]
+                      };
+                      setRegulations(newRegs);
+                    }
+                  }
                 }}
                 className="border border-slate-300 rounded-lg p-2 font-semibold bg-white outline-none w-64 text-slate-700"
               >
@@ -1679,92 +1675,92 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
 
               <div className="space-y-3">
                 {(() => {
-                   const regIndex = regulations.findIndex(r => r._id === poSelectedReg);
-                   if (regIndex === -1) return null;
-                   const reg = regulations[regIndex];
-                   const poOutcomeIndex = reg.outcomes?.findIndex((o: any) => o.name === 'PO');
-                   if (poOutcomeIndex === undefined || poOutcomeIndex === -1) return null;
-                   
-                   const poOutcome = reg.outcomes[poOutcomeIndex];
-                   const items = poOutcome.items || [];
+                  const regIndex = regulations.findIndex(r => r._id === poSelectedReg);
+                  if (regIndex === -1) return null;
+                  const reg = regulations[regIndex];
+                  const poOutcomeIndex = reg.outcomes?.findIndex((o: any) => o.name === 'PO');
+                  if (poOutcomeIndex === undefined || poOutcomeIndex === -1) return null;
 
-                   return (
-                     <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-                       {items.length === 0 ? (
-                         <div className="text-center p-8 text-xs font-bold text-slate-400 border border-dashed border-slate-300 rounded-xl bg-slate-50/50">
-                           No POs configured yet. Click "Add PO" to begin.
-                         </div>
-                       ) : (
-                         items.map((item: any, iIdx: number) => (
-                           <div key={iIdx} className="flex items-start gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                             <div className="flex-1 space-y-2">
-                               <div>
-                                 <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">PO Code</span>
-                                 <input
-                                   type="text"
-                                   placeholder="e.g. PO1"
-                                   value={item.code}
-                                   onChange={(e) => {
-                                     const newRegs = [...regulations];
-                                     const newOutcomes = [...newRegs[regIndex].outcomes];
-                                     newOutcomes[poOutcomeIndex].items[iIdx].code = e.target.value;
-                                     newRegs[regIndex] = { ...newRegs[regIndex], outcomes: newOutcomes };
-                                     setRegulations(newRegs);
-                                   }}
-                                   className="w-32 border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-700 outline-none focus:ring-1 focus:ring-blue-500 bg-white shadow-sm"
-                                 />
-                               </div>
-                               <div>
-                                 <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">PO Description</span>
-                                 <textarea
-                                   placeholder="Enter PO description..."
-                                   rows={2}
-                                   value={item.description}
-                                   onChange={(e) => {
-                                     const newRegs = [...regulations];
-                                     const newOutcomes = [...newRegs[regIndex].outcomes];
-                                     newOutcomes[poOutcomeIndex].items[iIdx].description = e.target.value;
-                                     newRegs[regIndex] = { ...newRegs[regIndex], outcomes: newOutcomes };
-                                     setRegulations(newRegs);
-                                   }}
-                                   className="w-full border border-slate-300 rounded-lg p-2 text-xs text-slate-700 outline-none focus:ring-1 focus:ring-blue-500 bg-white shadow-sm resize-y"
-                                 />
-                               </div>
-                             </div>
-                             <button
-                               type="button"
-                               onClick={() => {
-                                 const newRegs = [...regulations];
-                                 const newOutcomes = [...newRegs[regIndex].outcomes];
-                                 newOutcomes[poOutcomeIndex].items.splice(iIdx, 1);
-                                 newRegs[regIndex] = { ...newRegs[regIndex], outcomes: newOutcomes };
-                                 setRegulations(newRegs);
-                               }}
-                               className="p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
-                               title="Remove PO"
-                             >
-                               <Trash2 className="w-4 h-4" />
-                             </button>
-                           </div>
-                         ))
-                       )}
-                       
-                       <button
-                         type="button"
-                         onClick={() => {
-                           const newRegs = [...regulations];
-                           const newOutcomes = [...newRegs[regIndex].outcomes];
-                           if (!newOutcomes[poOutcomeIndex].items) newOutcomes[poOutcomeIndex].items = [];
-                           newOutcomes[poOutcomeIndex].items.push({ code: `PO${newOutcomes[poOutcomeIndex].items.length + 1}`, description: '' });
-                           newRegs[regIndex] = { ...newRegs[regIndex], outcomes: newOutcomes };
-                           setRegulations(newRegs);
-                         }}
-                         className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors mt-4 cursor-pointer w-fit border border-blue-200/50"
-                       >
-                         <Plus className="w-4 h-4" /> Add PO
-                       </button>
-                     </div>
-                   );
+                  const poOutcome = reg.outcomes[poOutcomeIndex];
+                  const items = poOutcome.items || [];
+
+                  return (
+                    <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                      {items.length === 0 ? (
+                        <div className="text-center p-8 text-xs font-bold text-slate-400 border border-dashed border-slate-300 rounded-xl bg-slate-50/50">
+                          No POs configured yet. Click "Add PO" to begin.
+                        </div>
+                      ) : (
+                        items.map((item: any, iIdx: number) => (
+                          <div key={iIdx} className="flex items-start gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div className="flex-1 space-y-2">
+                              <div>
+                                <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">PO Code</span>
+                                <input
+                                  type="text"
+                                  placeholder="e.g. PO1"
+                                  value={item.code}
+                                  onChange={(e) => {
+                                    const newRegs = [...regulations];
+                                    const newOutcomes = [...newRegs[regIndex].outcomes];
+                                    newOutcomes[poOutcomeIndex].items[iIdx].code = e.target.value;
+                                    newRegs[regIndex] = { ...newRegs[regIndex], outcomes: newOutcomes };
+                                    setRegulations(newRegs);
+                                  }}
+                                  className="w-32 border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-700 outline-none focus:ring-1 focus:ring-blue-500 bg-white shadow-sm"
+                                />
+                              </div>
+                              <div>
+                                <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">PO Description</span>
+                                <textarea
+                                  placeholder="Enter PO description..."
+                                  rows={2}
+                                  value={item.description}
+                                  onChange={(e) => {
+                                    const newRegs = [...regulations];
+                                    const newOutcomes = [...newRegs[regIndex].outcomes];
+                                    newOutcomes[poOutcomeIndex].items[iIdx].description = e.target.value;
+                                    newRegs[regIndex] = { ...newRegs[regIndex], outcomes: newOutcomes };
+                                    setRegulations(newRegs);
+                                  }}
+                                  className="w-full border border-slate-300 rounded-lg p-2 text-xs text-slate-700 outline-none focus:ring-1 focus:ring-blue-500 bg-white shadow-sm resize-y"
+                                />
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newRegs = [...regulations];
+                                const newOutcomes = [...newRegs[regIndex].outcomes];
+                                newOutcomes[poOutcomeIndex].items.splice(iIdx, 1);
+                                newRegs[regIndex] = { ...newRegs[regIndex], outcomes: newOutcomes };
+                                setRegulations(newRegs);
+                              }}
+                              className="p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
+                              title="Remove PO"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newRegs = [...regulations];
+                          const newOutcomes = [...newRegs[regIndex].outcomes];
+                          if (!newOutcomes[poOutcomeIndex].items) newOutcomes[poOutcomeIndex].items = [];
+                          newOutcomes[poOutcomeIndex].items.push({ code: `PO${newOutcomes[poOutcomeIndex].items.length + 1}`, description: '' });
+                          newRegs[regIndex] = { ...newRegs[regIndex], outcomes: newOutcomes };
+                          setRegulations(newRegs);
+                        }}
+                        className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors mt-4 cursor-pointer w-fit border border-blue-200/50"
+                      >
+                        <Plus className="w-4 h-4" /> Add PO
+                      </button>
+                    </div>
+                  );
                 })()}
               </div>
             </div>
@@ -1830,9 +1826,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                       <td className="p-4 font-semibold">{u.email}</td>
                       <td className="p-4">
                         <span className={`px-2 py-0.5 rounded text-[8px] font-extrabold uppercase border ${u.role === 'Admin' ? 'bg-red-50 text-red-700 border-red-100' :
-                            u.role === 'HOD' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' :
-                              u.role === 'Coordinator' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                                'bg-slate-100 text-slate-600'
+                          u.role === 'HOD' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' :
+                            u.role === 'Coordinator' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                              'bg-slate-100 text-slate-600'
                           }`}>
                           {u.role}
                         </span>
@@ -1841,8 +1837,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                       <td className="p-4">{u.programId?.code || 'None'}</td>
                       <td className="p-4">
                         <span className={`px-2.5 py-0.5 rounded text-[9px] font-bold border ${u.isActive !== false
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                            : 'bg-slate-100 text-slate-500 border-slate-200'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                          : 'bg-slate-100 text-slate-500 border-slate-200'
                           }`}>
                           {u.isActive !== false ? 'Active' : 'Deactivated'}
                         </span>
@@ -1897,7 +1893,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 return (
                   <div key={hod._id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -z-0 group-hover:scale-110 transition-transform"></div>
-                    
+
                     <div className="flex items-start gap-4 relative z-10">
                       <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold text-lg border-2 border-white shadow-sm flex-shrink-0">
                         {hod.name.charAt(0).toUpperCase()}
@@ -1905,13 +1901,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                       <div className="flex-1">
                         <h3 className="text-lg font-bold text-slate-800">{hod.name}</h3>
                         <p className="text-sm text-slate-500 font-medium">{hod.email}</p>
-                        
+
                         {dept ? (
                           <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
                             <h4 className="text-sm font-bold text-indigo-700 mb-1">
                               {dept.name} ({dept.code})
                             </h4>
-                            
+
                             <div className="mt-3">
                               <p className="text-xs text-slate-500 font-bold mb-2 uppercase tracking-wider">Assigned Regulations ({deptRegs.length})</p>
                               {deptRegs.length > 0 ? (
@@ -1939,7 +1935,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                   </div>
                 );
               })}
-            
+
             {users.filter(u => u.role === 'HOD' && u.isActive !== false).length === 0 && (
               <div className="col-span-full p-12 text-center text-slate-400 font-medium">
                 <Users className="w-12 h-12 mx-auto mb-3 opacity-20" />
@@ -1975,11 +1971,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                     <button
                       key={p._id}
                       onClick={() => setSelectedDirProgram(p._id)}
-                      className={`px-5 py-2.5 rounded-xl font-bold border transition-all cursor-pointer ${
-                        selectedDirProgram === p._id
+                      className={`px-5 py-2.5 rounded-xl font-bold border transition-all cursor-pointer ${selectedDirProgram === p._id
                           ? 'bg-blue-600 text-white border-blue-600 shadow-md'
                           : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                      }`}
+                        }`}
                     >
                       {p.code}
                     </button>
@@ -2004,88 +1999,88 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                             {deptRegs.map((reg) => {
                               const review = getCurriculumReview(reg._id, dept._id);
                               return (
-                              <div key={reg._id} className="border border-slate-200 rounded-xl p-5 hover:border-blue-300 transition-colors bg-slate-50 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-16 h-16 bg-blue-100/50 rounded-bl-full -z-0 group-hover:scale-110 transition-transform"></div>
-                                <div className="flex items-start justify-between gap-2 relative z-10">
-                                  <h4 className="font-extrabold text-slate-800 text-lg">{reg.code}</h4>
-                                  <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${getCurriculumReviewClass(review.status)}`}>
-                                    {review.status}
-                                  </span>
-                                </div>
-                                <p className="text-xs text-slate-500 font-medium mb-4 relative z-10">Academic Year: {reg.academicYear}</p>
-                                {review.status === 'Unlocked' && review.remarks && (
-                                  <p className="text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-100 rounded-lg p-2 mb-4 relative z-10">
-                                    Last remarks: {review.remarks}
-                                  </p>
-                                )}
-                                
-                                <div className="flex flex-wrap gap-2 relative z-10">
-                                  <button
-                                    onClick={() => {
-                                      const prog = programs.find((p) => p._id === selectedDirProgram);
-                                      if (prog) setSelectedProgram(prog);
-                                      setSelectedDepartment(dept);
-                                      setSelectedRegulation(reg);
-                                      setBookViewMode('view');
-                                    }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors cursor-pointer"
-                                  >
-                                    <Eye className="w-3.5 h-3.5" />
-                                    View
-                                  </button>
-                                  {review.status !== 'Published' && review.status !== 'Archived' && (
-                                    <button
-                                      onClick={() => handlePublishCurriculumBook(reg._id, dept._id)}
-                                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 transition-colors cursor-pointer"
-                                    >
-                                      <CheckCircle2 className="w-3.5 h-3.5" />
-                                      Publish
-                                    </button>
+                                <div key={reg._id} className="border border-slate-200 rounded-xl p-5 hover:border-blue-300 transition-colors bg-slate-50 relative overflow-hidden group">
+                                  <div className="absolute top-0 right-0 w-16 h-16 bg-blue-100/50 rounded-bl-full -z-0 group-hover:scale-110 transition-transform"></div>
+                                  <div className="flex items-start justify-between gap-2 relative z-10">
+                                    <h4 className="font-extrabold text-slate-800 text-lg">{reg.code}</h4>
+                                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${getCurriculumReviewClass(review.status)}`}>
+                                      {review.status}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-slate-500 font-medium mb-4 relative z-10">Academic Year: {reg.academicYear}</p>
+                                  {review.status === 'Unlocked' && review.remarks && (
+                                    <p className="text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-100 rounded-lg p-2 mb-4 relative z-10">
+                                      Last remarks: {review.remarks}
+                                    </p>
                                   )}
-                                  {review.status === 'Published' && (
-                                    <>
+
+                                  <div className="flex flex-wrap gap-2 relative z-10">
+                                    <button
+                                      onClick={() => {
+                                        const prog = programs.find((p) => p._id === selectedDirProgram);
+                                        if (prog) setSelectedProgram(prog);
+                                        setSelectedDepartment(dept);
+                                        setSelectedRegulation(reg);
+                                        setBookViewMode('view');
+                                      }}
+                                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors cursor-pointer"
+                                    >
+                                      <Eye className="w-3.5 h-3.5" />
+                                      View
+                                    </button>
+                                    {review.status !== 'Published' && review.status !== 'Archived' && (
                                       <button
-                                        onClick={() => handleUnlockCurriculumBook(reg._id, dept._id)}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-bold hover:bg-amber-700 transition-colors cursor-pointer"
+                                        onClick={() => handlePublishCurriculumBook(reg._id, dept._id)}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 transition-colors cursor-pointer"
                                       >
-                                        <Unlock className="w-3.5 h-3.5" />
+                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                        Publish
+                                      </button>
+                                    )}
+                                    {review.status === 'Published' && (
+                                      <>
+                                        <button
+                                          onClick={() => handleUnlockCurriculumBook(reg._id, dept._id)}
+                                          className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-bold hover:bg-amber-700 transition-colors cursor-pointer"
+                                        >
+                                          <Unlock className="w-3.5 h-3.5" />
+                                          Unlock
+                                        </button>
+                                        <button
+                                          onClick={() => handleArchiveCurriculumBook(reg._id, dept._id)}
+                                          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-600 text-white rounded-lg text-xs font-bold hover:bg-slate-700 transition-colors cursor-pointer"
+                                        >
+                                          <FileText className="w-3.5 h-3.5" />
+                                          Archive
+                                        </button>
+                                      </>
+                                    )}
+                                    {review.status !== 'Archived' && review.status !== 'Unlocked' && review.status !== 'Draft' && (
+                                      <button
+                                        onClick={() => setCurriculumRemarkModal({ open: true, regId: reg._id, deptId: dept._id })}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold hover:bg-amber-100 transition-colors cursor-pointer"
+                                      >
+                                        <AlertCircle className="w-3.5 h-3.5" />
                                         Unlock
                                       </button>
-                                      <button
-                                        onClick={() => handleArchiveCurriculumBook(reg._id, dept._id)}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-600 text-white rounded-lg text-xs font-bold hover:bg-slate-700 transition-colors cursor-pointer"
-                                      >
-                                        <FileText className="w-3.5 h-3.5" />
-                                        Archive
-                                      </button>
-                                    </>
-                                  )}
-                                  {review.status !== 'Archived' && review.status !== 'Unlocked' && review.status !== 'Draft' && (
+                                    )}
+                                    <div className="w-full h-px bg-slate-200 my-1"></div>
                                     <button
-                                      onClick={() => setCurriculumRemarkModal({ open: true, regId: reg._id, deptId: dept._id })}
-                                      className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold hover:bg-amber-100 transition-colors cursor-pointer"
+                                      onClick={() => generateDOCX(`${reg.code} Curriculum Book`, dept, reg)}
+                                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors cursor-pointer"
                                     >
-                                      <AlertCircle className="w-3.5 h-3.5" />
-                                      Unlock
+                                      <FileText className="w-3.5 h-3.5" />
+                                      Word
                                     </button>
-                                  )}
-                                  <div className="w-full h-px bg-slate-200 my-1"></div>
-                                  <button
-                                    onClick={() => generateDOCX(`${reg.code} Curriculum Book`, dept, reg)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors cursor-pointer"
-                                  >
-                                    <FileText className="w-3.5 h-3.5" />
-                                    Word
-                                  </button>
-                                  <button
-                                    onClick={() => generatePDF(`${reg.code} Curriculum Book`, dept, reg)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors cursor-pointer"
-                                  >
-                                    <Download className="w-3.5 h-3.5" />
-                                    PDF
-                                  </button>
+                                    <button
+                                      onClick={() => generatePDF(`${reg.code} Curriculum Book`, dept, reg)}
+                                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors cursor-pointer"
+                                    >
+                                      <Download className="w-3.5 h-3.5" />
+                                      PDF
+                                    </button>
+                                  </div>
                                 </div>
-                              </div>
                               );
                             })}
                           </div>
@@ -2114,8 +2109,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                   key={tab}
                   onClick={() => setApprovalTabFilter(tab)}
                   className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer border ${approvalTabFilter === tab
-                      ? 'bg-blue-600 border-blue-600 text-white shadow'
-                      : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                    ? 'bg-blue-600 border-blue-600 text-white shadow'
+                    : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
                     }`}
                 >
                   {tab}
@@ -2157,8 +2152,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                       <td className="p-4 font-semibold">{v.assignedCoordinator?.name || 'HOD CSE'}</td>
                       <td className="p-4">
                         <span className={`px-2.5 py-0.5 rounded text-[9px] font-bold border ${v.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                            v.status.startsWith('Pending') ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                              'bg-red-50 text-red-700 border-red-100'
+                          v.status.startsWith('Pending') ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                            'bg-red-50 text-red-700 border-red-100'
                           }`}>
                           {v.status}
                         </span>
@@ -2892,25 +2887,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                   onChange={(e) => {
                     const progId = e.target.value;
                     const selectedProg = programs.find((p) => p._id === progId);
-                    
+
                     // Deep copy outcomes to avoid reference mutation, dropping the internal _id so mongoose generates new ones for Regulation
-                    const inheritedOutcomes = selectedProg?.outcomes 
-                      ? selectedProg.outcomes.map((o: any) => ({ 
-                          name: o.name, 
-                          isGlobal: o.isGlobal, 
-                          isLocal: o.isLocal, 
-                          isMapped: o.isMapped,
-                          items: o.items ? o.items.map((i: any) => ({ code: i.code, description: i.description })) : []
-                        })) 
+                    const inheritedOutcomes = selectedProg?.outcomes
+                      ? selectedProg.outcomes.map((o: any) => ({
+                        name: o.name,
+                        isGlobal: o.isGlobal,
+                        isLocal: o.isLocal,
+                        isMapped: o.isMapped,
+                        items: o.items ? o.items.map((i: any) => ({ code: i.code, description: i.description })) : []
+                      }))
                       : [];
 
-                    setRegModal({ 
-                      ...regModal, 
-                      data: { 
-                        ...regModal.data, 
+                    setRegModal({
+                      ...regModal,
+                      data: {
+                        ...regModal.data,
                         programId: progId,
                         outcomes: regModal.data.outcomes?.length > 0 ? regModal.data.outcomes : inheritedOutcomes
-                      } 
+                      }
                     });
                   }}
                   className="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 font-semibold outline-none focus:ring-1 focus:ring-blue-500 bg-white"
@@ -3221,8 +3216,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                         <p className="text-xs text-slate-500 mt-0.5">Academic Year: {reg.academicYear} â€¢ Duration: {reg.durationYears} Years</p>
                       </div>
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${reg.status === 'Published'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                          : reg.status === 'Archived'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                        : reg.status === 'Archived'
                           ? 'bg-red-50 text-red-700 border-red-100'
                           : 'bg-amber-50 text-amber-700 border-amber-100'
                         }`}>
@@ -3246,14 +3241,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 <AlertCircle className="w-5 h-5 text-red-600 animate-pulse" />
                 <span>Confirm Regulation Deletion</span>
               </h3>
-              <button 
+              <button
                 onClick={() => setDeleteConfirmationModal({ open: false, regId: null, regCode: '', stats: null, loadingStats: false })}
                 className="text-slate-400 hover:text-slate-700 text-lg"
               >
                 âœ•
               </button>
             </div>
-            
+
             <div className="p-6 space-y-4">
               <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl">
                 <p className="text-xs text-red-800 font-semibold leading-relaxed">
@@ -3283,7 +3278,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                       </div>
                     ))}
                   </div>
-                  
+
                   <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
                     <p className="text-[11px] text-amber-800 font-medium leading-relaxed">
                       <strong>Cascade Operations:</strong> All Course Outcomes (COs), Syllabus structures, Semester schemes, and Course Assignments associated with this regulation will be soft-deleted automatically.
