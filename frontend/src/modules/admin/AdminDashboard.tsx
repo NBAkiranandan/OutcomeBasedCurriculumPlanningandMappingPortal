@@ -280,13 +280,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
     }
   };
 
-  // Toggle Program Status
-  const handleToggleProgram = async (id: string) => {
+  // Delete Program
+  const handleDeleteProgram = async (id: string, name?: string) => {
+    if (!window.confirm(`Are you sure you want to permanently delete program ${name ? `"${name}"` : ''}? This action cannot be undone.`)) return;
     try {
-      await api.programs.delete(id); // Backend endpoint deactivates
+      await api.programs.delete(id);
+      alert('Program permanently deleted from database.');
       loadData();
     } catch (err: any) {
-      alert(`Failed to toggle program state: ${err.message}`);
+      alert(`Failed to delete program: ${err.message}`);
     }
   };
 
@@ -307,13 +309,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
     }
   };
 
-  // Toggle Department Status
-  const handleToggleDept = async (id: string) => {
+  // Delete Department
+  const handleDeleteDept = async (id: string, name?: string) => {
+    if (!window.confirm(`Are you sure you want to permanently delete department ${name ? `"${name}"` : ''}? This action cannot be undone.`)) return;
     try {
       await api.programs.deleteDept(id);
+      alert('Department permanently deleted from database.');
       loadData();
     } catch (err: any) {
-      alert(`Failed to toggle department state: ${err.message}`);
+      alert(`Failed to delete department: ${err.message}`);
     }
   };
 
@@ -477,13 +481,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
     }
   };
 
-  // Toggle User Status
-  const handleToggleUser = async (id: string) => {
+  // Delete User
+  const handleDeleteUser = async (id: string, name?: string) => {
+    if (!window.confirm(`Are you sure you want to permanently delete user account ${name ? `"${name}"` : ''}? This action cannot be undone.`)) return;
     try {
       await api.users.delete(id);
+      alert('User account permanently deleted from database.');
       loadData();
     } catch (err: any) {
-      alert(`Failed to toggle user account state: ${err.message}`);
+      alert(`Failed to delete user account: ${err.message}`);
     }
   };
 
@@ -1145,9 +1151,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                     <Edit3 className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => handleToggleProgram(prog._id)}
-                    className={`p-1.5 hover:bg-slate-100 rounded cursor-pointer transition-colors ${prog.isActive !== false ? 'text-red-500 hover:text-red-700' : 'text-emerald-600 hover:text-emerald-700'}`}
-                    title={prog.isActive !== false ? 'Deactivate' : 'Activate'}
+                    onClick={() => handleDeleteProgram(prog._id, prog.name)}
+                    className="p-1.5 hover:bg-slate-100 rounded cursor-pointer transition-colors text-red-500 hover:text-red-700"
+                    title="Delete Program"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -1224,9 +1230,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                         <Edit3 className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleToggleDept(dept._id)}
-                        className={`p-1 hover:bg-slate-100 rounded cursor-pointer ${dept.isActive !== false ? 'text-red-500 hover:text-red-700' : 'text-emerald-600'}`}
-                        title={dept.isActive !== false ? 'Deactivate' : 'Activate'}
+                        onClick={() => handleDeleteDept(dept._id, dept.name)}
+                        className="p-1 hover:bg-slate-100 rounded cursor-pointer text-red-500 hover:text-red-700"
+                        title="Delete Department"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1291,16 +1297,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                   <div
                     key={reg._id}
                     className={`bg-white rounded-2xl border shadow-sm flex flex-col overflow-hidden transition-all ${reg.status === 'LOCKED' ? 'border-red-200' :
-                        reg.status === 'ACTIVE' ? 'border-emerald-200' :
-                          reg.status === 'ARCHIVED' ? 'border-slate-300 opacity-75' :
-                            'border-slate-200'
+                      reg.status === 'ACTIVE' ? 'border-emerald-200' :
+                        reg.status === 'ARCHIVED' ? 'border-slate-300 opacity-75' :
+                          'border-slate-200'
                       }`}
                   >
                     {/* Card Top Color Strip */}
                     <div className={`h-1 w-full ${reg.status === 'LOCKED' ? 'bg-red-400' :
-                        reg.status === 'ACTIVE' ? 'bg-emerald-500' :
-                          reg.status === 'ARCHIVED' ? 'bg-slate-400' :
-                            'bg-amber-400'
+                      reg.status === 'ACTIVE' ? 'bg-emerald-500' :
+                        reg.status === 'ARCHIVED' ? 'bg-slate-400' :
+                          'bg-amber-400'
                       }`} />
 
                     <div className="p-5 flex-1 flex flex-col">
@@ -1516,9 +1522,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                 <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 overflow-hidden">
                   {/* Modal header strip */}
                   <div className={`h-1.5 w-full ${target === 'ACTIVE' ? 'bg-emerald-500' :
-                      target === 'LOCKED' ? 'bg-red-500' :
-                        target === 'ARCHIVED' ? 'bg-slate-500' :
-                          'bg-amber-400'
+                    target === 'LOCKED' ? 'bg-red-500' :
+                      target === 'ARCHIVED' ? 'bg-slate-500' :
+                        'bg-amber-400'
                     }`} />
 
                   <div className="p-6">
@@ -1584,9 +1590,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                         onClick={handleConfirmTransition}
                         disabled={lifecycleModal.loading}
                         className={`flex-1 py-2.5 text-white rounded-xl text-xs font-extrabold uppercase transition-all cursor-pointer flex items-center justify-center gap-2 ${target === 'ACTIVE' ? 'bg-emerald-600 hover:bg-emerald-700' :
-                            target === 'LOCKED' ? 'bg-red-600 hover:bg-red-700' :
-                              target === 'ARCHIVED' ? 'bg-slate-600 hover:bg-slate-700' :
-                                'bg-amber-500 hover:bg-amber-600'
+                          target === 'LOCKED' ? 'bg-red-600 hover:bg-red-700' :
+                            target === 'ARCHIVED' ? 'bg-slate-600 hover:bg-slate-700' :
+                              'bg-amber-500 hover:bg-amber-600'
                           }`}
                       >
                         {lifecycleModal.loading ? (
@@ -1852,9 +1858,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleToggleUser(u._id)}
-                          className={`p-1 hover:bg-slate-100 rounded cursor-pointer ${u.isActive !== false ? 'text-red-500 hover:text-red-700' : 'text-emerald-600'}`}
-                          title={u.isActive !== false ? 'Deactivate' : 'Activate'}
+                          onClick={() => handleDeleteUser(u._id, u.name)}
+                          className="p-1 hover:bg-slate-100 rounded cursor-pointer text-red-500 hover:text-red-700"
+                          title="Delete User"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -1972,8 +1978,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, setAc
                       key={p._id}
                       onClick={() => setSelectedDirProgram(p._id)}
                       className={`px-5 py-2.5 rounded-xl font-bold border transition-all cursor-pointer ${selectedDirProgram === p._id
-                          ? 'bg-blue-600 text-white border-blue-600 shadow-md'
-                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
                         }`}
                     >
                       {p.code}

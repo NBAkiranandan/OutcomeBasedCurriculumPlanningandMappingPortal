@@ -65,7 +65,7 @@ export const deleteProgram = async (req, res, next) => {
     if (!program) return res.status(404).json({ message: 'Program not found' });
     return res.status(200).json({
       program,
-      message: `Program accounts successfully ${program.isActive ? 'activated' : 'deactivated'}.`
+      message: 'Program deleted successfully.'
     });
   } catch (error) {
     return next(error);
@@ -93,7 +93,7 @@ export const deleteDepartment = async (req, res, next) => {
     if (!department) return res.status(404).json({ message: 'Department not found' });
     return res.status(200).json({
       department,
-      message: `Department successfully ${department.isActive ? 'activated' : 'deactivated'}.`
+      message: 'Department deleted successfully.'
     });
   } catch (error) {
     return next(error);

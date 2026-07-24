@@ -38,14 +38,7 @@ export const updateProgram = async (id, updateData) => {
 };
 
 export const deleteProgram = async (id) => {
-  // We can do logical delete by toggling isActive, or hard delete.
-  // Let's support toggling isActive if it exists, or just removing.
-  const program = await Program.findById(id);
-  if (program) {
-    program.isActive = !program.isActive;
-    return program.save();
-  }
-  return null;
+  return Program.findByIdAndDelete(id);
 };
 
 export const updateDepartment = async (id, updateData) => {
@@ -53,10 +46,5 @@ export const updateDepartment = async (id, updateData) => {
 };
 
 export const deleteDepartment = async (id) => {
-  const dept = await Department.findById(id);
-  if (dept) {
-    dept.isActive = !dept.isActive;
-    return dept.save();
-  }
-  return null;
+  return Department.findByIdAndDelete(id);
 };

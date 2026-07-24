@@ -199,22 +199,20 @@ export const deleteUser = async (req, res, next) => {
       }
     }
 
-    // Toggle active status
-    user.isActive = !user.isActive;
-    await user.save();
+    await User.findByIdAndDelete(id);
 
     await AuditLog.create({
       userId: req.user.id,
       userName: req.user.name,
       userEmail: req.user.email,
-      action: user.isActive ? 'ACTIVATE_USER' : 'DEACTIVATE_USER',
-      details: `${user.isActive ? 'Activated' : 'Deactivated'} user: ${user.name} (${user.email})`,
+      action: 'DELETE_USER',
+      details: `Deleted user: ${user.name} (${user.email})`,
       category: 'Security'
     });
 
     return res.status(200).json({ 
-      user: { id: user._id, isActive: user.isActive }, 
-      message: `User accounts successfully ${user.isActive ? 'activated' : 'deactivated'}.` 
+      user: { id: user._id }, 
+      message: 'User deleted successfully.' 
     });
   } catch (error) {
     return next(error);
